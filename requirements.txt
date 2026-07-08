@@ -1,0 +1,5 @@
+anomalib==2.5.0
+torch
+timm
+numpy
+pandas
