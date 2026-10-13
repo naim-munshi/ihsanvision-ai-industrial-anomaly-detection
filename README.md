@@ -17,7 +17,7 @@
 | Models | PaDiM and PatchCore training | PaDiM/bottle verified on Kaggle |
 | Evaluation | Disjoint split audit and metrics export | PaDiM/bottle report captured |
 | Inference | Trusted checkpoint → score + overlay | Single-image PaDiM smoke test passed |
-| Service | FastAPI: `/health`, `/predict`, Swagger | Offline tests; live app pending |
+| Service | FastAPI: `/health`, `/predict`, Swagger | Mac localhost real-checkpoint HTTP smoke passed; browser interaction pending |
 | Interface | Responsive upload and result dashboard | Implemented; live run pending |
 | Quality | pytest and GitHub Actions, Python 3.11/3.12 | CI passing on development branch |
 
@@ -111,7 +111,7 @@ python -m uvicorn src.api:app --host 127.0.0.1 --port 8000
 
 Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/) for the UI and [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) for OpenAPI.
 
-The local service is implemented and tested with mocked predictions. **Actual browser → API → model operation is still pending end-to-end verification.** Only load checkpoints you trust.
+The local service is implemented and tested with mocked predictions. **A real Mac HTTP → API → model round trip is now verified; clicking/uploading in the browser UI remains pending.** Only load checkpoints you trust.
 
 ### 3. Compare PaDiM and PatchCore
 
@@ -167,7 +167,16 @@ source .venv/bin/activate
 python -m scripts.local_api_smoke --url http://127.0.0.1:8001
 ~~~
 
-A successful smoke test establishes real Mac service connectivity and checkpoint-backed prediction, **not defect detection accuracy**. The service offloads blocking model execution to a worker thread and serializes inference per process; it still reloads the checkpoint on each request. See [deployment notes](docs/deployment.md).
+The user successfully exercised the real checkpoint through this HTTP path on macOS (see [Mac API smoke report](reports/2026-10-14-macos-api-smoke.md)). The test used a **synthetic** image and took **66.69 seconds including checkpoint load**, so it does **not** measure defect-detection accuracy or warm throughput.
+
+An **experimental lazy model-cache** is now enabled by default. To test it, restart the server after updating Git and run the same smoke command *twice*, without restarting Uvicorn between calls. Compare `model_reused`, the raw anomaly scores and `latency_ms_including_load`:
+
+~~~bash
+python -m scripts.local_api_smoke --url http://127.0.0.1:8001
+python -m scripts.local_api_smoke --url http://127.0.0.1:8001
+~~~
+
+If repeat inference fails or results diverge, stop the server and set `export IHSANVISION_MODEL_CACHE=0` before restarting Uvicorn. That restores the previously verified **load-every-request** code path. The per-process model cache has only been tested against fake Engines in CI; real-checkpoint verification is pending. See [deployment notes](docs/deployment.md).
 
 ## Quality checks
 
@@ -185,6 +194,7 @@ CI tests configuration, split leakage, image handling, API validation, and simul
 - [Development and Kaggle workflow](docs/development.md)
 - [API deployment and security notes](docs/deployment.md)
 - [Engineering roadmap and acceptance criteria](docs/roadmap.md)
+- [macOS live API smoke evidence](reports/2026-10-14-macos-api-smoke.md)
 - [Trained PaDiM model card](docs/model-card.md)
 - [Contributing guide](CONTRIBUTING.md)
 
