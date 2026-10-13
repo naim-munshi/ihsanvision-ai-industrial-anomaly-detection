@@ -68,7 +68,7 @@ def predict_image(image_path: Path, checkpoint: Path, model_name: str = "padim",
     # Lightning checkpoints are pickle-based. NEVER accept them from user uploads.
     engine = Engine(accelerator=accelerator, devices=1, logger=False)
     start = time.perf_counter()
-    batches = engine.predict(model=make_model(model_name),
+    batches = engine.predict(model=make_model(model_name, pre_trained=False),
                              data_path=image_path, ckpt_path=str(checkpoint),
                              return_predictions=True)
     elapsed_ms = round((time.perf_counter() - start) * 1000, 2)
