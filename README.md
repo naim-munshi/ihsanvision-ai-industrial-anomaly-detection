@@ -8,7 +8,7 @@
 
 **IhsanVision.AI** is a computer vision software prototype for detecting and localizing manufacturing defects. It combines unsupervised anomaly detection (**PaDiM** and **PatchCore**) with reproducible MVTec AD experiments, checkpoint-based inference, a **FastAPI service**, and a responsive browser inspection interface.
 
-**Current stage: research prototype.** Real PaDiM training and single-image inference have been exercised on Kaggle; hosted API/UI operation and the PatchCore benchmark are **not yet validated**.
+**Current stage: research prototype.** PaDiM training and saved-checkpoint inference were verified on Kaggle; **local Mac API inference and same-process checkpoint reuse are now verified**. Browser interaction, hosted deployment, and the PatchCore benchmark are **not yet validated**.
 
 ## Project status
 
@@ -17,7 +17,7 @@
 | Models | PaDiM and PatchCore training | PaDiM/bottle verified on Kaggle |
 | Evaluation | Disjoint split audit and metrics export | PaDiM/bottle report captured |
 | Inference | Trusted checkpoint → score + overlay | Single-image PaDiM smoke test passed |
-| Service | FastAPI: `/health`, `/predict`, Swagger | Mac localhost real-checkpoint HTTP smoke passed; browser interaction pending |
+| Service | FastAPI: `/health`, `/predict`, Swagger; lazy trusted checkpoint reuse | Mac HTTP smoke and repeated inference verified; browser interaction pending |
 | Interface | Responsive upload and result dashboard | Implemented; live run pending |
 | Quality | pytest and GitHub Actions, Python 3.11/3.12 | CI passing on development branch |
 
@@ -111,7 +111,7 @@ python -m uvicorn src.api:app --host 127.0.0.1 --port 8000
 
 Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/) for the UI and [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) for OpenAPI.
 
-The local service is implemented and tested with mocked predictions. **A real Mac HTTP → API → model round trip is now verified; clicking/uploading in the browser UI remains pending.** Only load checkpoints you trust.
+The local service is covered by mocked CI tests. **A real Mac HTTP → API → model round trip and in-process cache reuse are now verified; clicking/uploading in the browser UI remains pending.** Only load checkpoints you trust.
 
 ### 3. Compare PaDiM and PatchCore
 
@@ -167,7 +167,7 @@ source .venv/bin/activate
 python -m scripts.local_api_smoke --url http://127.0.0.1:8001
 ~~~
 
-**Checkpoint restoration is now constructed with `pre_trained=False`**, preventing a redundant ImageNet backbone download from Hugging Face when the trusted trained checkpoint already supplies all model weights. This does **not** change training initialization (`pre_trained=True`). Re-run the real Mac integration test after pulling this change; the new behavior has not yet been verified with the user's checkpoint.
+**Checkpoint restoration uses `pre_trained=False`** to avoid redundant Hugging Face backbone downloads; training still uses `pre_trained=True`. The subsequent Mac run completed successfully without those network retries.
 
 The user successfully exercised the real checkpoint through this HTTP path on macOS (see [Mac API smoke report](reports/2026-10-14-macos-api-smoke.md)). The test used a **synthetic** image and took **66.69 seconds including checkpoint load**, so it does **not** measure defect-detection accuracy or warm throughput.
 
@@ -178,7 +178,16 @@ python -m scripts.local_api_smoke --url http://127.0.0.1:8001
 python -m scripts.local_api_smoke --url http://127.0.0.1:8001
 ~~~
 
-If repeat inference fails or results diverge, stop the server and set `export IHSANVISION_MODEL_CACHE=0` before restarting Uvicorn. That restores the previously verified **load-every-request** code path. The per-process model cache has only been tested against fake Engines in CI; real-checkpoint verification is pending. See [deployment notes](docs/deployment.md).
+If repeat inference fails or results diverge, stop the server and set `export IHSANVISION_MODEL_CACHE=0` before restarting Uvicorn. That restores the previously verified **load-every-request** code path. **Real-checkpoint cache reuse is verified on macOS:** in one observed cold/reused pair, model-reported inference fell from **721.99 ms to 123.54 ms** (5.84× for that pair), both with the identical synthetic score and heatmap. This is not a warm p50/p95 benchmark. See [evidence](reports/2026-10-14-macos-api-smoke.md). See [deployment notes](docs/deployment.md).
+
+To collect a repeatable localhost **inference-time** sample from a still-running server:
+
+~~~bash
+python -m scripts.benchmark_local_api --url http://127.0.0.1:8002 --runs 10 \\
+  --output results/local-padin-serving-benchmark.json
+~~~
+
+This intentionally distinguishes `model_reused=true` samples, reports warm p50/p95, and validates identical-input score consistency. It is neither an accuracy evaluation nor an HTTP throughput benchmark.
 
 ## Quality checks
 
