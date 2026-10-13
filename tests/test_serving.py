@@ -37,7 +37,8 @@ def setup_fake_engine(monkeypatch):
     monkeypatch.setitem(sys.modules, "anomalib", anomalib)
     monkeypatch.setitem(sys.modules, "anomalib.engine", engine_module)
     created = []
-    def fake_model(name):
+    def fake_model(name, *, pre_trained=True):
+        assert pre_trained is False
         obj = object()
         created.append((name, obj))
         return obj
