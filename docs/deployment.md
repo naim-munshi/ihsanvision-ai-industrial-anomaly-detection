@@ -46,6 +46,12 @@ This runs an actual HTTP integration test and validates score/label/overlay fiel
 
 For caching validation, use **two calls without restarting the same server**. The new smoke script prints `model_reused`: it should be `false` on the first call and `true` on the second. Measure latency and numerical consistency before claiming any improvement. If errors occur, restart with `IHSANVISION_MODEL_CACHE=0` as above. When no image is provided, it sends a synthetic PNG: its score is **not** meaningful for defect detection. Neither script provides authentication or load testing.
 
+### macOS networking and port troubleshooting
+
+When the port is occupied (`[Errno 48] address already in use`), use another available local port such as `8002` and run the smoke test from a **separate Terminal while Uvicorn remains running**. A `Ctrl+C` in the server Terminal stops Uvicorn and the smoke test then reports `Connection refused` (`Errno 61`). You can inspect listeners using `lsof -nP -iTCP:8001 -sTCP:LISTEN`; do not terminate an unknown process blindly.
+
+A previous Mac run failed to retrieve the ResNet18 backbone from Hugging Face because TLS certificate verification failed. Since checkpoint-backed inference restores the backbone weights, the factory now sets `pre_trained=False` for both the cold and cached inference paths, without changing the training initialization. This removes an unnecessary download during model construction. **Real Mac runtime confirmation after this change is still pending.** Do not disable certificate verification to work around a network's HTTPS interception.
+
 ## API contract
 
 | Method | Endpoint | Input | Output |
