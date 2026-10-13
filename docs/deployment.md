@@ -6,7 +6,7 @@ The FastAPI service and responsive browser dashboard are implemented. Automated 
 
 The current server offloads synchronous Anomalib execution to a worker thread, so the event loop can answer health requests. A semaphore allows **one inference at a time per worker process**. A **new experimental lazy in-memory cache** loads the operator's trusted model checkpoint on the first request and attempts to reuse that same Engine/model instance for subsequent requests in the same process.
 
-**Caching is not yet verified with a real checkpoint.** The previous cold-inference route is still available by setting `IHSANVISION_MODEL_CACHE=0` **before starting Uvicorn**. Changing the environment variable in another shell does not update an existing server process. No bounded request queue, authentication, rate limiting or scale-out capacity exists.
+**PaDiM caching has now been verified with the user's real Mac checkpoint** (see the recorded first/reused pair), although PatchCore, multi-worker reuse and load-test behavior are still unverified. The previous cold-inference route is still available by setting `IHSANVISION_MODEL_CACHE=0` **before starting Uvicorn**. Changing the environment variable in another shell does not update an existing server process. No bounded request queue, authentication, rate limiting or scale-out capacity exists.
 
 Only bind the service to `127.0.0.1` for initial validation. Do **not** expose this prototype directly to the public internet.
 
@@ -42,15 +42,26 @@ Or pass an actual product image:
 python -m scripts.local_api_smoke --url http://127.0.0.1:8001 --image /path/to/bottle.png
 ~~~
 
-This runs an actual HTTP integration test and validates score/label/overlay fields. The user already observed `api-smoke-passed` on macOS with PaDiM and a ~66.69-second cold result (see [run evidence](../reports/2026-10-14-macos-api-smoke.md)).
+This runs an actual HTTP integration test and validates score/label/overlay fields. The user observed `api-smoke-passed` on macOS with PaDiM and a ~66.69-second earlier download-affected cold result. With the updated factory and cache, a later two-request run reported 721.99 ms initial inference and 123.54 ms reuse with matching score and overlay (see [run evidence](../reports/2026-10-14-macos-api-smoke.md)).
 
 For caching validation, use **two calls without restarting the same server**. The new smoke script prints `model_reused`: it should be `false` on the first call and `true` on the second. Measure latency and numerical consistency before claiming any improvement. If errors occur, restart with `IHSANVISION_MODEL_CACHE=0` as above. When no image is provided, it sends a synthetic PNG: its score is **not** meaningful for defect detection. Neither script provides authentication or load testing.
+
+### Repeatable local inference latency sample
+
+With Uvicorn running on port 8002, use a separate Terminal:
+
+~~~bash
+python -m scripts.benchmark_local_api --url http://127.0.0.1:8002 --runs 10 \\
+  --output results/local-padim-serving-benchmark.json
+~~~
+
+The script measures Anomalib's reported inference span per request, checks that identical test inputs produce consistent scores, and reports the warm-sample p50 and empirical nearest-rank p95. It only classifies samples as warm if `model_reused=true`. The first request is **not necessarily cold**, because the server may already have the checkpoint in memory. These numbers exclude total HTTP exchange and UI rendering; no throughput or concurrency claims should be made.
 
 ### macOS networking and port troubleshooting
 
 When the port is occupied (`[Errno 48] address already in use`), use another available local port such as `8002` and run the smoke test from a **separate Terminal while Uvicorn remains running**. A `Ctrl+C` in the server Terminal stops Uvicorn and the smoke test then reports `Connection refused` (`Errno 61`). You can inspect listeners using `lsof -nP -iTCP:8001 -sTCP:LISTEN`; do not terminate an unknown process blindly.
 
-A previous Mac run failed to retrieve the ResNet18 backbone from Hugging Face because TLS certificate verification failed. Since checkpoint-backed inference restores the backbone weights, the factory now sets `pre_trained=False` for both the cold and cached inference paths, without changing the training initialization. This removes an unnecessary download during model construction. **Real Mac runtime confirmation after this change is still pending.** Do not disable certificate verification to work around a network's HTTPS interception.
+A previous Mac run failed to retrieve the ResNet18 backbone from Hugging Face because TLS certificate verification failed. Since checkpoint-backed inference restores the backbone weights, the factory now sets `pre_trained=False` for both the cold and cached inference paths, without changing the training initialization. This removes an unnecessary download during model construction. **The subsequent Mac run succeeded on both initial and reused requests without Hugging Face TLS failures.** Do not disable certificate verification to work around a network's HTTPS interception.
 
 ## API contract
 
@@ -91,7 +102,7 @@ The service validates common image formats (PNG, JPEG, WEBP, BMP) by actual cont
 **Not suitable for public deployment as is**:
 
 - No API authentication, account management, tenant isolation or rate limiting.
-- Experimental per-process model cache without real-model compatibility verification, model registry or safe hot-reload lifecycle.
+- Real-Mac-verified PaDiM per-process cache, but without PatchCore, multi-worker, high-load verification, model registry or safe hot-reload lifecycle.
 - Only per-process serialized inference; no bounded queue, streaming limits, monitoring dashboards or service-level objectives.
 - No structured audit logs or user privacy retention policy.
 - No hosted deployment smoke test or disaster recovery procedure.
@@ -104,7 +115,7 @@ For a later public service implement authenticated authorization, reverse proxy/
 
 Before a public endpoint is announced:
 
-1. Re-verify two successive requests with the **real Kaggle-trained checkpoint** after enabling the experimental cache and compare with the proven cold result.
+1. Collect repeated warm latency samples with the **real Kaggle-trained checkpoint** and compare reproducibly against the first request; the initial two-request cache smoke already passed.
 2. Confirm proper health, missing-checkpoint errors, supported and rejected file inputs.
 3. Measure cold/warm p50/p95 latency and memory using a repeatable workload.
 4. Introduce authentication and rate limiting, plus a proper checkpoint/model version lifecycle.
