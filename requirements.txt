@@ -1,5 +1,12 @@
+# Runtime dependencies. Match the validated experiment's Anomalib release.
+# Install an appropriate PyTorch build for your CPU/GPU first if needed.
 anomalib==2.5.0
-torch
+torch>=2.3
+torchvision
 timm
-numpy
-pandas
+numpy>=1.26,<3
+pandas>=2.0,<3
+Pillow>=10
+fastapi>=0.110,<1
+uvicorn[standard]>=0.27
+python-multipart>=0.0.9
