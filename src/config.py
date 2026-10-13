@@ -39,11 +39,18 @@ class TrainConfig:
         values["output_dir"] = str(self.output_dir)
         return values
 
-def make_model(name: str):
+def make_model(name: str, *, pre_trained: bool = True):
+    """Construct a training model, or checkpoint-restored inference model.
+
+    Training requires ImageNet backbone initialization (pre_trained=True).
+    Inference restores backbone, thresholds and normal statistics from the
+    trusted Lightning checkpoint, so requesting pretrained weights again is
+    unnecessary and can fail on networks that inspect HTTPS traffic.
+    """
     if name not in MODELS:
         raise ValueError(f"Unknown model: {name}")
     from anomalib.models import Padim, Patchcore
-    return {"padim": Padim, "patchcore": Patchcore}[name]()
+    return {"padim": Padim, "patchcore": Patchcore}[name](pre_trained=pre_trained)
 
 def seed_everything(seed: int) -> None:
     random.seed(seed)
