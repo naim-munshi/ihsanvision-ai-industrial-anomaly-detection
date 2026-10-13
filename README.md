@@ -183,8 +183,7 @@ If repeat inference fails or results diverge, stop the server and set `export IH
 To collect a repeatable localhost **inference-time** sample from a still-running server:
 
 ~~~bash
-python -m scripts.benchmark_local_api --url http://127.0.0.1:8002 --runs 10 \\
-  --output results/local-padin-serving-benchmark.json
+python -m scripts.benchmark_local_api --url http://127.0.0.1:8002 --runs 10 --output results/local-padim-serving-benchmark.json
 ~~~
 
 This intentionally distinguishes `model_reused=true` samples, reports warm p50/p95, and validates identical-input score consistency. It is neither an accuracy evaluation nor an HTTP throughput benchmark.
