@@ -4,6 +4,8 @@
 
 The FastAPI service and responsive browser dashboard are implemented. Automated API tests pass with simulated predictions, and standalone **real** PaDiM checkpoint inference has succeeded on Kaggle. **Live browser → FastAPI → real model end-to-end execution is not yet verified.**
 
+The current server offloads synchronous Anomalib execution to a worker thread, so the event loop can answer health requests. A semaphore allows **one inference at a time per worker process**. It does **not** implement model caching, request queue bounds, authentication, rate limiting or scale-out capacity.
+
 Only bind the service to `127.0.0.1` for initial validation. Do **not** expose this prototype directly to the public internet.
 
 ## Local startup
@@ -16,7 +18,29 @@ export IHSANVISION_MODEL="padim"
 python -m uvicorn src.api:app --host 127.0.0.1 --port 8000
 ~~~
 
-UI: `http://127.0.0.1:8000/`. Swagger: `http://127.0.0.1:8000/docs`.
+UI: `http://127.0.0.1:8000/`. Swagger: `http://127.0.0.1:8000/docs`. If port 8000 is already occupied (common on macOS), use `--port 8001` instead.
+
+### Local verification commands
+
+Check dependencies and the copied checkpoint/report JSONs without deserializing the model:
+
+~~~bash
+python -m scripts.local_preflight
+~~~
+
+With the server started and its port known, use **another terminal**:
+
+~~~bash
+python -m scripts.local_api_smoke --url http://127.0.0.1:8001
+~~~
+
+Or pass an actual product image:
+
+~~~bash
+python -m scripts.local_api_smoke --url http://127.0.0.1:8001 --image /path/to/bottle.png
+~~~
+
+This runs an actual HTTP integration test and validates score/label/overlay fields. When no image is provided, it sends a synthetic PNG: its score is **not** meaningful for defect detection. Neither script provides authentication or load testing.
 
 ## API contract
 
@@ -58,7 +82,7 @@ The service validates common image formats (PNG, JPEG, WEBP, BMP) by actual cont
 
 - No API authentication, account management, tenant isolation or rate limiting.
 - No model hot-reload or lifecycle manager; the checkpoint may be loaded per request.
-- No concurrency controls, streaming limits, monitoring dashboards or service-level objectives.
+- Only per-process serialized inference; no bounded queue, streaming limits, monitoring dashboards or service-level objectives.
 - No structured audit logs or user privacy retention policy.
 - No hosted deployment smoke test or disaster recovery procedure.
 
