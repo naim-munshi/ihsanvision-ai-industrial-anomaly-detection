@@ -61,7 +61,7 @@ def fake_anomalib(monkeypatch, model_output=None):
     monkeypatch.setitem(sys.modules, "anomalib.engine", engine_module)
     monkeypatch.setattr(train, "make_model", lambda _: object())
     monkeypatch.setattr(train, "seed_everything", lambda _: None)
-    monkeypatch.setattr(predict, "make_model", lambda _: object())
+    monkeypatch.setattr(predict, "make_model", lambda _, **kwargs: object())
 
     torch = ModuleType("torch")
     torch.__version__ = "test-torch"
