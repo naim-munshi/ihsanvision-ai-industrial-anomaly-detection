@@ -11,8 +11,8 @@ This is a **state-based roadmap**, not an assertion that all systems are already
 | M3 | Single-image model inference + heatmap | **Verified on Kaggle** | `single-image-inference-passed`, overlay screenshot |
 | M4 | CI and dependency-isolated tests | **Verified** | Python 3.11/3.12 GitHub Actions pass |
 | M5 | PatchCore comparison on same dataset/protocol | **Pending** | Metric tables, timings, model configs and hardware |
-| M6 | Real FastAPI + browser demo against trusted model | **Tooling implemented, live test pending** | Local recorded smoke-test result |
-| M7 | Persistent serving, tests and performance profiling | **Pending** | Warm/cold latency p50/p95, load test and resource profile |
+| M6 | Real FastAPI + browser demo against trusted model | **HTTP service verified; browser upload pending** | Real Mac API pass; normal and defective browser uploads still needed |
+| M7 | Persistent serving, tests and performance profiling | **Experimental cache implemented; real validation pending** | Compare first/second Mac HTTP calls and record warm/cold p50/p95 later |
 | M8 | Authentication, rate limit, audit logging | **Pending** | Security tests and privacy policy |
 | M9 | Container packaging and hosted demo | **Pending** | Verified deployment, CI release and rollback |
 | M10 | Portfolio release | **Pending** | Demonstration, figures, reproducibility package and review |
@@ -33,7 +33,7 @@ Run `python -m src.benchmark` for the same category and seed. Compare model metr
 
 ### Priority 3 — Live app inspection
 
-First run `python -m scripts.local_preflight` to inspect copied Mac checkpoint and JSON artifacts. Then launch the API and execute `python -m scripts.local_api_smoke --url http://127.0.0.1:8001`. Finally test normal and defective input images through the browser. Resolve mismatches between CLI and web behavior.
+The Mac preflight and a real checkpoint-backed HTTP API smoke test already passed. Next, verify two repeated calls with caching enabled, record timing and score consistency, then test normal and defective input images through the browser. Resolve mismatches between CLI and web behavior.
 
 **Definition of done:** Browser works for real image upload; resulting score/label/overlay visible; failure states explained; local screenshots and API response saved.
 
