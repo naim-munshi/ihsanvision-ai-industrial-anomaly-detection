@@ -22,8 +22,14 @@ def test_multipart_contains_expected_file_field():
 
 
 def test_localhost_only():
-    with pytest.raises(ValueError, match="localhost"):
-        smoke.smoke("https://example.com", b"fake")
+    for url in (
+        "https://example.com",
+        "http://127.0.0.1:8001@evil.example/",
+        "http://localhost:8001/predict",
+        "http://localhost",
+    ):
+        with pytest.raises(ValueError, match="localhost|port"):
+            smoke.smoke(url, b"fake")
 
 
 def test_smoke_contract(monkeypatch):
