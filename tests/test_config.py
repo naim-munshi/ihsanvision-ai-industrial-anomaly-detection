@@ -52,3 +52,37 @@ def test_bad_ratio(tmp_path):
 def test_metrics_filter_non_finite_values():
     assert scalar_metrics([{"auroc": 0.9, "nan": float("nan"),
                             "nonscalar": [0.1, 0.2]}]) == {"auroc": 0.9}
+
+
+def test_model_factory_passes_pretrained_flag(monkeypatch):
+    """Checkpoint inference must not try to fetch ImageNet backbone weights."""
+    import sys
+    from types import ModuleType
+    from src.config import make_model
+
+    fake_anomalib = ModuleType("anomalib")
+    fake_anomalib.__path__ = []
+    fake_models = ModuleType("anomalib.models")
+    recorded = []
+
+    class FakePadim:
+        def __init__(self, *, pre_trained=True):
+            recorded.append(("padim", pre_trained))
+
+    class FakePatchcore:
+        def __init__(self, *, pre_trained=True):
+            recorded.append(("patchcore", pre_trained))
+
+    fake_models.Padim = FakePadim
+    fake_models.Patchcore = FakePatchcore
+    monkeypatch.setitem(sys.modules, "anomalib", fake_anomalib)
+    monkeypatch.setitem(sys.modules, "anomalib.models", fake_models)
+
+    make_model("padim")
+    make_model("padim", pre_trained=False)
+    make_model("patchcore", pre_trained=False)
+    assert recorded == [
+        ("padim", True),
+        ("padim", False),
+        ("patchcore", False),
+    ]
