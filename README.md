@@ -60,6 +60,24 @@ For GPU installs, follow [PyTorch's platform selector](https://pytorch.org/get-s
 
 MVTec AD uses **CC BY-NC-SA 4.0**; check its license and conditions before any commercial use.
 
+## Kaggle preflight (no download or training)
+
+After attaching the MVTec AD input in Kaggle and cloning this feature branch, run:
+
+```bash
+python -m scripts.kaggle_preflight
+```
+
+The script searches the common Kaggle nested paths, prints the usable `dataset_root`, and verifies normal training images plus normal/anomalous test images exist. It **does not** start training or download data. Copy the exact `dataset_root` field into the training command below. For a custom location, use `--input-dir` or `--dataset-root`.
+
+A shared Kaggle notebook can use:
+
+```python
+!python -m scripts.kaggle_preflight
+```
+
+If the repository was cloned before this utility was added, run `git pull` **on the feature branch** first.
+
 ## Train a model
 
 ```bash
