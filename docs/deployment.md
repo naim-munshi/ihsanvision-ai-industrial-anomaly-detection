@@ -51,8 +51,7 @@ For caching validation, use **two calls without restarting the same server**. Th
 With Uvicorn running on port 8002, use a separate Terminal:
 
 ~~~bash
-python -m scripts.benchmark_local_api --url http://127.0.0.1:8002 --runs 10 \\
-  --output results/local-padim-serving-benchmark.json
+python -m scripts.benchmark_local_api --url http://127.0.0.1:8002 --runs 10 --output results/local-padim-serving-benchmark.json
 ~~~
 
 The script measures Anomalib's reported inference span per request, checks that identical test inputs produce consistent scores, and reports the warm-sample p50 and empirical nearest-rank p95. It only classifies samples as warm if `model_reused=true`. The first request is **not necessarily cold**, because the server may already have the checkpoint in memory. These numbers exclude total HTTP exchange and UI rendering; no throughput or concurrency claims should be made.
