@@ -15,6 +15,7 @@ from PIL import Image, UnidentifiedImageError
 
 from .config import MODELS
 from .serving import PersistentModelPredictor
+from .predict import predict_image
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +51,11 @@ def create_app(predict_fn=None) -> FastAPI:
         version="0.3.0",
         description="Defect detection and localization. Not for safety-critical decisions.",
     )
-    predict_fn = predict_fn if predict_fn is not None else PersistentModelPredictor()
+    if predict_fn is None:
+        # Safe fallback to previously verified cold inference while the new
+        # persistent predictor is undergoing real-checkpoint validation.
+        use_cache = os.getenv("IHSANVISION_MODEL_CACHE", "1").strip() != "0"
+        predict_fn = PersistentModelPredictor() if use_cache else predict_image
 
     # The default predictor lazily caches one checkpoint per process.
     # Serialize calls because Anomalib Engine/Trainer is not thread-safe.
