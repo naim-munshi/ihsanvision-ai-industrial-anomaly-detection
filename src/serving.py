@@ -55,7 +55,7 @@ class PersistentModelPredictor:
             from anomalib.engine import Engine
 
             self._engine = Engine(accelerator=self.accelerator, devices=1, logger=False)
-            self._model = make_model(model_name)
+            self._model = make_model(model_name, pre_trained=False)
             self._key = key
             self._ready = False
 
