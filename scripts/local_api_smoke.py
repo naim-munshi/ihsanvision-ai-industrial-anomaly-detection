@@ -93,6 +93,7 @@ def smoke(base_url: str, payload: bytes, timeout: float = 180) -> dict:
         "anomaly_score": result["anomaly_score"],
         "predicted_anomaly": result.get("predicted_anomaly"),
         "latency_ms_including_load": result.get("latency_ms"),
+        "model_reused": result.get("model_reused"),
         "overlay_png": bool(overlay),
         "status": "api-smoke-passed",
         "warning": "Synthetic input checks connectivity, NOT model accuracy or warm-serving latency.",
