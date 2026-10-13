@@ -11,7 +11,7 @@ This is a **state-based roadmap**, not an assertion that all systems are already
 | M3 | Single-image model inference + heatmap | **Verified on Kaggle** | `single-image-inference-passed`, overlay screenshot |
 | M4 | CI and dependency-isolated tests | **Verified** | Python 3.11/3.12 GitHub Actions pass |
 | M5 | PatchCore comparison on same dataset/protocol | **Pending** | Metric tables, timings, model configs and hardware |
-| M6 | Real FastAPI + browser demo against trusted model | **Pending** | Local recorded smoke-test result |
+| M6 | Real FastAPI + browser demo against trusted model | **Tooling implemented, live test pending** | Local recorded smoke-test result |
 | M7 | Persistent serving, tests and performance profiling | **Pending** | Warm/cold latency p50/p95, load test and resource profile |
 | M8 | Authentication, rate limit, audit logging | **Pending** | Security tests and privacy policy |
 | M9 | Container packaging and hosted demo | **Pending** | Verified deployment, CI release and rollback |
@@ -33,7 +33,7 @@ Run `python -m src.benchmark` for the same category and seed. Compare model metr
 
 ### Priority 3 — Live app inspection
 
-Run the locally hosted web UI with the trusted PaDiM checkpoint and test normal and defective input images. Resolve mismatches between CLI and web behavior.
+First run `python -m scripts.local_preflight` to inspect copied Mac checkpoint and JSON artifacts. Then launch the API and execute `python -m scripts.local_api_smoke --url http://127.0.0.1:8001`. Finally test normal and defective input images through the browser. Resolve mismatches between CLI and web behavior.
 
 **Definition of done:** Browser works for real image upload; resulting score/label/overlay visible; failure states explained; local screenshots and API response saved.
 
