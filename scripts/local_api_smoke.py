@@ -15,6 +15,7 @@ from io import BytesIO
 import json
 from pathlib import Path
 import urllib.error
+import urllib.parse
 import urllib.request
 import uuid
 
@@ -44,9 +45,24 @@ def multipart_png(payload: bytes) -> tuple[bytes, str]:
 
 def smoke(base_url: str, payload: bytes, timeout: float = 180) -> dict:
     """Call health, UI and prediction endpoints; never print the base64 overlay."""
-    base = base_url.rstrip("/")
-    if not base.startswith(("http://127.0.0.1:", "http://localhost:")):
-        raise ValueError("Smoke test intentionally accepts localhost URLs only")
+    parsed = urllib.parse.urlsplit(base_url)
+    if (
+        parsed.scheme != "http"
+        or parsed.hostname not in {"localhost", "127.0.0.1"}
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.path not in ("", "/")
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise ValueError("Smoke test intentionally accepts localhost HTTP origin URLs only")
+    try:
+        port = parsed.port
+    except ValueError:
+        raise ValueError("Invalid localhost port") from None
+    if port is None:
+        raise ValueError("Specify the local server port, for example :8001")
+    base = f"http://{parsed.hostname}:{port}"
     with urllib.request.urlopen(base + "/health", timeout=10) as response:
         health = json.load(response)
     if not health.get("model_configured"):
