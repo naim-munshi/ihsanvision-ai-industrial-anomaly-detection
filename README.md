@@ -141,6 +141,34 @@ ihsanvision-ai-industrial-anomaly-detection/
 └── requirements-dev.txt
 ~~~
 
+## Local integration checks
+
+On macOS, after the Kaggle checkpoint has been copied to a trusted path outside the repository, run the **artifact/dependency preflight**:
+
+~~~bash
+python -m scripts.local_preflight
+~~~
+
+This checks package availability, the checkpoint file, and consistency of the saved train/validation/test reports. It **does not deserialize the checkpoint** or claim successful real-model inference.
+
+Start the local API on a free port (8001 if 8000 is occupied):
+
+~~~bash
+export IHSANVISION_CHECKPOINT="$HOME/ihsanvision-artifacts/padim-bottle-seed42/model.ckpt"
+export IHSANVISION_MODEL=padim
+python -m uvicorn src.api:app --host 127.0.0.1 --port 8001
+~~~
+
+From a **second terminal**, exercise the API with a synthetic image:
+
+~~~bash
+cd ~/ihsanvision-portfolio
+source .venv/bin/activate
+python -m scripts.local_api_smoke --url http://127.0.0.1:8001
+~~~
+
+A successful smoke test establishes real Mac service connectivity and checkpoint-backed prediction, **not defect detection accuracy**. The service offloads blocking model execution to a worker thread and serializes inference per process; it still reloads the checkpoint on each request. See [deployment notes](docs/deployment.md).
+
 ## Quality checks
 
 ~~~bash
@@ -157,6 +185,8 @@ CI tests configuration, split leakage, image handling, API validation, and simul
 - [Development and Kaggle workflow](docs/development.md)
 - [API deployment and security notes](docs/deployment.md)
 - [Engineering roadmap and acceptance criteria](docs/roadmap.md)
+- [Trained PaDiM model card](docs/model-card.md)
+- [Contributing guide](CONTRIBUTING.md)
 
 ## Limitations and responsible use
 
