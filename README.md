@@ -167,6 +167,8 @@ source .venv/bin/activate
 python -m scripts.local_api_smoke --url http://127.0.0.1:8001
 ~~~
 
+**Checkpoint restoration is now constructed with `pre_trained=False`**, preventing a redundant ImageNet backbone download from Hugging Face when the trusted trained checkpoint already supplies all model weights. This does **not** change training initialization (`pre_trained=True`). Re-run the real Mac integration test after pulling this change; the new behavior has not yet been verified with the user's checkpoint.
+
 The user successfully exercised the real checkpoint through this HTTP path on macOS (see [Mac API smoke report](reports/2026-10-14-macos-api-smoke.md)). The test used a **synthetic** image and took **66.69 seconds including checkpoint load**, so it does **not** measure defect-detection accuracy or warm throughput.
 
 An **experimental lazy model-cache** is now enabled by default. To test it, restart the server after updating Git and run the same smoke command *twice*, without restarting Uvicorn between calls. Compare `model_reused`, the raw anomaly scores and `latency_ms_including_load`:
