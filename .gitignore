@@ -9,7 +9,6 @@ results/
 *.pth
 *.onnx
 *.bin
-*.xml
 *.log
 .env
 .venv/
