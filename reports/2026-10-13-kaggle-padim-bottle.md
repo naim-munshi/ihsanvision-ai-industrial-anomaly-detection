@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-13 (JST)
 **Evidence:** User-supplied executed Kaggle notebook `ihsanvision-ai-industrial-anomaly-detection.ipynb`, code cell with `python -m src.train` output.
-**Status:** Training + saved-checkpoint test successfully completed, as shown in the supplied notebook. This report is a transcription of that execution evidence, **not** an independently rerun benchmark.
+**Status:** Training + saved-checkpoint test shown in the user-supplied executed notebook; **real single-image inference smoke test** later shown in a separate user-provided Kaggle screenshot. These observations were not independently reproduced on another machine.
 
 ## Command captured
 
@@ -41,12 +41,29 @@ The pipeline uses `val_split_mode="from_test"`, `val_split_ratio=0.2`, and `test
 
 AUROC measures ranking/discrimination. The pixel-level F1 (64.97%) is substantially lower than pixel AUROC (97.68%); visual localization and threshold calibration require further investigation.
 
-## Next verification
+## Subsequent real single-image inference (user screenshot)
 
-1. Inspect `report.json` and `splits.json` to confirm split counts and threshold/calibration protocol.
-2. Use the saved checkpoint for real single-image inference via `python -m src.predict` (not yet demonstrated by the uploaded notebook).
-3. Inspect the overlay for a known defective image.
-4. Execute equivalent held-out tests with PatchCore on the same seed, category and dataset.
-5. Collect a deployable demo result and document hardware-dependent per-image latency.
+The user subsequently ran `python -m scripts.kaggle_smoke_test` using the checkpoint created above. The Kaggle screenshot shows the following complete status values:
+
+| Field | Observed |
+| --- | --- |
+| status | `single-image-inference-passed` |
+| model / category | `padim` / `bottle` |
+| predicted_anomaly | `true` |
+| anomaly_score | `0.8632830381393433` |
+| latency_ms | approximately `1396.49` |
+| train / validation / test | **209 / 16 / 67** |
+| overlay | `smoke_overlay.png` generated and displayed |
+
+The screenshot shows a visibly damaged bottle and an anomaly overlay with highlighted areas near the rim and lower-right portion. This is evidence of **successful checkpoint-backed inference and image rendering for that one sample**, not evidence that every pixel is correctly localized, that the displayed overlay is calibrated, or that the service UI is operational. The recorded latency includes model initialization/checkpoint loading.
+
+The screenshot displays split counts returned by the smoke script; direct inspection of the underlying `splits.json` and `report.json` contents remains pending.
+
+## Remaining verification
+
+1. Preserve and inspect `report.json`, `splits.json`, `smoke_report.json` and the original model checkpoint.
+2. Execute an equivalent held-out **PatchCore** training/evaluation for the same seed, category and protocol.
+3. Verify live **FastAPI → model → browser** inference using the saved checkpoint.
+4. Record comparable warm/cold serving latency, peak memory, and visual localization quality.
 
 The original notebook's separate `engine.test()` cell returned different values and uses its own data-module defaults. Do **not** combine its results with this pipeline run as if they came from one evaluation protocol.
