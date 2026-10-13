@@ -94,6 +94,14 @@ python -m compileall -q src scripts
 python -m pytest -q
 ~~~
 
+### Validate local artifacts before starting the server
+
+~~~bash
+python -m scripts.local_preflight
+~~~
+
+The script verifies the current environment and artifact files, checks for duplicate/overlapping split paths, and compares recorded split counts. It reads JSON, but **does not deserialize checkpoint bytes or run the model**.
+
 ### API and UI
 
 Place or point to a **trusted** checkpoint outside version control:
@@ -104,7 +112,17 @@ export IHSANVISION_MODEL="padim"
 python -m uvicorn src.api:app --host 127.0.0.1 --port 8000
 ~~~
 
-Open `http://127.0.0.1:8000/`. A real end-to-end browser/API smoke test is still required.
+Open `http://127.0.0.1:8000/`. To smoke-test the running server from a separate Terminal:
+
+~~~bash
+cd ~/ihsanvision-portfolio
+source .venv/bin/activate
+python -m scripts.local_api_smoke --url http://127.0.0.1:8001
+~~~
+
+If port 8000 is free, use that port consistently for both Uvicorn and the smoke script. The script makes actual HTTP requests and validates a synthetic PNG prediction; **the synthetic input is not a meaningful model-quality test**. Passing a real image via `--image /path/to/sample.png` is supported. Actual Mac live inference remains **unverified until someone runs this command successfully**.
+
+Blocking inference runs in a threadpool; a per-process semaphore prevents concurrent model execution while the checkpoint is still loaded per prediction.
 
 ## Contribution procedure
 
