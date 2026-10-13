@@ -13,7 +13,10 @@ from src.serving import PersistentModelPredictor
 
 def setup_fake_engine(monkeypatch):
     engines = []
+    anomalib = ModuleType("anomalib")
+    anomalib.__path__ = []
     engine_module = ModuleType("anomalib.engine")
+    anomalib.engine = engine_module
 
     class FakeEngine:
         def __init__(self, **kwargs):
@@ -31,6 +34,7 @@ def setup_fake_engine(monkeypatch):
             )]
 
     engine_module.Engine = FakeEngine
+    monkeypatch.setitem(sys.modules, "anomalib", anomalib)
     monkeypatch.setitem(sys.modules, "anomalib.engine", engine_module)
     created = []
     def fake_model(name):
