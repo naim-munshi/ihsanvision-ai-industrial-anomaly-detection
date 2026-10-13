@@ -2,9 +2,11 @@
 
 ## Current status
 
-The FastAPI service and responsive browser dashboard are implemented. Automated API tests pass with simulated predictions, and standalone **real** PaDiM checkpoint inference has succeeded on Kaggle. **Live browser → FastAPI → real model end-to-end execution is not yet verified.**
+The FastAPI service and responsive browser dashboard are implemented. Automated API tests pass with simulated predictions, and standalone **real** PaDiM checkpoint inference has succeeded on Kaggle. **Real Mac HTTP → FastAPI → checkpoint inference has now passed** using a synthetic PNG. Real browser upload interaction with actual normal/defect images is still pending.
 
-The current server offloads synchronous Anomalib execution to a worker thread, so the event loop can answer health requests. A semaphore allows **one inference at a time per worker process**. It does **not** implement model caching, request queue bounds, authentication, rate limiting or scale-out capacity.
+The current server offloads synchronous Anomalib execution to a worker thread, so the event loop can answer health requests. A semaphore allows **one inference at a time per worker process**. A **new experimental lazy in-memory cache** loads the operator's trusted model checkpoint on the first request and attempts to reuse that same Engine/model instance for subsequent requests in the same process.
+
+**Caching is not yet verified with a real checkpoint.** The previous cold-inference route is still available by setting `IHSANVISION_MODEL_CACHE=0` **before starting Uvicorn**. Changing the environment variable in another shell does not update an existing server process. No bounded request queue, authentication, rate limiting or scale-out capacity exists.
 
 Only bind the service to `127.0.0.1` for initial validation. Do **not** expose this prototype directly to the public internet.
 
@@ -40,7 +42,9 @@ Or pass an actual product image:
 python -m scripts.local_api_smoke --url http://127.0.0.1:8001 --image /path/to/bottle.png
 ~~~
 
-This runs an actual HTTP integration test and validates score/label/overlay fields. When no image is provided, it sends a synthetic PNG: its score is **not** meaningful for defect detection. Neither script provides authentication or load testing.
+This runs an actual HTTP integration test and validates score/label/overlay fields. The user already observed `api-smoke-passed` on macOS with PaDiM and a ~66.69-second cold result (see [run evidence](../reports/2026-10-14-macos-api-smoke.md)).
+
+For caching validation, use **two calls without restarting the same server**. The new smoke script prints `model_reused`: it should be `false` on the first call and `true` on the second. Measure latency and numerical consistency before claiming any improvement. If errors occur, restart with `IHSANVISION_MODEL_CACHE=0` as above. When no image is provided, it sends a synthetic PNG: its score is **not** meaningful for defect detection. Neither script provides authentication or load testing.
 
 ## API contract
 
@@ -81,7 +85,7 @@ The service validates common image formats (PNG, JPEG, WEBP, BMP) by actual cont
 **Not suitable for public deployment as is**:
 
 - No API authentication, account management, tenant isolation or rate limiting.
-- No model hot-reload or lifecycle manager; the checkpoint may be loaded per request.
+- Experimental per-process model cache without real-model compatibility verification, model registry or safe hot-reload lifecycle.
 - Only per-process serialized inference; no bounded queue, streaming limits, monitoring dashboards or service-level objectives.
 - No structured audit logs or user privacy retention policy.
 - No hosted deployment smoke test or disaster recovery procedure.
@@ -94,7 +98,7 @@ For a later public service implement authenticated authorization, reverse proxy/
 
 Before a public endpoint is announced:
 
-1. Verify local FastAPI request against the **real Kaggle-trained checkpoint** and compare with CLI prediction.
+1. Re-verify two successive requests with the **real Kaggle-trained checkpoint** after enabling the experimental cache and compare with the proven cold result.
 2. Confirm proper health, missing-checkpoint errors, supported and rejected file inputs.
 3. Measure cold/warm p50/p95 latency and memory using a repeatable workload.
 4. Introduce authentication and rate limiting, plus a proper checkpoint/model version lifecycle.
