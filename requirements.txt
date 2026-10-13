@@ -4,7 +4,7 @@ anomalib==2.5.0
 torch>=2.3
 torchvision
 timm
-numpy>=1.26,<3
+numpy>=1.26,<2.1
 pandas>=2.0,<3
 Pillow>=10
 fastapi>=0.110,<1
