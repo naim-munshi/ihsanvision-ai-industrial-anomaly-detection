@@ -102,6 +102,22 @@ This is **not the same as** evaluating on the full official MVTec test split. Co
 
 The saved `report.json` contains the actual numeric metrics returned by Anomalib and runtime versions. It does not invent or backfill results when training has not run.
 
+## Verified Kaggle experiment (2026-10-13)
+
+A supplied executed Kaggle notebook demonstrates one real **PaDiM / bottle** CPU training and checkpoint-backed held-out test evaluation, using the command below. Results: **image AUROC 0.9963**, **image F1 0.9592**, **pixel AUROC 0.9768**, and **pixel F1 0.6497**.
+
+For complete values, provenance, and evaluation limits see [the Kaggle verification report](reports/2026-10-13-kaggle-padim-bottle.md). These are notebook-recorded results, not independently reproduced; they do not represent the complete official MVTec test split. The web API and single-image inference still need live runtime verification.
+
+After training and checking the checkpoint, run **this single command** in Kaggle from the repository directory to test inference and save an overlay:
+
+```bash
+python -m scripts.kaggle_smoke_test \
+  --dataset-root /kaggle/input/datasets/ipythonx/mvtec-ad \
+  --output-dir /kaggle/working/ihsanvision_runs
+```
+
+This checks model and report files, verifies the saved data splits do not overlap, selects a real defective test image and performs checkpoint-backed prediction. On success it writes `smoke_overlay.png` and `smoke_report.json` into the original run folder. The overlay uses **relative heatmap normalization**, not a calibrated binary mask.
+
 ## Benchmark PaDiM against PatchCore
 
 ```bash
