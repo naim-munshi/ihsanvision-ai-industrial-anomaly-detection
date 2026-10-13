@@ -14,7 +14,7 @@ from fastapi.responses import FileResponse
 from PIL import Image, UnidentifiedImageError
 
 from .config import MODELS
-from .predict import predict_image
+from .serving import PersistentModelPredictor
 
 logger = logging.getLogger(__name__)
 
@@ -47,13 +47,13 @@ def _run_prediction(payload: bytes, checkpoint: Path, model_name: str, predict_f
 def create_app(predict_fn=None) -> FastAPI:
     app = FastAPI(
         title="IhsanVision AI",
-        version="0.2.1",
+        version="0.3.0",
         description="Defect detection and localization. Not for safety-critical decisions.",
     )
-    predict_fn = predict_fn or predict_image
+    predict_fn = predict_fn if predict_fn is not None else PersistentModelPredictor()
 
-    # Model checkpoints and runtime engines are expensive; serialize inference
-    # per worker until persistent, concurrency-safe model loading is implemented.
+    # The default predictor lazily caches one checkpoint per process.
+    # Serialize calls because Anomalib Engine/Trainer is not thread-safe.
     inference_semaphore = asyncio.Semaphore(1)
 
     @app.get("/")
