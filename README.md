@@ -118,7 +118,8 @@ CI validates packaging imports, canonical/legacy entry points, API contracts, le
 - [Incremental Kaggle PatchCore comparison](docs/patchcore-comparison-workflow.md)
 - [Deployment, limitations and security](docs/deployment.md)
 - [Milestones and acceptance criteria](docs/roadmap.md)
-- [Repository migration and branch conventions](docs/repository-structure.md)
+- [Repository structure and branch conventions](docs/repository-structure.md)
+- [Mac checkout, SSL installation and test troubleshooting](docs/mac-environment-troubleshooting.md)
 - [Contribution guide](CONTRIBUTING.md)
 
 ### Supporting run records
