@@ -25,7 +25,7 @@ GitHub now reports **`main` as the default branch**. PR #2 and PR #3 are merged,
 
 ### Local Mac migration
 
-The established Mac project at `~/ihsanvision-portfolio` tracks the development feature branch. Do not overwrite or delete that checkout simply because `main` becomes default.
+The established Mac project at `~/ihsanvision-portfolio` initially tracked a single development feature branch. Do not overwrite or delete that checkout simply because `main` is now default. See [single-branch fetch and SSL setup troubleshooting](mac-environment-troubleshooting.md).
 
 For an existing checkout that needs the new canonical package:
 
