@@ -123,7 +123,7 @@ python -m src.benchmark \
   --output-dir runs/benchmark
 ~~~
 
-Metrics are written to `comparison.csv` and `comparison.json` **only after the saved PaDiM and PatchCore train/validation/test paths match for each category**. A mismatch aborts publication of the comparison. This command trains both models into the specified output folder; do not use it to rerun an already completed PaDiM experiment without planning the compute cost. PatchCore results have **not yet been run/verified**; do not publish comparative performance claims.
+Metrics are written to `comparison.csv` and `comparison.json` **only after exact train/validation/test manifest matching**. The command above trains both models. **To avoid retraining our completed PaDiM experiment, use `--reuse-existing`**, with the original three artifacts in `--output-dir/padim-bottle-seed42`; it will train only missing PatchCore runs after a pre-fit manifest check. See the [incremental Kaggle PatchCore guide](docs/patchcore-comparison-workflow.md). PatchCore results have **not yet been run/verified**; do not publish comparative performance claims.
 
 ## Project structure
 
@@ -201,6 +201,7 @@ CI tests configuration, split leakage, image handling, API validation, and simul
 
 - [Architecture and design decisions](docs/architecture.md)
 - [Evaluation methodology and measured results](docs/evaluation.md)
+- [Incremental PatchCore comparison without PaDiM retraining](docs/patchcore-comparison-workflow.md)
 - [Development and Kaggle workflow](docs/development.md)
 - [API deployment and security notes](docs/deployment.md)
 - [Engineering roadmap and acceptance criteria](docs/roadmap.md)
