@@ -99,6 +99,8 @@ The current application code resides in `ihsanvision/`. Older `src.*` imports/CL
 
 Use a compatible PyTorch wheel for the target environment. Installation and first model initialization may need internet to download pretrained feature extraction weights.
 
+If a Mac checkout was originally cloned from a single feature branch, or pip reports an SSL certificate error, see [non-destructive Mac troubleshooting](mac-environment-troubleshooting.md). The `--no-deps` flag does not disable build-isolation downloads; a suitable locally installed setuptools/wheel may allow `--no-build-isolation` instead.
+
 ### Lightweight tests (no model weights)
 
 ~~~bash
