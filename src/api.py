@@ -16,6 +16,7 @@ from PIL import Image, UnidentifiedImageError
 from .config import MODELS
 from .serving import PersistentModelPredictor
 from .predict import predict_image
+from .schemas import PredictionResponse
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +54,7 @@ def _run_prediction(payload: bytes, suffix: str, checkpoint: Path, model_name: s
 def create_app(predict_fn=None) -> FastAPI:
     app = FastAPI(
         title="IhsanVision AI",
-        version="0.3.0",
+        version="0.3.1",
         description="Defect detection and localization. Not for safety-critical decisions.",
     )
     if predict_fn is None:
@@ -78,7 +79,7 @@ def create_app(predict_fn=None) -> FastAPI:
             "model_configured": bool(checkpoint and Path(checkpoint).is_file()),
         }
 
-    @app.post("/predict")
+    @app.post("/predict", response_model=PredictionResponse)
     async def predict(file: UploadFile = File(...)):
         checkpoint = os.getenv("IHSANVISION_CHECKPOINT")
         model_name = os.getenv("IHSANVISION_MODEL", "padim").lower()
