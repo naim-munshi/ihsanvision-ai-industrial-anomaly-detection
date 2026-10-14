@@ -45,6 +45,9 @@ def test_smoke_test_writes_overlay_and_summary(tmp_path):
 
     result = verify_checkpoint(data, tmp_path / "runs", predictor=stub)
     assert result["status"] == "single-image-inference-passed"
+    # The first alphabetically discovered anomaly is a VALIDATION sample.
+    # Smoke inference must instead use the independently held-out TEST sample.
+    assert seen[0][0] == data / "bottle" / "test" / "broken" / "002.png"
     assert seen[0][1] == run / "model.ckpt"
     assert result["split_counts"] == {"train": 1, "val": 1, "test": 1}
     assert (run / "smoke_overlay.png").is_file()
@@ -71,3 +74,37 @@ def test_pick_defective_only(tmp_path):
     data, _ = prepare(tmp_path)
     chosen = choose_defective_image(data, "bottle")
     assert chosen.parent.name != "good"
+
+
+
+def test_smoke_fails_closed_if_only_validation_has_anomalies(tmp_path):
+    data, run = prepare(tmp_path)
+    # All defective images in the held-out test directory were assigned to
+    # validation; do not silently fall back to the validation split.
+    test = data / "bottle" / "test" / "broken" / "002.png"
+    good = data / "bottle" / "test" / "good" / "004.png"
+    good.parent.mkdir(parents=True, exist_ok=True)
+    Image.new("RGB", (8, 8), "white").save(good)
+    (run / "splits.json").write_text(json.dumps({
+        "train": [str(data / "bottle" / "train" / "good" / "000.png")],
+        "val": [str(data / "bottle" / "test" / "broken" / "001.png")],
+        "test": [str(good)],
+    }))
+    called = []
+    def predictor(*args):
+        called.append(args)
+        raise AssertionError("Inference must never run on validation data")
+
+    with pytest.raises(FileNotFoundError, match="held-out defective"):
+        verify_checkpoint(data, tmp_path / "runs", predictor=predictor)
+    assert called == []
+
+
+def test_smoke_detects_duplicate_split_paths(tmp_path):
+    data, run = prepare(tmp_path)
+    val = str(data / "bottle" / "test" / "broken" / "001.png")
+    (run / "splits.json").write_text(json.dumps({
+        "train": ["train.png"], "val": [val, val], "test": ["test.png"],
+    }))
+    with pytest.raises(ValueError, match="Duplicate paths"):
+        verify_checkpoint(data, tmp_path / "runs", predictor=lambda *args: None)
