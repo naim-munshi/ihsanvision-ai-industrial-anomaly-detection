@@ -29,7 +29,7 @@ The active implementation is on `feature/portfolio-production-pipeline` and is r
 5. Run a training experiment only if no checkpoint exists or you need a controlled new run:
 
 ~~~python
-!python -m src.train \
+!python -m ihsanvision.train \
   --dataset-root /kaggle/input/datasets/ipythonx/mvtec-ad \
   --category bottle --model padim \
   --output-dir /kaggle/working/ihsanvision_runs \
@@ -90,13 +90,21 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ~~~
 
+Install the local package namespace in editable mode after the dependency installation:
+
+~~~bash
+python -m pip install -e . --no-deps
+~~~
+
+The current application code resides in `ihsanvision/`. Older `src.*` imports/CLI entry points remain available as compatibility shims (see [repository migration](repository-structure.md)).
+
 Use a compatible PyTorch wheel for the target environment. Installation and first model initialization may need internet to download pretrained feature extraction weights.
 
 ### Lightweight tests (no model weights)
 
 ~~~bash
 python -m pip install -r requirements-dev.txt
-python -m compileall -q src scripts
+python -m compileall -q ihsanvision src scripts tests
 python -m pytest -q
 ~~~
 
@@ -115,7 +123,7 @@ Place or point to a **trusted** checkpoint outside version control:
 ~~~bash
 export IHSANVISION_CHECKPOINT="/path/to/trusted/model.ckpt"
 export IHSANVISION_MODEL="padim"
-python -m uvicorn src.api:app --host 127.0.0.1 --port 8000
+python -m uvicorn ihsanvision.api:app --host 127.0.0.1 --port 8000
 ~~~
 
 Open `http://127.0.0.1:8000/`. To smoke-test the running server from a separate Terminal:
