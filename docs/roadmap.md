@@ -11,7 +11,7 @@ This is a **state-based roadmap**, not an assertion that all systems are already
 | M3 | Single-image model inference + heatmap | **Verified on Kaggle** | `single-image-inference-passed`, overlay screenshot |
 | M4 | CI and dependency-isolated tests | **Verified** | Python 3.11/3.12 GitHub Actions pass |
 | M5 | PatchCore comparison on same dataset/protocol | **Pending** | Metric tables, timings, model configs and hardware |
-| M6 | Real FastAPI + browser demo against trusted model | **HTTP service verified; browser upload pending** | Real Mac API pass; normal and defective browser uploads still needed |
+| M6 | Real FastAPI + browser demo against trusted model | **Browser normal/defective UI demo verified** | Both screenshots show upload preview, PaDiM classification, raw score, and heatmap; sample split membership unverified |
 | M7 | Persistent serving, tests and performance profiling | **Sequential 10-request sample recorded; load profiling pending** | Cached PaDiM p50 135.78 ms, p95 1244.62 ms including one long-tail sample; not throughput/cold-start |
 | M8 | Authentication, rate limit, audit logging | **Pending** | Security tests and privacy policy |
 | M9 | Container packaging and hosted demo | **Pending** | Verified deployment, CI release and rollback |
@@ -33,9 +33,9 @@ Run `python -m src.benchmark` for the same category and seed (both model trainin
 
 ### Priority 3 — Live app inspection
 
-The Mac preflight, checkpoint-backed HTTP API smoke test and a pair of cached repeated calls already passed. A 10-request same-image latency sample is now recorded (all requests marked `model_reused=true`; p50 135.78 ms, p95 1244.62 ms due to one spike). Next, restart the API with freshly pulled code, verify the updated response schema, and test normal and defective bottle images through the browser. Broader latency/throughput testing remains pending. Resolve mismatches between CLI and web behavior.
+The Mac preflight, checkpoint-backed HTTP API smoke test and a pair of cached repeated calls already passed. A 10-request same-image latency sample is now recorded (all requests marked `model_reused=true`; p50 135.78 ms, p95 1244.62 ms due to one spike). The user provided screenshots from a real-browser normal and defective bottle test showing expected labels and localization images ([UI evidence](../reports/2026-10-14-browser-bottle-inspection.md)). Next, validate a subset explicitly within the saved held-out test manifest, check error-state handling, and continue the fair PatchCore comparison. Broader latency/throughput testing remains pending. Resolve mismatches between CLI and web behavior.
 
-**Definition of done:** Browser works for real image upload; resulting score/label/overlay visible; failure states explained; local screenshots and API response saved.
+**Definition of done:** Browser upload and score/label/overlay have been observed for normal/defective examples. Error-state coverage, traceable held-out sample provenance and release screenshot packaging remain pending.
 
 ### Priority 4 — Improve engineering robustness
 
