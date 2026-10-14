@@ -115,15 +115,19 @@ The local service is covered by mocked CI tests and a typed `PredictionResponse`
 
 ### 3. Compare PaDiM and PatchCore
 
+For the **already completed PaDiM/bottle experiment**, keep its three original artifacts under the benchmark output directory and only train the missing PatchCore run:
+
 ~~~bash
 python -m src.benchmark \
-  --dataset-root /path/to/mvtec_ad \
-  --categories bottle cable \
-  --seed 42 \
-  --output-dir runs/benchmark
+  --dataset-root /kaggle/input/datasets/ipythonx/mvtec-ad \
+  --categories bottle --seed 42 \
+  --output-dir /kaggle/working/ihsanvision_runs \
+  --accelerator cpu --reuse-existing
 ~~~
 
-Metrics are written to `comparison.csv` and `comparison.json` **only after exact train/validation/test manifest matching**. The command above trains both models. **To avoid retraining our completed PaDiM experiment, use `--reuse-existing`**, with the original three artifacts in `--output-dir/padim-bottle-seed42`; it will train only missing PatchCore runs after a pre-fit manifest check. See the [incremental Kaggle PatchCore guide](docs/patchcore-comparison-workflow.md). PatchCore results have **not yet been run/verified**; do not publish comparative performance claims.
+Replace the dataset root with the actual Kaggle mount location. The `--reuse-existing` flag **refuses to retrain PaDiM** and validates identical train/validation/test paths *before* fitting PatchCore. It will refuse missing or partial artifacts. For an entirely new multi-category project, omit `--reuse-existing` to train both models intentionally.
+
+After a valid run, metrics are written to `comparison.csv` and `comparison.json` **only after exact split matching**. See the [incremental Kaggle PatchCore guide](docs/patchcore-comparison-workflow.md) for safely restoring preserved PaDiM artifacts. PatchCore results have **not yet been run/verified**; do not publish comparative performance claims.
 
 ## Project structure
 
