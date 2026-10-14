@@ -8,7 +8,7 @@
 
 **IhsanVision.AI** is a computer vision software prototype for detecting and localizing manufacturing defects. It combines unsupervised anomaly detection (**PaDiM** and **PatchCore**) with reproducible MVTec AD experiments, checkpoint-based inference, a **FastAPI service**, and a responsive browser inspection interface.
 
-**Current stage: research prototype.** PaDiM training and saved-checkpoint inference were verified on Kaggle; **local Mac API inference and same-process checkpoint reuse are now verified**. Browser interaction, hosted deployment, and the PatchCore benchmark are **not yet validated**.
+**Current stage: research prototype.** PaDiM training and saved-checkpoint inference were verified on Kaggle; **local Mac API inference and same-process checkpoint reuse are now verified**. Real browser image-upload and prediction display have been observed with normal/defective bottle examples; hosted deployment and the PatchCore benchmark are **not yet validated**.
 
 ## Project status
 
@@ -18,7 +18,7 @@
 | Evaluation | Disjoint split audit and metrics export | PaDiM/bottle report captured |
 | Inference | Trusted checkpoint → score + overlay | Single-image PaDiM smoke test passed |
 | Service | FastAPI: `/health`, `/predict`, Swagger; lazy trusted checkpoint reuse | Mac HTTP smoke and repeated inference verified; browser interaction pending |
-| Interface | Responsive upload and result dashboard | Implemented; live run pending |
+| Interface | Responsive upload and result dashboard | Real normal/defective bottle UI screenshots supplied; error states remain unverified |
 | Quality | pytest and GitHub Actions, Python 3.11/3.12 | CI passing on development branch; tested API response contract |
 
 ## Verified experiment: PaDiM / MVTec AD bottle
@@ -111,7 +111,7 @@ python -m uvicorn src.api:app --host 127.0.0.1 --port 8000
 
 Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/) for the UI and [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) for OpenAPI.
 
-The local service is covered by mocked CI tests and a typed `PredictionResponse` OpenAPI schema that rejects non-finite anomaly scores and negative inference latency. **A real Mac HTTP → API → model round trip and in-process cache reuse are now verified; clicking/uploading in the browser UI remains pending.** Only load checkpoints you trust.
+The local service is covered by mocked CI tests and a typed `PredictionResponse` OpenAPI schema that rejects non-finite anomaly scores and negative inference latency. **A real Mac HTTP → API → model round trip and in-process cache reuse are now verified; normal and defective bottle browser uploads are now observed in screenshots (see [UI inspection report](reports/2026-10-14-browser-bottle-inspection.md)).** Only load checkpoints you trust.
 
 ### 3. Compare PaDiM and PatchCore
 
@@ -206,12 +206,13 @@ CI tests configuration, split leakage, image handling, API validation, and simul
 - [Engineering roadmap and acceptance criteria](docs/roadmap.md)
 - [macOS live API smoke evidence](reports/2026-10-14-macos-api-smoke.md)
 - [macOS 10-request serving latency evidence](reports/2026-10-14-macos-10-request-inference-benchmark.md)
+- [Real bottle browser UI inspection evidence](reports/2026-10-14-browser-bottle-inspection.md)
 - [Trained PaDiM model card](docs/model-card.md)
 - [Contributing guide](CONTRIBUTING.md)
 
 ## Limitations and responsible use
 
-This project is an **engineering portfolio prototype**, not certified industrial quality-control software. Missing before production: model-serving lifecycle, authentication, rate limiting, observability, throughput profiling, repeatability across seeds/categories, PatchCore evaluation, calibrated localization, and live web-app verification.
+This project is an **engineering portfolio prototype**, not certified industrial quality-control software. Missing before production: model-serving lifecycle, authentication, rate limiting, observability, throughput profiling, repeatability across seeds/categories, PatchCore evaluation, calibrated localization, and live web-app error-state/release verification.
 
 The API accepts images, **not user-uploaded checkpoints**. Lightning/PyTorch checkpoints use serialization that may execute arbitrary code when deserialized: load only weights from trusted sources. MVTec AD images and model weights are **not included** in this repository. Consult the [dataset publisher](https://www.mvtec.com/company/research/datasets/mvtec-ad) for licensing and permitted use; no repository code license has yet been selected.
 
