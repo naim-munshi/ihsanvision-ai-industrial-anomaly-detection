@@ -4,17 +4,17 @@
 
 **Kaggle** is the compute workspace for experiments and dataset access. **GitHub** is the source-of-truth repository. **Local development** (VS Code/macOS/Linux) is where the service and UI should be validated. A remote deployment can be added after security and performance requirements are met.
 
-The tested portfolio source tree has been integrated into `main` through [merged pull request #2](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/pull/2). The GitHub default-branch setting must separately be updated from the historical `MdNaim` to `main`; until then explicitly clone `-b main` and use new `feature/*` branches for further work.
+The tested portfolio source tree was integrated through [merged pull request #2](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/pull/2). GitHub's default branch is now **`main` (verified 2026-10-14)**. Create focused `feature/*` or `chore/*` branches from `main` and submit PRs for review.
 
 ## Kaggle experiments
 
 ### Fresh Kaggle session
 
 1. Use a Python Kaggle notebook and attach MVTec AD from **Add Input**.
-2. Clone the development branch:
+2. Clone the default `main` branch:
 
 ~~~python
-!git clone -b main https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection.git
+!git clone https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection.git
 %cd /kaggle/working/ihsanvision-ai-industrial-anomaly-detection
 !python -m pip install -r requirements.txt
 ~~~
@@ -61,11 +61,11 @@ If you previously cloned the old **feature** branch, you can update the existing
 !git pull --ff-only
 ~~~
 
-The old integrated feature branch is retained for audit. For new development, switch to `main` (`git fetch origin` followed by `git switch main`) and create a new short-lived feature branch from it.
+The old feature branch remains temporarily for audit. **Existing single-branch clones** may need an explicit remote-tracking ref first: `git fetch origin main:refs/remotes/origin/main`, then `git switch -c main --track origin/main` (if the local `main` does not already exist). A failed `git switch main` leaves you on the previous branch; do not assume a subsequent `git pull` updates `main`.
 
 ### Incremental PatchCore experiment (do not rerun PaDiM)
 
-The completed PaDiM bottle experiment should be reused. New `src.benchmark --reuse-existing` mode requires its saved `model.ckpt`, `report.json`, and `splits.json`, checks split equivalence **before** new PatchCore training, and refuses partial or mismatched experiments.
+The completed PaDiM bottle experiment should be reused. The `ihsanvision.benchmark --reuse-existing` mode requires its saved `model.ckpt`, `report.json`, and `splits.json`, checks split equivalence **before** new PatchCore training, and refuses partial or mismatched experiments.
 
 See the [Kaggle PatchCore comparison workflow](patchcore-comparison-workflow.md) for restoring trusted artifacts from the private user-owned Kaggle input and running only the missing PatchCore job. No real PatchCore output is claimed yet.
 
@@ -82,11 +82,10 @@ Do not push MVTec images or the checkpoint binary into this Git repository. Do n
 ## Local development
 
 ~~~bash
-git clone -b feature/portfolio-production-pipeline https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection.git
+git clone https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection.git
 cd ihsanvision-ai-industrial-anomaly-detection
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ~~~
 
@@ -123,24 +122,24 @@ Place or point to a **trusted** checkpoint outside version control:
 ~~~bash
 export IHSANVISION_CHECKPOINT="/path/to/trusted/model.ckpt"
 export IHSANVISION_MODEL="padim"
-python -m uvicorn ihsanvision.api:app --host 127.0.0.1 --port 8000
+python -m uvicorn ihsanvision.api:app --host 127.0.0.1 --port 8002
 ~~~
 
-Open `http://127.0.0.1:8000/`. To smoke-test the running server from a separate Terminal:
+Open `http://127.0.0.1:8002/`. To smoke-test the running server from a separate Terminal:
 
 ~~~bash
 cd ~/ihsanvision-portfolio
 source .venv/bin/activate
-python -m scripts.local_api_smoke --url http://127.0.0.1:8001
+python -m scripts.local_api_smoke --url http://127.0.0.1:8002
 ~~~
 
-If port 8000 is free, use that port consistently for both Uvicorn and the smoke script. The script makes actual HTTP requests and validates a synthetic PNG prediction; **the synthetic input is not a meaningful model-quality test**. Passing a real image via `--image /path/to/sample.png` is supported. Actual Mac PaDiM checkpoint inference, repeat requests, and real normal/defective bottle UI examples have now been observed; see the [Mac evidence](../reports/2026-10-14-macos-api-smoke.md) and [browser UI observation](../reports/2026-10-14-browser-bottle-inspection.md).
+Use the **same port** for Uvicorn, the dashboard and the smoke script. If port 8002 is occupied, choose another free local port consistently. The script makes actual HTTP requests and validates a synthetic PNG prediction; **the synthetic input is not a meaningful model-quality test**. Passing a real image via `--image /path/to/sample.png` is supported. Actual Mac PaDiM checkpoint inference, repeat requests, and real normal/defective bottle UI examples have now been observed; see the [Mac evidence](../reports/2026-10-14-macos-api-smoke.md) and [browser UI observation](../reports/2026-10-14-browser-bottle-inspection.md).
 
 Blocking inference runs in a threadpool; a per-process semaphore serializes model execution while a trusted checkpoint can be reused within the same server process.
 
 ## Contribution procedure
 
-1. Keep changes in a feature branch; avoid pushing unverified experiments to `MdNaim`.
+1. Keep changes in a focused branch; submit a PR to `main` and avoid committing to legacy branches.
 2. Describe how a change impacts model outputs, metrics or API contracts.
 3. Add/adjust tests for new behavior.
 4. Run offline CI before merging; use actual dataset checks for model-path changes.
