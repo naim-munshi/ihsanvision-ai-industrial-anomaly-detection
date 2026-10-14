@@ -4,7 +4,7 @@
 
 **Kaggle** is the compute workspace for experiments and dataset access. **GitHub** is the source-of-truth repository. **Local development** (VS Code/macOS/Linux) is where the service and UI should be validated. A remote deployment can be added after security and performance requirements are met.
 
-The active implementation is on `feature/portfolio-production-pipeline` and is reviewed in [pull request #2](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/pull/2). The repository default branch is `MdNaim`; do not accidentally clone only the default branch while this PR is open.
+The tested portfolio source tree has been integrated into `main` through [merged pull request #2](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/pull/2). The GitHub default-branch setting must separately be updated from the historical `MdNaim` to `main`; until then explicitly clone `-b main` and use new `feature/*` branches for further work.
 
 ## Kaggle experiments
 
@@ -14,7 +14,7 @@ The active implementation is on `feature/portfolio-production-pipeline` and is r
 2. Clone the development branch:
 
 ~~~python
-!git clone -b feature/portfolio-production-pipeline https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection.git
+!git clone -b main https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection.git
 %cd /kaggle/working/ihsanvision-ai-industrial-anomaly-detection
 !python -m pip install -r requirements.txt
 ~~~
@@ -53,7 +53,7 @@ display(Image(filename="/kaggle/working/ihsanvision_runs/padim-bottle-seed42/smo
 
 ### Continue an existing Kaggle notebook
 
-If you previously cloned this **feature** branch, update your existing checkout rather than cloning a second copy:
+If you previously cloned the old **feature** branch, you can update the existing checkout and use its compatible code; for new experiments, use `main` after fetching it instead of cloning multiple copies:
 
 ~~~python
 %cd /kaggle/working/ihsanvision-ai-industrial-anomaly-detection
@@ -61,7 +61,7 @@ If you previously cloned this **feature** branch, update your existing checkout 
 !git pull --ff-only
 ~~~
 
-If the branch is not `feature/portfolio-production-pipeline`, check the branch before pulling or running commands.
+The old integrated feature branch is retained for audit. For new development, switch to `main` (`git fetch origin` followed by `git switch main`) and create a new short-lived feature branch from it.
 
 ### Incremental PatchCore experiment (do not rerun PaDiM)
 
