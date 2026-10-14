@@ -25,7 +25,7 @@ These performance and AUROC numbers come from **different protocols and purposes
 **Requirements:** Python 3.11–3.13, a trusted Anomalib/Lightning `.ckpt` checkpoint, and adequate RAM for the model. PyTorch wheels differ across systems.
 
 ~~~bash
-git clone -b main https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection.git
+git clone https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection.git
 cd ihsanvision-ai-industrial-anomaly-detection
 python3 -m venv .venv
 source .venv/bin/activate
@@ -33,7 +33,7 @@ python -m pip install -r requirements.txt
 python -m pip install -e . --no-deps
 ~~~
 
-**Branch transition:** The validated source tree is merged into `main`, but the GitHub default setting may still be `MdNaim` until its owner changes it. The explicit `-b main` above ensures the correct clone immediately; after the default switch, ordinary `git clone` will be sufficient.
+**Repository default branch: `main` (verified 2026-10-14).** New contributors should use `main` and create focused `feature/*` branches. The historical `MdNaim` and integrated feature branches are kept temporarily for local checkout migration and audit history.
 
 Configure the **trusted** checkpoint outside Git (never upload a checkpoint through the HTTP API):
 
@@ -118,7 +118,8 @@ CI validates packaging imports, canonical/legacy entry points, API contracts, le
 - [Incremental Kaggle PatchCore comparison](docs/patchcore-comparison-workflow.md)
 - [Deployment, limitations and security](docs/deployment.md)
 - [Milestones and acceptance criteria](docs/roadmap.md)
-- [Repository migration and branch conventions](docs/repository-structure.md)
+- [Repository structure and branch conventions](docs/repository-structure.md)
+- [Mac checkout, SSL installation and test troubleshooting](docs/mac-environment-troubleshooting.md)
 - [Contribution guide](CONTRIBUTING.md)
 
 ### Supporting run records
@@ -137,4 +138,4 @@ CI validates packaging imports, canonical/legacy entry points, API contracts, le
 - Before hosting publicly: implement appropriate authentication, rate limits, request-admission controls, observability and deployment isolation.
 - Pending: real PatchCore evaluation, multiple-seed/robustness analysis, error-state UI QA, and a reviewed portfolio release.
 
-The stable `main` branch and short-lived `feature/*` development workflow are the intended long-term Git conventions; branch-default changes are tracked separately from code refactoring.
+The default branch is `main`. Future changes follow `main` → short-lived `feature/*` or `chore/*` branch → pull request → CI → `main`.

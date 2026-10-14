@@ -2,15 +2,15 @@
 
 ## Why this workflow exists
 
-The original PaDiM/bottle run is completed. Repeating it just to add PatchCore would waste compute, and a casual new split can invalidate comparison. Use `src.benchmark --reuse-existing` to **reuse the previous PaDiM checkpoint/report/split manifest and train only PatchCore**, provided that its run artifacts are available in Kaggle.
+The original PaDiM/bottle run is completed. Repeating it just to add PatchCore would waste compute, and a casual new split can invalidate comparison. Use `ihsanvision.benchmark --reuse-existing` to **reuse the previous PaDiM checkpoint/report/split manifest and train only PatchCore**, provided that its run artifacts are available in Kaggle.
 
-**Current status:** The orchestration and offline tests are implemented. A real PatchCore training job has **not** yet been run, so there are **no PatchCore metrics to report**. Do not merge into the released branch on that basis.
+**Current status:** The orchestration and offline tests are implemented. A real PatchCore training job has **not** yet been run, so there are **no PatchCore metrics to report**. Do not claim completed PatchCore metrics on that basis; the *workflow software* has already been integrated into `main`.
 
 ## Prerequisites
 
 - A Kaggle notebook with the same MVTec AD dataset attached.
-- `feature/portfolio-production-pipeline` checkout updated to the latest commit, with `requirements.txt` installed.
-- Saved PaDiM experiment artifacts `model.ckpt`, `report.json`, and `splits.json`, originally produced by `src.train --model padim --seed 42`.
+- `main` checkout updated to the latest commit, with `requirements.txt` installed.
+- Saved PaDiM experiment artifacts `model.ckpt`, `report.json`, and `splits.json`, originally produced by `ihsanvision.train --model padim --seed 42`.
 - Dataset mounted at the **same resolved paths** used to generate the reference manifest. A Kaggle path change can cause an intentional safety stop even if image contents are identical.
 - Compatible Anomalib 2.5.0 and PyTorch environment; PatchCore default backbone may require a pretrained-weight download during **training**.
 
