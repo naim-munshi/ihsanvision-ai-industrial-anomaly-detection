@@ -88,7 +88,7 @@ def test_health_remains_responsive_during_image_verification(monkeypatch, tmp_pa
     monkeypatch.setattr(api, "_validate_image", slow_verify)
 
     async def exercise():
-        app = api.create_app(predict_fn=lambda *_: {"anomaly_score": 0.3})
+        app = api.create_app(predict_fn=lambda *_: {"model": "padim", "anomaly_score": 0.3})
         async with httpx.AsyncClient(
             transport=httpx.ASGITransport(app=app),
             base_url="http://testserver",
