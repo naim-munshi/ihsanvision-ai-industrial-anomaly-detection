@@ -59,6 +59,12 @@ The screenshot shows a valid heatmap overlay on a visibly damaged bottle. The sm
 
 **What this does not establish:** high recall on other defect types, pixel-level segmentation validity, a calibrated defect probability, model fairness/robustness, or live API throughput. Because this prediction loads the checkpoint, the reported duration is not steady-state latency.
 
+## Browser demonstration (qualitative only)
+
+The local browser dashboard was tested with `normal_bottle.png` and `defective_bottle.png`. The screenshots show raw PaDiM scores **0.3637 (predicted normal)** and **0.8633 (flagged anomaly)** with image previews and colored anomaly overlays. See the [UI inspection record](../reports/2026-10-14-browser-bottle-inspection.md).
+
+**Do not count these as two new independent held-out evaluation samples** until their original dataset paths are compared with the saved `splits.json`. This manual demonstration checks UI behavior and plausible qualitative prediction, not model-level validation metrics.
+
 ## How to reproduce
 
 Follow [development.md](development.md#kaggle-experiments), using the same dataset path, Anomalib version, model, seed and split configuration. Compare `report.json`, `splits.json` and generated checkpoint only within the same protocol.
