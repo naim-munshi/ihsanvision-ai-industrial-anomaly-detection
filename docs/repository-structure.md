@@ -15,13 +15,13 @@ The project now uses the canonical import namespace `ihsanvision`. The code was 
 - `main` — intended canonical default branch and integration/release source. Code reaches `main` through reviewed pull requests with green CI.
 - `feature/<short-task>` — focused work branches originating at the latest `main`, opened as PRs back into `main`.
 - `MdNaim` — legacy default name from the initial repository setup, retained until migration and review are completed. Do not add new commits to it.
-- `feature/portfolio-production-pipeline` — historical integrated development work; existing PR #2 should target `main` during migration. The branch can remain for traceability after merging.
+- `feature/portfolio-production-pipeline` — historical integrated development work; PR #2 has now been merged into `main`; the historical feature branch remains for traceability. The branch can remain for traceability after merging.
 
 **Important:** GitHub's actual default branch is repository *metadata*, not determined by a `README.md` or `git branch -M` command on the maintainer's Mac. Setting a local branch name does **not** change the GitHub default.
 
 ### Owner-only default branch switch
 
-After the reviewed PR is merged or `main` otherwise contains the intended validated code:
+The validated source was merged into `main` through PR #2. The repository owner now needs to:
 
 1. On GitHub, open **Repository → Settings → General → Default branch** (UI wording may vary by GitHub version).
 2. Select the existing `main` branch and confirm **Update**.
@@ -50,7 +50,7 @@ Use `python -m uvicorn ihsanvision.api:app --host 127.0.0.1 --port 8002` when ru
 When ready to move development work to a new clean checkout on the default branch:
 
 ~~~bash
-git clone https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection.git
+git clone -b main https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection.git
 cd ihsanvision-ai-industrial-anomaly-detection
 git branch --show-current
 ~~~
