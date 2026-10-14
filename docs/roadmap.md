@@ -12,7 +12,7 @@ This is a **state-based roadmap**, not an assertion that all systems are already
 | M4 | CI and dependency-isolated tests | **Verified** | Python 3.11/3.12 GitHub Actions pass |
 | M5 | PatchCore comparison on same dataset/protocol | **Pending** | Metric tables, timings, model configs and hardware |
 | M6 | Real FastAPI + browser demo against trusted model | **HTTP service verified; browser upload pending** | Real Mac API pass; normal and defective browser uploads still needed |
-| M7 | Persistent serving, tests and performance profiling | **PaDiM reuse verified on Mac; profiling pending** | 721.99 ms first / 123.54 ms reused on one pair; record p50/p95 with more samples |
+| M7 | Persistent serving, tests and performance profiling | **Sequential 10-request sample recorded; load profiling pending** | Cached PaDiM p50 135.78 ms, p95 1244.62 ms including one long-tail sample; not throughput/cold-start |
 | M8 | Authentication, rate limit, audit logging | **Pending** | Security tests and privacy policy |
 | M9 | Container packaging and hosted demo | **Pending** | Verified deployment, CI release and rollback |
 | M10 | Portfolio release | **Pending** | Demonstration, figures, reproducibility package and review |
@@ -33,7 +33,7 @@ Run `python -m src.benchmark` for the same category and seed (both model trainin
 
 ### Priority 3 — Live app inspection
 
-The Mac preflight, checkpoint-backed HTTP API smoke test and a pair of cached repeated calls already passed. Next, collect a repeatable serving latency sample with `python -m scripts.benchmark_local_api --url http://127.0.0.1:8002 --runs 10`, then test normal and defective input images through the browser. Resolve mismatches between CLI and web behavior.
+The Mac preflight, checkpoint-backed HTTP API smoke test and a pair of cached repeated calls already passed. A 10-request same-image latency sample is now recorded (all requests marked `model_reused=true`; p50 135.78 ms, p95 1244.62 ms due to one spike). Next, restart the API with freshly pulled code, verify the updated response schema, and test normal and defective bottle images through the browser. Broader latency/throughput testing remains pending. Resolve mismatches between CLI and web behavior.
 
 **Definition of done:** Browser works for real image upload; resulting score/label/overlay visible; failure states explained; local screenshots and API response saved.
 
