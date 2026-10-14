@@ -55,7 +55,7 @@ The staging helper validates the report, matching seed/category, metric fields, 
 ### Step 3 — Run only missing PatchCore training (the first new real experiment)
 
 ~~~bash
-python -m src.benchmark \
+python -m ihsanvision.benchmark \
   --dataset-root /kaggle/input/datasets/ipythonx/mvtec-ad \
   --categories bottle \
   --seed 42 \
