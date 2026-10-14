@@ -19,7 +19,7 @@
 | Inference | Trusted checkpoint → score + overlay | Single-image PaDiM smoke test passed |
 | Service | FastAPI: `/health`, `/predict`, Swagger; lazy trusted checkpoint reuse | Mac HTTP smoke and repeated inference verified; browser interaction pending |
 | Interface | Responsive upload and result dashboard | Implemented; live run pending |
-| Quality | pytest and GitHub Actions, Python 3.11/3.12 | CI passing on development branch |
+| Quality | pytest and GitHub Actions, Python 3.11/3.12 | CI passing on development branch; tested API response contract |
 
 ## Verified experiment: PaDiM / MVTec AD bottle
 
@@ -111,7 +111,7 @@ python -m uvicorn src.api:app --host 127.0.0.1 --port 8000
 
 Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/) for the UI and [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) for OpenAPI.
 
-The local service is covered by mocked CI tests. **A real Mac HTTP → API → model round trip and in-process cache reuse are now verified; clicking/uploading in the browser UI remains pending.** Only load checkpoints you trust.
+The local service is covered by mocked CI tests and a typed `PredictionResponse` OpenAPI schema that rejects non-finite anomaly scores and negative inference latency. **A real Mac HTTP → API → model round trip and in-process cache reuse are now verified; clicking/uploading in the browser UI remains pending.** Only load checkpoints you trust.
 
 ### 3. Compare PaDiM and PatchCore
 
