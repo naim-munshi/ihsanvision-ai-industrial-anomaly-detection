@@ -1,0 +1,23 @@
+# Data, weights and experiment artifacts (never commit training data).
+data/
+datasets/
+runs/
+outputs/
+results/
+*.ckpt
+*.pt
+*.pth
+*.onnx
+*.bin
+*.log
+.env
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.py[cod]
+.DS_Store
+.ipynb_checkpoints/
+*.egg-info/

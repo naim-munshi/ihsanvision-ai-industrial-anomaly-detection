@@ -1,0 +1,15 @@
+# Prevent platform-specific line-ending noise in reviewed diffs.
+* text=auto
+*.py text eol=lf
+*.md text eol=lf
+*.toml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+
+# Pretrained checkpoints and dataset content should stay outside Git.
+*.ckpt binary
+*.onnx binary
+*.pth binary
+*.pt binary
+*.ipynb linguist-generated=false
