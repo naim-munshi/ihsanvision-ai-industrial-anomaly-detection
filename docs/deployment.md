@@ -2,7 +2,7 @@
 
 ## Current status
 
-The FastAPI service and responsive browser dashboard are implemented. Automated API tests pass with simulated predictions, and standalone **real** PaDiM checkpoint inference has succeeded on Kaggle. **Real Mac HTTP → FastAPI → checkpoint inference has now passed** using a synthetic PNG. Real browser upload interaction with actual normal/defect images is still pending.
+The FastAPI service and responsive browser dashboard are implemented. Automated API tests pass with simulated predictions, and standalone **real** PaDiM checkpoint inference has succeeded on Kaggle. **Real Mac HTTP → FastAPI → checkpoint inference has now passed** using a synthetic PNG. Real-browser interaction with a normal and a visibly defective bottle image has now been observed in [the UI inspection report](../reports/2026-10-14-browser-bottle-inspection.md); separate validation of error states, mobile behavior and sample split provenance is still pending.
 
 The current server offloads synchronous Anomalib execution to a worker thread, so the event loop can answer health requests. A semaphore allows **one inference at a time per worker process**. A **new experimental lazy in-memory cache** loads the operator's trusted model checkpoint on the first request and attempts to reuse that same Engine/model instance for subsequent requests in the same process.
 
@@ -121,6 +121,6 @@ Before a public endpoint is announced:
 3. Measure cold/warm p50/p95 latency and memory using a repeatable workload.
 4. Introduce authentication and rate limiting, plus a proper checkpoint/model version lifecycle.
 5. Establish privacy/logging policy, security review, TLS and deployment rollback.
-6. Verify UI functions on desktop and mobile; record evidence in an issue or report.
+6. The desktop browser's normal/defective inspection path has been observed working. Verify error-state behavior and mobile layout; retain sample provenance and screenshots in an approved portfolio location.
 
 Further work is tracked in [roadmap.md](roadmap.md).
