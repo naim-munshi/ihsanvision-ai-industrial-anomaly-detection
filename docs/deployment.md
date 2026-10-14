@@ -17,7 +17,7 @@ Requirements: Python 3.11/3.12, installed dependencies from `requirements.txt` a
 ~~~bash
 export IHSANVISION_CHECKPOINT="/absolute/path/to/trusted/model.ckpt"
 export IHSANVISION_MODEL="padim"
-python -m uvicorn src.api:app --host 127.0.0.1 --port 8000
+python -m uvicorn ihsanvision.api:app --host 127.0.0.1 --port 8000
 ~~~
 
 UI: `http://127.0.0.1:8000/`. Swagger: `http://127.0.0.1:8000/docs`. If port 8000 is already occupied (common on macOS), use `--port 8001` instead.
