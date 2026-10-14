@@ -205,6 +205,7 @@ CI tests configuration, split leakage, image handling, API validation, and simul
 - [API deployment and security notes](docs/deployment.md)
 - [Engineering roadmap and acceptance criteria](docs/roadmap.md)
 - [macOS live API smoke evidence](reports/2026-10-14-macos-api-smoke.md)
+- [macOS 10-request serving latency evidence](reports/2026-10-14-macos-10-request-inference-benchmark.md)
 - [Trained PaDiM model card](docs/model-card.md)
 - [Contributing guide](CONTRIBUTING.md)
 
