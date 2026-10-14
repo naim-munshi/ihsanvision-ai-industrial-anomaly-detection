@@ -63,6 +63,12 @@ If you previously cloned this **feature** branch, update your existing checkout 
 
 If the branch is not `feature/portfolio-production-pipeline`, check the branch before pulling or running commands.
 
+### Incremental PatchCore experiment (do not rerun PaDiM)
+
+The completed PaDiM bottle experiment should be reused. New `src.benchmark --reuse-existing` mode requires its saved `model.ckpt`, `report.json`, and `splits.json`, checks split equivalence **before** new PatchCore training, and refuses partial or mismatched experiments.
+
+See the [Kaggle PatchCore comparison workflow](patchcore-comparison-workflow.md) for restoring trusted artifacts from the private user-owned Kaggle input and running only the missing PatchCore job. No real PatchCore output is claimed yet.
+
 ### Preserve data and models
 
 Kaggle working storage may be reset between sessions. **Before closing the session**, save a notebook version and export the run artifacts from `/kaggle/working/ihsanvision_runs/` to storage you control. At minimum preserve:
@@ -120,9 +126,9 @@ source .venv/bin/activate
 python -m scripts.local_api_smoke --url http://127.0.0.1:8001
 ~~~
 
-If port 8000 is free, use that port consistently for both Uvicorn and the smoke script. The script makes actual HTTP requests and validates a synthetic PNG prediction; **the synthetic input is not a meaningful model-quality test**. Passing a real image via `--image /path/to/sample.png` is supported. Actual Mac live inference remains **unverified until someone runs this command successfully**.
+If port 8000 is free, use that port consistently for both Uvicorn and the smoke script. The script makes actual HTTP requests and validates a synthetic PNG prediction; **the synthetic input is not a meaningful model-quality test**. Passing a real image via `--image /path/to/sample.png` is supported. Actual Mac PaDiM checkpoint inference, repeat requests, and real normal/defective bottle UI examples have now been observed; see the [Mac evidence](../reports/2026-10-14-macos-api-smoke.md) and [browser UI observation](../reports/2026-10-14-browser-bottle-inspection.md).
 
-Blocking inference runs in a threadpool; a per-process semaphore prevents concurrent model execution while the checkpoint is still loaded per prediction.
+Blocking inference runs in a threadpool; a per-process semaphore serializes model execution while a trusted checkpoint can be reused within the same server process.
 
 ## Contribution procedure
 
