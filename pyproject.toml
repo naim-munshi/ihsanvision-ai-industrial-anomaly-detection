@@ -8,7 +8,6 @@ version = "0.4.0"
 description = "Reproducible industrial anomaly detection with PaDiM, PatchCore and FastAPI"
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
-license = { text = "Proprietary - license to be chosen" }
 authors = [{ name = "IhsanVision.AI contributors" }]
 dependencies = [
   "anomalib==2.5.0",
