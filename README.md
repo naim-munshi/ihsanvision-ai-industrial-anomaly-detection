@@ -1,228 +1,140 @@
 # IhsanVision.AI
-### Industrial Anomaly Detection & Visual Quality Inspection
 
-[![CI](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/actions/workflows/ci.yml/badge.svg?branch=feature%2Fportfolio-production-pipeline)](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/actions/workflows/ci.yml)
-![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12-3776AB)
-![Anomalib](https://img.shields.io/badge/Anomalib-2.5.0-6A5ACD)
-![Stage](https://img.shields.io/badge/stage-research%20prototype-orange)
+**Industrial anomaly detection research software** featuring a reproducible PaDiM/PatchCore evaluation pipeline, a FastAPI inference service, and a browser-based visual inspection dashboard.
 
-**IhsanVision.AI** is a computer vision software prototype for detecting and localizing manufacturing defects. It combines unsupervised anomaly detection (**PaDiM** and **PatchCore**) with reproducible MVTec AD experiments, checkpoint-based inference, a **FastAPI service**, and a responsive browser inspection interface.
+> **Project status:** Research/portfolio prototype. The trained **PaDiM / MVTec AD bottle** model and local browser demonstration are verified. PatchCore training/comparison, security hardening and hosted production deployment remain unverified.
 
-**Current stage: research prototype.** PaDiM training and saved-checkpoint inference were verified on Kaggle; **local Mac API inference and same-process checkpoint reuse are now verified**. Real browser image-upload and prediction display have been observed with normal/defective bottle examples; hosted deployment and the PatchCore benchmark are **not yet validated**.
+## What works
 
-## Project status
-
-| Component | Implementation | Validation |
+| Component | Evidence | Status |
 | --- | --- | --- |
-| Models | PaDiM and PatchCore training | PaDiM/bottle verified on Kaggle |
-| Evaluation | Disjoint split audit and metrics export | PaDiM/bottle report captured |
-| Inference | Trusted checkpoint → score + overlay | Single-image PaDiM smoke test passed |
-| Service | FastAPI: `/health`, `/predict`, Swagger; lazy trusted checkpoint reuse | Mac HTTP smoke and repeated inference verified; browser interaction pending |
-| Interface | Responsive upload and result dashboard | Real normal/defective bottle UI screenshots supplied; error states remain unverified |
-| Quality | pytest and GitHub Actions, Python 3.11/3.12 | CI passing on development branch; tested API response contract |
+| PaDiM training and checkpoint evaluation | MVTec AD bottle, seed 42, held-out test subset | Verified on Kaggle |
+| Image-level AUROC / F1 | **0.9963 / 0.9592** | Measured, restricted evaluation protocol |
+| Pixel-level AUROC / F1 | **0.9768 / 0.6497** | Measured, restricted evaluation protocol |
+| Prediction + relative heatmap | Saved checkpoint in Kaggle and macOS | Verified |
+| FastAPI + responsive browser inspection | Normal and visibly defective bottle example | Verified locally |
+| Warm model reuse | Same-process Mac PaDiM requests | Verified locally |
+| Sequential inference latency | 10 reused requests, p50 **135.78 ms**, nearest-rank p95 **1,244.62 ms** | Preliminary, not a load test |
+| PatchCore / PaDiM comparison | Reuse-safe experiment orchestration | Software implemented; real training pending |
+| Automated code checks | Python 3.11 and 3.12 | GitHub Actions |
 
-## Verified experiment: PaDiM / MVTec AD bottle
+These performance and AUROC numbers come from **different protocols and purposes**. The dataset evaluation held out 16 images from MVTec's official test directory for validation, leaving **67 test images**. It is **not directly comparable with the full-test MVTec leaderboard**. The browser examples and synthetic API smoke input must not be presented as additional accuracy measurements.
 
-An executed Kaggle run using **Anomalib 2.5.0, CPU, seed 42** produced:
+## Quick start — local inspection (macOS/Linux)
 
-| Metric | Held-out test |
-| --- | ---: |
-| Image AUROC | **0.9963** |
-| Image F1 | **0.9592** |
-| Pixel AUROC | **0.9768** |
-| Pixel F1 | **0.6497** |
-
-The run used **209 normal train images, 16 validation images and 67 final test images**, as recorded in the Kaggle output. Validation images were sampled from the original MVTec AD test folder, then excluded from the remaining test set. **These results cannot be directly compared with full-test MVTec leaderboard scores.**
-
-The subsequent *real* checkpoint inference on a defective bottle image returned `predicted_anomaly=true`, raw anomaly score **0.8633**, and an image overlay. Its observed **~1.4-second** latency includes checkpoint loading; it is **not** steady-state API latency. A raw anomaly score is **not a probability**, and the overlay is *relative*, not a calibrated segmentation mask.
-
-[Training provenance](reports/2026-10-13-kaggle-padim-bottle.md) · [Evaluation details](docs/evaluation.md)
-
-## System overview
-
-~~~text
-MVTec AD
-  ├─ train/good ──> PaDiM / PatchCore ──> trusted checkpoint
-  └─ test/* ──────> validation holdout + remaining final test
-                                        │
-                                     metrics
-
-Browser image upload ──> FastAPI ──> Anomalib Engine.predict
-                                         │
-                               score + label + overlay
-                                         │
-                                   web dashboard
-~~~
-
-See [Architecture](docs/architecture.md) for boundaries, decisions, and limitations.
-
-## Quick start
-
-### 1. Train and verify on Kaggle
-
-Attach the MVTec AD dataset to a Kaggle notebook. Clone the **feature branch** while PR #2 is under review:
-
-~~~python
-!git clone -b feature/portfolio-production-pipeline https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection.git
-%cd /kaggle/working/ihsanvision-ai-industrial-anomaly-detection
-!python -m pip install -r requirements.txt
-~~~
-
-Verify the dataset location:
-
-~~~python
-!python -m scripts.kaggle_preflight
-~~~
-
-Train (replace the dataset root with the value reported by preflight):
-
-~~~python
-!python -m src.train \
-  --dataset-root /kaggle/input/datasets/ipythonx/mvtec-ad \
-  --category bottle --model padim \
-  --output-dir /kaggle/working/ihsanvision_runs \
-  --accelerator cpu
-~~~
-
-Validate the saved checkpoint against a defective image from the **persisted held-out test partition** (the script refuses to substitute a validation image):
-
-~~~python
-!python -m scripts.kaggle_smoke_test \
-  --dataset-root /kaggle/input/datasets/ipythonx/mvtec-ad \
-  --output-dir /kaggle/working/ihsanvision_runs
-~~~
-
-Outputs include `model.ckpt`, `report.json`, `splits.json`, `smoke_report.json` and `smoke_overlay.png`. The PaDiM/bottle experiment above has **already completed**; keep the checkpoint rather than retraining unnecessarily. See the full [Kaggle workflow](docs/development.md#kaggle-experiments).
-
-### 2. Run the web application locally
-
-Use Python 3.11 or 3.12. Consult [PyTorch's platform-specific selector](https://pytorch.org/get-started/locally/) for CPU/CUDA/Apple Silicon installations.
+**Requirements:** Python 3.11–3.13, a trusted Anomalib/Lightning `.ckpt` checkpoint, and adequate RAM for the model. PyTorch wheels differ across systems.
 
 ~~~bash
-git clone -b feature/portfolio-production-pipeline https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection.git
+git clone https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection.git
 cd ihsanvision-ai-industrial-anomaly-detection
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
-export IHSANVISION_CHECKPOINT="/absolute/path/to/trusted/model.ckpt"
-export IHSANVISION_MODEL="padim"
-python -m uvicorn src.api:app --host 127.0.0.1 --port 8000
+python -m pip install -e . --no-deps
 ~~~
 
-Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/) for the UI and [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) for OpenAPI.
+Until the restructuring is merged, choose `feature/portfolio-production-pipeline` when cloning, or run `git switch feature/portfolio-production-pipeline` and pull the branch. The repository's GitHub default setting may still be `MdNaim` during the migration.
 
-The local service is covered by mocked CI tests and a typed `PredictionResponse` OpenAPI schema that rejects non-finite anomaly scores and negative inference latency. **A real Mac HTTP → API → model round trip and in-process cache reuse are now verified; normal and defective bottle browser uploads are now observed in screenshots (see [UI inspection report](reports/2026-10-14-browser-bottle-inspection.md)).** Only load checkpoints you trust.
-
-### 3. Compare PaDiM and PatchCore
-
-For the **already completed PaDiM/bottle experiment**, keep its three original artifacts under the benchmark output directory and only train the missing PatchCore run:
+Configure the **trusted** checkpoint outside Git (never upload a checkpoint through the HTTP API):
 
 ~~~bash
-python -m src.benchmark \
+export IHSANVISION_CHECKPOINT="/absolute/path/to/trusted/model.ckpt"
+export IHSANVISION_MODEL=padim
+python -m uvicorn ihsanvision.api:app --host 127.0.0.1 --port 8002
+~~~
+
+Open **http://127.0.0.1:8002/** for the interface and **http://127.0.0.1:8002/docs** for OpenAPI documentation.
+
+From another terminal, run the synthetic API smoke check:
+
+~~~bash
+python -m scripts.local_api_smoke --url http://127.0.0.1:8002
+~~~
+
+This is a *service integration test*, not a defect accuracy test. See [developer workflow](docs/development.md) and [deployment/security notes](docs/deployment.md). If 8002 is occupied, inspect the listener with `lsof -nP -iTCP:8002 -sTCP:LISTEN` and choose a free port instead of killing an unknown process.
+
+## Model experiments — Kaggle
+
+**Existing PaDiM results should be preserved rather than retrained.** The saved run includes `model.ckpt`, `report.json` and `splits.json`. Dataset and weights must remain outside the source repository.
+
+To train PatchCore without retraining PaDiM, follow the [incremental comparison procedure](docs/patchcore-comparison-workflow.md). Once the three trusted PaDiM artifacts are staged in the matching output folder, the command is:
+
+~~~bash
+python -m ihsanvision.benchmark \
   --dataset-root /kaggle/input/datasets/ipythonx/mvtec-ad \
   --categories bottle --seed 42 \
   --output-dir /kaggle/working/ihsanvision_runs \
   --accelerator cpu --reuse-existing
 ~~~
 
-Replace the dataset root with the actual Kaggle mount location. The `--reuse-existing` flag **refuses to retrain PaDiM** and validates identical train/validation/test paths *before* fitting PatchCore. It will refuse missing or partial artifacts. For an entirely new multi-category project, omit `--reuse-existing` to train both models intentionally.
+Adjust the dataset path based on `python -m scripts.kaggle_preflight`. The benchmark checks **exact train/validation/test image paths before fitting PatchCore** and refuses missing or inconsistent PaDiM reference runs. Training and evaluation results must be collected from a real completed run; none are invented.
 
-After a valid run, metrics are written to `comparison.csv` and `comparison.json` **only after exact split matching**. See the [incremental Kaggle PatchCore guide](docs/patchcore-comparison-workflow.md) for safely restoring preserved PaDiM artifacts. PatchCore results have **not yet been run/verified**; do not publish comparative performance claims.
-
-## Project structure
+## Repository layout
 
 ~~~text
 ihsanvision-ai-industrial-anomaly-detection/
-├── src/                     # Training, inference, API, config, benchmark
-├── demo/index.html          # Browser inspection interface
-├── scripts/                 # Dataset preflight and checkpoint smoke test
-├── tests/                   # Offline unit and contract tests
-├── notebooks/               # Original Kaggle exploration
-├── reports/                 # Experiment observations and provenance
-├── docs/                    # Architecture, evaluation, workflow, security, roadmap
-├── .github/workflows/       # Python 3.11/3.12 CI
-├── requirements.txt
-└── requirements-dev.txt
+├── ihsanvision/                 # Canonical Python application package
+│   ├── api.py                   # FastAPI endpoints, upload handling
+│   ├── schemas.py               # OpenAPI / Pydantic response contracts
+│   ├── serving.py               # Cached trusted-checkpoint inference
+│   ├── predict.py               # CLI inference, score + overlay
+│   ├── train.py                 # Reproducible Anomalib experiment
+│   ├── benchmark.py             # PaDiM/PatchCore comparison
+│   └── config.py                # Models, configuration, split auditing
+├── src/                         # Legacy import/CLI compatibility only
+├── scripts/                     # Kaggle preflight, artifact staging, Mac smoke/latency checks
+├── tests/                       # Fast mocked/offline regression tests
+├── demo/index.html              # Local inspection UI
+├── notebooks/                   # Historical exploratory notebooks
+├── reports/                     # Observed experiment evidence and limitations
+├── docs/                        # Architecture, evaluation, developer and deployment guides
+├── .github/workflows/ci.yml     # Python 3.11/3.12 checks
+├── pyproject.toml               # Python packaging / CLI entry points
+├── requirements.txt             # Runtime dependency constraints
+└── requirements-dev.txt         # Lightweight CI/test dependencies
 ~~~
 
-## Local integration checks
+The **canonical** imports and commands use `ihsanvision.*`. Older notebooks and workflows that use `src.train`, `src.predict`, `src.benchmark`, or `src.api` remain supported by **compatibility shims**; new features should not be added to those wrappers.
 
-On macOS, after the Kaggle checkpoint has been copied to a trusted path outside the repository, run the **artifact/dependency preflight**:
+For an editable install, these command-line entry points are also available: `ihsanvision-train`, `ihsanvision-predict` and `ihsanvision-benchmark`.
 
-~~~bash
-python -m scripts.local_preflight
-~~~
-
-This checks package availability, the checkpoint file, and consistency of the saved train/validation/test reports. It **does not deserialize the checkpoint** or claim successful real-model inference.
-
-Start the local API on a free port (8001 if 8000 is occupied):
-
-~~~bash
-export IHSANVISION_CHECKPOINT="$HOME/ihsanvision-artifacts/padim-bottle-seed42/model.ckpt"
-export IHSANVISION_MODEL=padim
-python -m uvicorn src.api:app --host 127.0.0.1 --port 8001
-~~~
-
-From a **second terminal**, exercise the API with a synthetic image:
-
-~~~bash
-cd ~/ihsanvision-portfolio
-source .venv/bin/activate
-python -m scripts.local_api_smoke --url http://127.0.0.1:8001
-~~~
-
-**Checkpoint restoration uses `pre_trained=False`** to avoid redundant Hugging Face backbone downloads; training still uses `pre_trained=True`. The subsequent Mac run completed successfully without those network retries.
-
-The user successfully exercised the real checkpoint through this HTTP path on macOS (see [Mac API smoke report](reports/2026-10-14-macos-api-smoke.md)). The test used a **synthetic** image and took **66.69 seconds including checkpoint load**, so it does **not** measure defect-detection accuracy or warm throughput.
-
-An **experimental lazy model-cache** is now enabled by default. To test it, restart the server after updating Git and run the same smoke command *twice*, without restarting Uvicorn between calls. Compare `model_reused`, the raw anomaly scores and `latency_ms_including_load`:
-
-~~~bash
-python -m scripts.local_api_smoke --url http://127.0.0.1:8001
-python -m scripts.local_api_smoke --url http://127.0.0.1:8001
-~~~
-
-If repeat inference fails or results diverge, stop the server and set `export IHSANVISION_MODEL_CACHE=0` before restarting Uvicorn. That restores the previously verified **load-every-request** code path. **Real-checkpoint cache reuse is verified on macOS:** in one observed cold/reused pair, model-reported inference fell from **721.99 ms to 123.54 ms** (5.84× for that pair), both with the identical synthetic score and heatmap. This is not a warm p50/p95 benchmark. See [evidence](reports/2026-10-14-macos-api-smoke.md). See [deployment notes](docs/deployment.md).
-
-To collect a repeatable localhost **inference-time** sample from a still-running server:
-
-~~~bash
-python -m scripts.benchmark_local_api --url http://127.0.0.1:8002 --runs 10 --output results/local-padim-serving-benchmark.json
-~~~
-
-This intentionally distinguishes `model_reused=true` samples, reports warm p50/p95, and validates identical-input score consistency. It is neither an accuracy evaluation nor an HTTP throughput benchmark.
-
-## Quality checks
+## Development and testing
 
 ~~~bash
 python -m pip install -r requirements-dev.txt
+python -m pip install -e . --no-deps
+python -m compileall -q ihsanvision src scripts tests
 python -m pytest -q
 ~~~
 
-CI tests configuration, split leakage, image handling, API validation, and simulated training/inference contracts. They **do not replace real model execution**, and do not require downloading datasets or pretrained weights.
+CI validates packaging imports, canonical/legacy entry points, API contracts, leakage checks and offline inference behavior. It does **not** exercise a real model checkpoint or retrain on MVTec datasets. Running one CI test suite successfully does not imply production readiness.
 
-## Technical documentation
+## Project documentation
 
-- [Architecture and design decisions](docs/architecture.md)
+- [Architecture and design choices](docs/architecture.md)
+- [Developer setup and execution](docs/development.md)
 - [Evaluation methodology and measured results](docs/evaluation.md)
-- [Incremental PatchCore comparison without PaDiM retraining](docs/patchcore-comparison-workflow.md)
-- [Development and Kaggle workflow](docs/development.md)
-- [API deployment and security notes](docs/deployment.md)
-- [Engineering roadmap and acceptance criteria](docs/roadmap.md)
-- [macOS live API smoke evidence](reports/2026-10-14-macos-api-smoke.md)
-- [macOS 10-request serving latency evidence](reports/2026-10-14-macos-10-request-inference-benchmark.md)
-- [Real bottle browser UI inspection evidence](reports/2026-10-14-browser-bottle-inspection.md)
 - [Trained PaDiM model card](docs/model-card.md)
-- [Contributing guide](CONTRIBUTING.md)
+- [Incremental Kaggle PatchCore comparison](docs/patchcore-comparison-workflow.md)
+- [Deployment, limitations and security](docs/deployment.md)
+- [Milestones and acceptance criteria](docs/roadmap.md)
+- [Repository migration and branch conventions](docs/repository-structure.md)
+- [Contribution guide](CONTRIBUTING.md)
 
-## Limitations and responsible use
+### Supporting run records
 
-This project is an **engineering portfolio prototype**, not certified industrial quality-control software. Missing before production: model-serving lifecycle, authentication, rate limiting, observability, throughput profiling, repeatability across seeds/categories, PatchCore evaluation, calibrated localization, and live web-app error-state/release verification.
+- [Kaggle PaDiM bottle experiment](reports/2026-10-13-kaggle-padim-bottle.md)
+- [Mac checkpoint-backed API smoke and cache](reports/2026-10-14-macos-api-smoke.md)
+- [Mac ten-request inference latency sample](reports/2026-10-14-macos-10-request-inference-benchmark.md)
+- [Normal and defective bottle UI screenshots — textual observation](reports/2026-10-14-browser-bottle-inspection.md)
 
-The API accepts images, **not user-uploaded checkpoints**. Lightning/PyTorch checkpoints use serialization that may execute arbitrary code when deserialized: load only weights from trusted sources. MVTec AD images and model weights are **not included** in this repository. Consult the [dataset publisher](https://www.mvtec.com/company/research/datasets/mvtec-ad) for licensing and permitted use; no repository code license has yet been selected.
+## Safety, licensing and next steps
 
-## References
+- Do not use a research-only anomaly score as a calibrated probability or a replacement for human quality-control decisions.
+- Use only trusted checkpoint artifacts: serialized Lightning checkpoints should not be loaded from untrusted uploads or third parties.
+- MVTec AD dataset rights are distinct from repository source rights. **No dataset images or model binaries are redistributed here.**
+- A source-code license **has not yet been selected**; do not assume code is licensed for unrestricted reuse.
+- Before hosting publicly: implement appropriate authentication, rate limits, request-admission controls, observability and deployment isolation.
+- Pending: real PatchCore evaluation, multiple-seed/robustness analysis, error-state UI QA, and a reviewed portfolio release.
 
-- Bergmann et al., *The MVTec Anomaly Detection Dataset*, International Journal of Computer Vision (2021).
-- [Anomalib](https://github.com/open-edge-platform/anomalib), open-source anomaly detection framework.
-- Defard et al., PaDiM (2021); Roth et al., PatchCore (2022).
+The stable `main` branch and short-lived `feature/*` development workflow are the intended long-term Git conventions; branch-default changes are tracked separately from code refactoring.
