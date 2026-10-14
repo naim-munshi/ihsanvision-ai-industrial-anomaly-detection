@@ -2,9 +2,9 @@ name: Python quality checks
 
 on:
   push:
-    branches: [main, MdNaim, "feature/**"]
+    branches: [main, "feature/**", "chore/**"]
   pull_request:
-    branches: [main, MdNaim]
+    branches: [main]
 
 jobs:
   unit-tests:
