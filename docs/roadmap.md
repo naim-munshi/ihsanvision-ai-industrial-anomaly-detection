@@ -27,7 +27,7 @@ Export the Kaggle-generated `model.ckpt`, `report.json`, `splits.json`, `smoke_r
 
 ### Priority 2 — PatchCore benchmark
 
-Use `python -m src.benchmark --reuse-existing` with the previously saved PaDiM artifacts and the same category/seed. This mode fails rather than retraining PaDiM, and verifies train/validation/test paths **before** new PatchCore fitting and before CSV publication. Follow [the incremental Kaggle workflow](patchcore-comparison-workflow.md). A real PatchCore run and measured metrics are still pending.
+Use `python -m ihsanvision.benchmark --reuse-existing` with the previously saved PaDiM artifacts and the same category/seed. This mode fails rather than retraining PaDiM, and verifies train/validation/test paths **before** new PatchCore fitting and before CSV publication. Follow [the incremental Kaggle workflow](patchcore-comparison-workflow.md). A real PatchCore run and measured metrics are still pending.
 
 **Definition of done:** Real PatchCore report; complete comparison CSV/JSON; clear hardware/split provenance.
 
