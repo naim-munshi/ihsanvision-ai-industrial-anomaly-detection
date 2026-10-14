@@ -90,7 +90,7 @@ def test_concurrent_inference_is_serialized(monkeypatch, tmp_path):
         time.sleep(0.035)
         with lock:
             active -= 1
-        return {"anomaly_score": 0.8}
+        return {"model": "padim", "anomaly_score": 0.8}
 
     async def exercise():
         app = create_app(predict_fn=counted_predict)
