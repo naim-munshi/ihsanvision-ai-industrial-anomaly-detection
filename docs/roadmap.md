@@ -10,7 +10,7 @@ This is a **state-based roadmap**, not an assertion that all systems are already
 | M2 | PaDiM training and checkpoint-backed held-out evaluation | **Verified on Kaggle** | Completed notebook run and metric report |
 | M3 | Single-image model inference + heatmap | **Verified on Kaggle** | `single-image-inference-passed`, overlay screenshot |
 | M4 | CI and dependency-isolated tests | **Verified** | Python 3.11/3.12 GitHub Actions pass |
-| M5 | PatchCore comparison on same dataset/protocol | **Pending** | Metric tables, timings, model configs and hardware |
+| M5 | PatchCore comparison on same dataset/protocol | **Reuse workflow implemented; training pending** | Reuse prior PaDiM, verify identical splits before PatchCore fit; real metrics still needed |
 | M6 | Real FastAPI + browser demo against trusted model | **Browser normal/defective UI demo verified** | Both screenshots show upload preview, PaDiM classification, raw score, and heatmap; sample split membership unverified |
 | M7 | Persistent serving, tests and performance profiling | **Sequential 10-request sample recorded; load profiling pending** | Cached PaDiM p50 135.78 ms, p95 1244.62 ms including one long-tail sample; not throughput/cold-start |
 | M8 | Authentication, rate limit, audit logging | **Pending** | Security tests and privacy policy |
@@ -27,7 +27,7 @@ Export the Kaggle-generated `model.ckpt`, `report.json`, `splits.json`, `smoke_r
 
 ### Priority 2 — PatchCore benchmark
 
-Run `python -m src.benchmark` for the same category and seed (both model trainings are performed in that command). Compare model metrics **only if the saved train/validation/test path manifests match exactly**; the benchmark now raises instead of emitting a misleading CSV when partitions differ. Record training duration and inference time, not just AUROC/F1.
+Use `python -m src.benchmark --reuse-existing` with the previously saved PaDiM artifacts and the same category/seed. This mode fails rather than retraining PaDiM, and verifies train/validation/test paths **before** new PatchCore fitting and before CSV publication. Follow [the incremental Kaggle workflow](patchcore-comparison-workflow.md). A real PatchCore run and measured metrics are still pending.
 
 **Definition of done:** Real PatchCore report; complete comparison CSV/JSON; clear hardware/split provenance.
 
