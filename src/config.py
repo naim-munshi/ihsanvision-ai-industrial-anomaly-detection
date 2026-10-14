@@ -20,6 +20,7 @@ class TrainConfig:
     num_workers: int = 0
     validation_ratio: float = 0.2
     accelerator: str = "auto"
+    reference_splits: Path | None = None
 
     def validate(self) -> None:
         if self.category not in CATEGORIES or self.model not in MODELS:
@@ -28,6 +29,8 @@ class TrainConfig:
             raise ValueError("Validation ratio must be between zero and one")
         if self.train_batch_size < 1 or self.eval_batch_size < 1 or self.num_workers < 0:
             raise ValueError("Invalid data loader settings")
+        if self.reference_splits is not None and not self.reference_splits.is_file():
+            raise FileNotFoundError(f"Reference splits missing: {self.reference_splits}")
         if not (self.dataset_root / self.category / "train" / "good").is_dir():
             raise FileNotFoundError("Dataset missing <root>/<category>/train/good")
         if not (self.dataset_root / self.category / "test").is_dir():
@@ -37,6 +40,7 @@ class TrainConfig:
         values = asdict(self)
         values["dataset_root"] = str(self.dataset_root.resolve())
         values["output_dir"] = str(self.output_dir)
+        values["reference_splits"] = str(self.reference_splits.resolve()) if self.reference_splits is not None else None
         return values
 
 def make_model(name: str, *, pre_trained: bool = True):
@@ -95,3 +99,33 @@ def scalar_metrics(test_results) -> dict:
             except (TypeError, ValueError):
                 pass
     return metrics
+
+
+def verify_reference_splits(manifest: dict[str, list[str]], path: Path) -> dict[str, int]:
+    """Refuse training when a new run would use different evaluation images.
+
+    This check runs *after datamodule setup* but *before fitting* so a mismatched
+    Kaggle mount or seed does not waste compute or produce invalid comparison.
+    """
+    reference = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(reference, dict):
+        raise ValueError("Reference split manifest must be an object")
+    keys = ("train", "val", "test")
+    for split in keys:
+        paths = reference.get(split)
+        if (
+            not isinstance(paths, list) or not paths
+            or not all(isinstance(p, str) and p for p in paths)
+            or len(paths) != len(set(paths))
+        ):
+            raise ValueError(f"Invalid reference {split} split")
+    for a, b in (("train", "val"), ("train", "test"), ("val", "test")):
+        if set(reference[a]) & set(reference[b]):
+            raise ValueError(f"Overlapping reference {a}/{b} split")
+    for split in keys:
+        if sorted(manifest[split]) != sorted(reference[split]):
+            raise RuntimeError(
+                f"Reference {split} split differs from current dataset: refusing to train. "
+                "Check Kaggle dataset mount, category, and seed."
+            )
+    return {split: len(manifest[split]) for split in keys}
