@@ -51,7 +51,6 @@ def test_reuses_existing_padim_and_trains_patchcore_only(tmp_path, monkeypatch):
         called.append(conf)
         assert conf.model == "patchcore"
         assert conf.reference_splits == output / "padim-bottle-seed42/splits.json"
-        conf.validate() if False else None  # Real datasets are not present in CI.
         folder = output / "patchcore-bottle-seed42"
         folder.mkdir()
         (folder / "splits.json").write_text(json.dumps(splits()))
