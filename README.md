@@ -116,6 +116,7 @@ CI validates packaging imports, canonical/legacy entry points, API contracts, le
 - [Evaluation methodology and measured results](docs/evaluation.md)
 - [Trained PaDiM model card](docs/model-card.md)
 - [Incremental Kaggle PatchCore comparison](docs/patchcore-comparison-workflow.md)
+- [Verified PaDiM/PatchCore summary generator](docs/verified-benchmark-summary.md)
 - [Deployment, limitations and security](docs/deployment.md)
 - [Milestones and acceptance criteria](docs/roadmap.md)
 - [Repository structure and branch conventions](docs/repository-structure.md)
