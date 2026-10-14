@@ -39,7 +39,7 @@ def test_jpeg_bytes_cannot_be_disguised_by_filename(monkeypatch, tmp_path):
 def test_supported_bmp_bytes_preserve_file_format(monkeypatch, tmp_path):
     seen = []
     client = configured_client(monkeypatch, tmp_path, lambda image, *_: (
-        seen.append(image.suffix) or {"anomaly_score": 0.3}
+        seen.append(image.suffix) or {"model": "padim", "anomaly_score": 0.3}
     ))
     result = client.post("/predict", files={
         "file": ("image.png", image_bytes("BMP"), "image/png")
@@ -49,7 +49,7 @@ def test_supported_bmp_bytes_preserve_file_format(monkeypatch, tmp_path):
 
 
 def test_gif_is_explicitly_rejected(monkeypatch, tmp_path):
-    client = configured_client(monkeypatch, tmp_path, lambda *_: {"anomaly_score": 0.3})
+    client = configured_client(monkeypatch, tmp_path, lambda *_: {"model": "padim", "anomaly_score": 0.3})
     result = client.post("/predict", files={
         "file": ("image.png", image_bytes("GIF"), "image/png")
     })
