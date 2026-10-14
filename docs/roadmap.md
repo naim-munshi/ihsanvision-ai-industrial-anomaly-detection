@@ -39,7 +39,7 @@ The Mac preflight, checkpoint-backed HTTP API smoke test and a pair of cached re
 
 ### Priority 4 — Improve engineering robustness
 
-A persistent model instance is implemented and observed working with real PaDiM. Continue with output schemas, request IDs, structured logs, configurable settings, response timeouts, and upload throttling. Expand integration tests to real-model checks in a dedicated environment.
+A persistent model instance is implemented and observed working with real PaDiM. The `/predict` response now has a Pydantic/OpenAPI schema that rejects invalid scores and latency. Continue with request IDs, structured logs, configurable settings, response timeouts, and upload throttling. Expand integration tests to real-model checks in a dedicated environment.
 
 **Definition of done:** Repeatable p50/p95 load benchmark with documented CPU/GPU and concurrency; no unsafe checkpoint upload path.
 
