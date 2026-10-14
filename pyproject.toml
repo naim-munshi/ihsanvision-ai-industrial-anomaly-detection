@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ihsanvision-ai"
+version = "0.4.0"
+description = "Reproducible industrial anomaly detection with PaDiM, PatchCore and FastAPI"
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+license = { text = "Proprietary - license to be chosen" }
+authors = [{ name = "IhsanVision.AI contributors" }]
+dependencies = [
+  "anomalib==2.5.0",
+  "torch>=2.3",
+  "torchvision",
+  "timm",
+  "numpy>=1.26,<2.1",
+  "pandas>=2.0,<3",
+  "Pillow>=10",
+  "fastapi>=0.110,<1",
+  "uvicorn[standard]>=0.27",
+  "python-multipart>=0.0.9",
+]
+
+[project.scripts]
+ihsanvision-train = "ihsanvision.train:main"
+ihsanvision-predict = "ihsanvision.predict:main"
+ihsanvision-benchmark = "ihsanvision.benchmark:main"
+
+[tool.setuptools]
+packages = ["ihsanvision", "src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+extend-exclude = ["notebooks"]
