@@ -94,7 +94,7 @@ The response includes fields similar to:
 
 ### Upload validation
 
-The service validates common image formats (PNG, JPEG, WEBP, BMP) by actual content, limits uploads to 10 MiB and 25 million pixels, and writes a temporary file for prediction. Unsupported/oversized payloads are rejected. Errors are surfaced without a model traceback; operators should inspect internal server logs separately.
+The service validates common image formats (PNG, JPEG, WEBP, BMP) by actual content, limits uploads to 10 MiB and 25 million pixels, and writes a temporary file whose extension is derived from inspected content, not the original user-supplied filename. Pillow validation executes in a worker thread to avoid blocking the FastAPI event loop. Unsupported/oversized payloads are rejected. Errors are surfaced without a model traceback; operators should inspect internal server logs separately.
 
 ## Security posture
 
