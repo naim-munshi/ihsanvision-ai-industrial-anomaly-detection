@@ -68,7 +68,7 @@ A previous Mac run failed to retrieve the ResNet18 backbone from Hugging Face be
 | --- | --- | --- | --- |
 | GET | `/` | None | Static inspection UI |
 | GET | `/health` | None | JSON `status` and `model_configured` |
-| POST | `/predict` | Multipart field `file` | JSON score, optional label, time and PNG overlay |
+| POST | `/predict` | Multipart field `file` | Typed `PredictionResponse` JSON: raw finite score, model, optional label/latency/PNG overlay/model_reused |
 
 Example from a **local trusted environment**:
 
@@ -89,6 +89,8 @@ The response includes fields similar to:
   "notes": "Score is NOT a probability; heatmap is relative visualization."
 }
 ~~~
+
+The endpoint declares a Pydantic `PredictionResponse` schema in `/openapi.json`. It requires a recognized `model` and finite `anomaly_score`, refuses negative `latency_ms`, and documents `model_reused` (optional for cold/CLI-style output). Invalid model output is a server-side error and must be investigated; no anomaly probability is asserted.
 
 **Example only:** numeric values illustrate the previously observed Kaggle smoke result; they are not a live service invocation. Do not interpret `anomaly_score` as a calibrated probability, `latency_ms` as warm-service throughput, or the overlay as a binary defect mask.
 
