@@ -24,23 +24,28 @@ MAX_PIXELS = 25_000_000
 UI = Path(__file__).resolve().parents[1] / "demo" / "index.html"
 
 
-def _validate_image(payload: bytes) -> None:
-    """Validate real image bytes, format and pixel count before inference."""
+IMAGE_SUFFIXES = {"PNG": ".png", "JPEG": ".jpg", "WEBP": ".webp", "BMP": ".bmp"}
+
+
+def _validate_image(payload: bytes) -> str:
+    """Inspect actual bytes, bound decoded pixels and return a trusted suffix."""
     try:
         with Image.open(BytesIO(payload)) as img:
             if img.width * img.height > MAX_PIXELS:
                 raise HTTPException(413, "Image has too many pixels")
-            if img.format not in {"PNG", "JPEG", "WEBP", "BMP"}:
+            suffix = IMAGE_SUFFIXES.get(img.format)
+            if suffix is None:
                 raise HTTPException(415, "Supported formats: PNG, JPEG, WEBP, BMP")
             img.verify()
+            return suffix
     except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError):
         raise HTTPException(415, "Invalid image content") from None
 
 
-def _run_prediction(payload: bytes, checkpoint: Path, model_name: str, predict_fn) -> dict:
+def _run_prediction(payload: bytes, suffix: str, checkpoint: Path, model_name: str, predict_fn) -> dict:
     """Run blocking ML work in a worker thread, keeping temporary bytes private."""
     with tempfile.TemporaryDirectory(prefix="ihsanvision-") as directory:
-        image_path = Path(directory) / "image.png"
+        image_path = Path(directory) / f"image{suffix}"
         image_path.write_bytes(payload)
         return predict_fn(image_path, checkpoint, model_name)
 
@@ -87,14 +92,16 @@ def create_app(predict_fn=None) -> FastAPI:
             raise HTTPException(400, "Empty upload")
         if len(payload) > MAX_UPLOAD:
             raise HTTPException(413, "Maximum upload size is 10 MiB")
-        _validate_image(payload)
+        # Decode and verify in a worker thread, not the event loop. The temporary
+        # file suffix is derived from inspected image bytes, never client filename.
+        suffix = await run_in_threadpool(_validate_image, payload)
 
         # Image decoding and Anomalib checkpoint inference are synchronous. Avoid
         # blocking FastAPI's event loop, so /health stays responsive during inference.
         async with inference_semaphore:
             try:
                 return await run_in_threadpool(
-                    _run_prediction, payload, Path(checkpoint), model_name, predict_fn
+                    _run_prediction, payload, suffix, Path(checkpoint), model_name, predict_fn
                 )
             except Exception:
                 logger.exception("Prediction failed")
