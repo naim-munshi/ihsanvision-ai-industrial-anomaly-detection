@@ -16,8 +16,8 @@ from pathlib import Path
 import shutil
 import tempfile
 
-from src.benchmark import read_completed_run
-from src.config import CATEGORIES
+from ihsanvision.benchmark import read_completed_run
+from ihsanvision.config import CATEGORIES
 
 
 ESSENTIAL_ARTIFACTS = ("model.ckpt", "report.json", "splits.json")
