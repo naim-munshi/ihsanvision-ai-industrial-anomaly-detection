@@ -84,7 +84,7 @@ Train (replace the dataset root with the value reported by preflight):
   --accelerator cpu
 ~~~
 
-Validate the saved checkpoint against a defective test image:
+Validate the saved checkpoint against a defective image from the **persisted held-out test partition** (the script refuses to substitute a validation image):
 
 ~~~python
 !python -m scripts.kaggle_smoke_test \
@@ -123,7 +123,7 @@ python -m src.benchmark \
   --output-dir runs/benchmark
 ~~~
 
-Metrics are written to `comparison.csv` and `comparison.json`. PatchCore results have **not yet been run/verified**; do not publish comparative performance claims.
+Metrics are written to `comparison.csv` and `comparison.json` **only after the saved PaDiM and PatchCore train/validation/test paths match for each category**. A mismatch aborts publication of the comparison. This command trains both models into the specified output folder; do not use it to rerun an already completed PaDiM experiment without planning the compute cost. PatchCore results have **not yet been run/verified**; do not publish comparative performance claims.
 
 ## Project structure
 
