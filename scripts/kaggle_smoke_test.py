@@ -19,16 +19,25 @@ from src.predict import predict_image
 SUPPORTED_IMAGES = {".png", ".jpeg", ".jpg", ".bmp", ".webp"}
 
 
-def choose_defective_image(dataset_root: Path, category: str) -> Path:
+def choose_defective_image(
+    dataset_root: Path, category: str, *, allowed_test_paths: set[str] | None = None
+) -> Path:
+    """Choose a defective image strictly from the held-out test split.
+
+    `allowed_test_paths` is provided by the persisted training split manifest.
+    For standalone inspection, omitting it preserves exploratory discovery,
+    but verify_checkpoint always supplies the held-out paths.
+    """
     test = dataset_root / category / "test"
     candidates = sorted(
         p for p in test.rglob("*")
         if p.is_file()
         and p.suffix.lower() in SUPPORTED_IMAGES
         and p.parent.name != "good"
+        and (allowed_test_paths is None or str(p.resolve()) in allowed_test_paths)
     ) if test.is_dir() else []
     if not candidates:
-        raise FileNotFoundError(f"No defective test image found in {test}")
+        raise FileNotFoundError(f"No held-out defective test image found in {test}")
     return candidates[0]
 
 
@@ -55,11 +64,18 @@ def verify_checkpoint(
             raise FileNotFoundError(f"Training artifact missing: {p}")
     import json
     splits = json.loads(manifest.read_text(encoding="utf-8"))
+    for split in ("train", "val", "test"):
+        paths = splits.get(split)
+        if not isinstance(paths, list) or not paths or not all(isinstance(p, str) for p in paths):
+            raise ValueError(f"Invalid or empty {split} split")
+        if len(paths) != len(set(paths)):
+            raise ValueError(f"Duplicate paths in {split} split")
     for a, b in (("train", "val"), ("train", "test"), ("val", "test")):
         if not set(splits[a]).isdisjoint(splits[b]):
             raise ValueError(f"Data leakage between {a} and {b}")
 
-    image = choose_defective_image(dataset_root, category)
+    held_out = {str(Path(path).resolve()) for path in splits["test"]}
+    image = choose_defective_image(dataset_root, category, allowed_test_paths=held_out)
     result = predictor(image, checkpoint, model, accelerator)
     if result["anomaly_score"] is None:
         raise RuntimeError("Model inference returned no anomaly score")
