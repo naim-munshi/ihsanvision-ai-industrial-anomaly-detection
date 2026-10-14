@@ -13,8 +13,8 @@ import argparse
 import base64
 from pathlib import Path
 
-from src.config import CATEGORIES, MODELS, save_json
-from src.predict import predict_image
+from ihsanvision.config import CATEGORIES, MODELS, save_json
+from ihsanvision.predict import predict_image
 
 SUPPORTED_IMAGES = {".png", ".jpeg", ".jpg", ".bmp", ".webp"}
 
