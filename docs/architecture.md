@@ -23,7 +23,7 @@ GitHub is the source of truth for code and documentation. The dataset and large 
          └───────────┬──────────────────┬──────────┘
                      │                  │
                      v                  v
-         src.train / Anomalib    Disjoint val/test
+         ihsanvision.train / Anomalib    Disjoint val/test
                      │                  │
                Padim/Patchcore          v
                      │          evaluator metrics
@@ -33,7 +33,7 @@ GitHub is the source of truth for code and documentation. The dataset and large 
                      │
                      v
                       ONLINE / INFERENCE
-  Uploaded image ──> src.api ──> src.predict
+  Uploaded image ──> ihsanvision.api ──> ihsanvision.serving
                              ├── validate inputs
                              ├── load trusted checkpoint
                              ├── Engine.predict
@@ -47,11 +47,11 @@ GitHub is the source of truth for code and documentation. The dataset and large 
 
 | File | Responsibility |
 | --- | --- |
-| `src/config.py` | Category/model choices, experiment settings, model factory, dataset split auditing and metric serialization |
-| `src/train.py` | Training, output directory, split-manifest creation, checkpoint export and held-out test report |
-| `src/benchmark.py` | Sequential PaDiM/PatchCore runs with comparison JSON/CSV |
-| `src/predict.py` | Single-image inference and visualization |
-| `src/api.py` | FastAPI application, upload validation and error translation |
+| `ihsanvision/config.py` | Category/model choices, experiment settings, model factory, dataset split auditing and metric serialization |
+| `ihsanvision/train.py` | Training, output directory, split-manifest creation, checkpoint export and held-out test report |
+| `ihsanvision/benchmark.py` | Sequential PaDiM/PatchCore runs with comparison JSON/CSV |
+| `ihsanvision/predict.py` | Single-image inference and visualization |
+| `ihsanvision/api.py` | FastAPI application, upload validation and error translation |
 | `demo/index.html` | No-build client-side dashboard |
 | `scripts/kaggle_preflight.py` | Detect and inspect a MVTec directory without running models |
 | `scripts/kaggle_smoke_test.py` | End-to-end *single-image* model check with saved checkpoint and overlay |
@@ -91,11 +91,11 @@ MVTec AD does not have a separate validation directory by default. The current i
 
 ### Do not confuse visualization with segmentation
 
-`src.predict` normalizes the anomaly map to the image's own minimum/maximum and blends color for a human-readable localization view. It is **not** a globally calibrated mask. Raw score units are model-specific and should not be compared across models without normalization/calibration.
+`ihsanvision.predict` normalizes the anomaly map to the image's own minimum/maximum and blends color for a human-readable localization view. It is **not** a globally calibrated mask. Raw score units are model-specific and should not be compared across models without normalization/calibration.
 
 ### Prototype limitations
 
-- Each API request runs an inference path that **reloads model/checkpoint**; performance numbers include weight initialization.
+- The current FastAPI process lazily loads a trusted checkpoint, then **reuses the model/Engine for repeated requests** under a per-process inference semaphore. The initial request includes restoration cost; subsequent warm requests do not normally reload model weights. An environment flag (`IHSANVISION_MODEL_CACHE=0`) restores the original cold-loading path. Multi-worker and PatchCore cache behavior have not been validated.
 - API has no authentication, rate limiting or queueing; external deployment is not yet advised.
 - Experiment backend is Anomalib 2.5.0; upgrading versions may affect checkpoint compatibility.
 - CPU-only Kaggle runs do not establish accelerator portability.
@@ -103,4 +103,4 @@ MVTec AD does not have a separate validation directory by default. The current i
 
 ## Planned architecture evolution
 
-After real API verification, introduce a persistent model manager (load once at startup), structured logging, request IDs, bounded concurrency, model/version metadata, metrics and authentication. Only then evaluate batch serving, export formats and external hosting. See [roadmap.md](roadmap.md).
+The prototype has a lazily initialized per-process model cache and validated Mac PaDiM UI inference. Next improve startup lifecycle management, structured logging, request IDs, bounded request queues, model/version metadata, metrics and authentication. Only then evaluate batch serving, export formats and external hosting. See [roadmap.md](roadmap.md).
