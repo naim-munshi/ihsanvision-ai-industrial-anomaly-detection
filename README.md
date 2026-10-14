@@ -25,7 +25,7 @@ These performance and AUROC numbers come from **different protocols and purposes
 **Requirements:** Python 3.11–3.13, a trusted Anomalib/Lightning `.ckpt` checkpoint, and adequate RAM for the model. PyTorch wheels differ across systems.
 
 ~~~bash
-git clone https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection.git
+git clone -b main https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection.git
 cd ihsanvision-ai-industrial-anomaly-detection
 python3 -m venv .venv
 source .venv/bin/activate
@@ -33,7 +33,7 @@ python -m pip install -r requirements.txt
 python -m pip install -e . --no-deps
 ~~~
 
-Until the restructuring is merged, choose `feature/portfolio-production-pipeline` when cloning, or run `git switch feature/portfolio-production-pipeline` and pull the branch. The repository's GitHub default setting may still be `MdNaim` during the migration.
+**Branch transition:** The validated source tree is merged into `main`, but the GitHub default setting may still be `MdNaim` until its owner changes it. The explicit `-b main` above ensures the correct clone immediately; after the default switch, ordinary `git clone` will be sufficient.
 
 Configure the **trusted** checkpoint outside Git (never upload a checkpoint through the HTTP API):
 
