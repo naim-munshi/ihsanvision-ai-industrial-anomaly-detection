@@ -27,7 +27,7 @@ Export the Kaggle-generated `model.ckpt`, `report.json`, `splits.json`, `smoke_r
 
 ### Priority 2 — PatchCore benchmark
 
-Run `python -m src.benchmark` for the same category and seed. Compare model metrics **within the same holdout protocol**. Record training duration and inference time, not just AUROC/F1.
+Run `python -m src.benchmark` for the same category and seed (both model trainings are performed in that command). Compare model metrics **only if the saved train/validation/test path manifests match exactly**; the benchmark now raises instead of emitting a misleading CSV when partitions differ. Record training duration and inference time, not just AUROC/F1.
 
 **Definition of done:** Real PatchCore report; complete comparison CSV/JSON; clear hardware/split provenance.
 
