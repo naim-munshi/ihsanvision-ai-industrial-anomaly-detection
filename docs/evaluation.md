@@ -55,7 +55,7 @@ A separate user-run `scripts.kaggle_smoke_test` produced the following visible o
 | Duration | Approximately **1396.49 ms** |
 | Saved overlay | `smoke_overlay.png` |
 
-The screenshot shows a valid heatmap overlay on a visibly damaged bottle. The smoke script checks for a checkpoint, report, split manifest, image inference and a valid PNG overlay.
+The screenshot shows a valid heatmap overlay on a visibly damaged bottle. The smoke script checks for a checkpoint, report, split manifest, image inference and a valid PNG overlay. **For future executions, the script now restricts candidate defective images to paths appearing in the saved held-out `test` split**, rejecting a run where no such defective test image remains; it does not fall back to a validation image. This is a protocol safeguard, not a new measured model result.
 
 **What this does not establish:** high recall on other defect types, pixel-level segmentation validity, a calibrated defect probability, model fairness/robustness, or live API throughput. Because this prediction loads the checkpoint, the reported duration is not steady-state latency.
 
@@ -73,7 +73,7 @@ For each *new* experiment log:
 
 ## Upcoming comparisons
 
-PatchCore/bottle and additional categories are **pending**. The benchmark script exists but no legitimate PatchCore performance data is included. Comparisons require the **same category and split semantics** and reporting all measurement parameters (especially differing memory and inference costs).
+PatchCore/bottle and additional categories are **pending**. The benchmark script exists but no legitimate PatchCore performance data is included. Comparisons require the **same category and exact train/validation/test image paths** and reporting all measurement parameters (especially differing memory and inference costs). The updated `src.benchmark` verifies equality of saved split manifests before emitting `comparison.csv` or `comparison.json`. This check is covered by offline tests, not by a completed PatchCore run.
 
 ## Research integrity
 
