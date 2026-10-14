@@ -12,23 +12,16 @@ The project now uses the canonical import namespace `ihsanvision`. The code was 
 
 ## Standard branch policy
 
-- `main` — intended canonical default branch and integration/release source. Code reaches `main` through reviewed pull requests with green CI.
+- `main` — **verified current GitHub default branch** and integration/release source. Code reaches `main` through reviewed pull requests with green CI.
 - `feature/<short-task>` — focused work branches originating at the latest `main`, opened as PRs back into `main`.
 - `MdNaim` — legacy default name from the initial repository setup, retained until migration and review are completed. Do not add new commits to it.
 - `feature/portfolio-production-pipeline` — historical integrated development work; PR #2 has now been merged into `main`; the historical feature branch remains for traceability. The branch can remain for traceability after merging.
 
 **Important:** GitHub's actual default branch is repository *metadata*, not determined by a `README.md` or `git branch -M` command on the maintainer's Mac. Setting a local branch name does **not** change the GitHub default.
 
-### Owner-only default branch switch
+### Default branch verified
 
-The validated source was merged into `main` through PR #2. The repository owner now needs to:
-
-1. On GitHub, open **Repository → Settings → General → Default branch** (UI wording may vary by GitHub version).
-2. Select the existing `main` branch and confirm **Update**.
-3. Confirm the repository header and clone default now point to `main`, and check that workflows/PRs target `main`.
-4. Do **not** delete legacy branches until you have verified no external forks, CI or local checkouts depend on them.
-
-This GitHub connector can read branch metadata, update PR bases and write code, but it has no repository-default-setting action in the current connection. Therefore treat the owner setting as a **separate manual step**.
+GitHub now reports **`main` as the default branch**. PR #2 and PR #3 are merged, and Python 3.11/3.12 CI passed on the integrated source. Preserve the old branches until any remaining single-branch Mac/Kaggle checkouts have migrated; there is no need to rewrite Git history.
 
 ### Local Mac migration
 
@@ -39,10 +32,11 @@ For an existing checkout that needs the new canonical package:
 ~~~bash
 cd ~/ihsanvision-portfolio
 git status -sb
+git fetch origin main:refs/remotes/origin/main
+git switch -c main --track origin/main  # only if local main does not exist
 git pull --ff-only
 source .venv/bin/activate
-python -m pip install -e . --no-deps
-python -m pytest -q
+python -m compileall -q ihsanvision src scripts tests
 ~~~
 
 Use `python -m uvicorn ihsanvision.api:app --host 127.0.0.1 --port 8002` when running from the updated environment; old `src.api:app` remains a compatibility route. If the port is taken, inspect its listener instead of terminating unknown processes.
@@ -50,12 +44,12 @@ Use `python -m uvicorn ihsanvision.api:app --host 127.0.0.1 --port 8002` when ru
 When ready to move development work to a new clean checkout on the default branch:
 
 ~~~bash
-git clone -b main https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection.git
+git clone https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection.git
 cd ihsanvision-ai-industrial-anomaly-detection
 git branch --show-current
 ~~~
 
-Do not assume `main` is the default until repository Settings has actually been updated.
+The default is verified as `main`; in single-branch historical clones, local refspecs may still need an explicit fetch.
 
 ## Tests and release gates
 
@@ -66,4 +60,4 @@ Do not assume `main` is the default until repository Settings has actually been 
 
 ## What is **not** included in the reorganization
 
-No dataset or model checkpoints were moved/committed. No actual MVTec images were redistributed, the Kaggle notebook was not rewritten, and the canonical/default GitHub setting is not automatically modified by file edits. No fabricated experiment metrics were introduced.
+No dataset or model checkpoints were moved/committed. No actual MVTec images were redistributed, the Kaggle notebook was not rewritten, and the default-branch switch was performed separately by the repository owner. No fabricated experiment metrics were introduced.
