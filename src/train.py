@@ -5,7 +5,8 @@ import platform
 import time
 
 from .config import (CATEGORIES, MODELS, TrainConfig, audit_splits,
-                     make_model, save_json, scalar_metrics, seed_everything)
+                     make_model, save_json, scalar_metrics, seed_everything,
+                     verify_reference_splits)
 
 def run(config: TrainConfig) -> dict:
     config.validate()
@@ -33,6 +34,8 @@ def run(config: TrainConfig) -> dict:
     )
     data.setup()
     manifest = audit_splits(data)
+    if config.reference_splits is not None:
+        verify_reference_splits(manifest, config.reference_splits)
     save_json(run_dir / "splits.json", manifest)
     model = make_model(config.model)
     engine = Engine(default_root_dir=str(run_dir / "engine"),
@@ -74,6 +77,8 @@ def main(argv=None) -> None:
     parser.add_argument("--eval-batch-size", type=int, default=8)
     parser.add_argument("--num-workers", type=int, default=0)
     parser.add_argument("--validation-ratio", type=float, default=0.2)
+    parser.add_argument("--reference-splits", type=Path,
+                        help="Optional persisted train/val/test manifest; require identical paths before fitting")
     parser.add_argument("--accelerator", default="auto",
                         choices=("auto", "cpu", "gpu", "mps", "cuda"))
     args = parser.parse_args(argv)
@@ -83,7 +88,7 @@ def main(argv=None) -> None:
         seed=args.seed, train_batch_size=args.train_batch_size,
         eval_batch_size=args.eval_batch_size,
         num_workers=args.num_workers, validation_ratio=args.validation_ratio,
-        accelerator=args.accelerator))
+        accelerator=args.accelerator, reference_splits=args.reference_splits))
     print(f"Checkpoint: {report['checkpoint']}")
     print(f"Test metrics: {report['evaluation']['metrics']}")
 
