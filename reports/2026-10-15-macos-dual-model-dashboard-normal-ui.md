@@ -30,6 +30,21 @@ Model discovery response:
 
 **What is not established:** The uploaded file's membership of the saved held-out test manifest has not been independently confirmed. One normal example per model does **not** establish accuracy, specificity, latency percentiles, segmentation quality or real-production behavior. The displayed raw scores are uncalibrated and **not directly comparable between PaDiM and PatchCore**. The two timings are one-off UI-reported prediction spans and should not be interpreted as a controlled speed benchmark.
 
+## Additional Safari observation — PaDiM defective bottle (screenshot dated 2026-10-15)
+
+A subsequent user-provided local Safari screenshot shows the same dashboard's **PaDiM** option selected with file `defective_bottle.png`. The observed values are:
+
+| Field | Observed |
+| --- | --- |
+| Selected model | PaDiM |
+| Uploaded filename shown | `defective_bottle.png` |
+| Raw anomaly score | `0.8633` |
+| Prediction | `Flagged anomaly` |
+| UI-reported prediction span | `674.09 ms` |
+| Overlay | Rendered; localized red highlighting near the visually damaged rim |
+
+This establishes **one observed positive classification** on a user-labeled defective bottle in the browser. The screenshot does not establish that the sample is in the saved held-out test manifest; pixel-level localization has not been compared to a ground-truth mask. This is not an accuracy, recall, cold-start or p95 benchmark. The corresponding **PatchCore result on the exact same defective file is still pending**. The underlying MVTec image is not committed.
+
 ## Next acceptance test
 
 Use the **same defective bottle image** in the browser for both model choices; record the predicted labels, raw scores, overlay behavior and the actual source image's membership of the saved held-out test manifest. Repeat a model switch to detect stale results or cache-routing issues. Do not reuse test samples for model selection or threshold tuning. Any future performance comparison requires a controlled warm/cold protocol and enough repeated trials.
