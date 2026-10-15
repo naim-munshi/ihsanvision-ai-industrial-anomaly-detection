@@ -13,6 +13,7 @@ import argparse
 import base64
 from io import BytesIO
 import json
+import os
 from pathlib import Path
 import urllib.error
 import urllib.parse
@@ -73,7 +74,11 @@ def smoke(base_url: str, payload: bytes, timeout: float = 180) -> dict:
     body, content_type = multipart_png(payload)
     request = urllib.request.Request(
         base + "/predict", data=body, method="POST",
-        headers={"Content-Type": content_type},
+        headers={
+            "Content-Type": content_type,
+            **({"X-IhsanVision-Key": os.environ["IHSANVISION_CLIENT_API_KEY"]}
+               if os.getenv("IHSANVISION_CLIENT_API_KEY") else {}),
+        },
     )
     with urllib.request.urlopen(request, timeout=timeout) as response:
         result = json.load(response)

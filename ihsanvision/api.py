@@ -5,10 +5,12 @@ import asyncio
 import logging
 import os
 import tempfile
+import time
+from uuid import uuid4
 from io import BytesIO
 from pathlib import Path
 
-from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from fastapi import FastAPI, File, Header, HTTPException, Query, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse
 from PIL import Image, UnidentifiedImageError
@@ -17,6 +19,7 @@ from .config import MODELS
 from .serving import PersistentModelPredictor
 from .predict import predict_image
 from .schemas import PredictionResponse
+from .security import GlobalSlidingWindow, positive_int_env, require_predict_key
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +107,30 @@ def create_app(predict_fn=None) -> FastAPI:
     # The default predictor lazily caches one checkpoint per process.
     # Serialize calls because Anomalib Engine/Trainer is not thread-safe.
     inference_semaphore = asyncio.Semaphore(1)
+    # A small per-process admission budget prevents an unbounded ML work queue.
+    admission_semaphore = asyncio.BoundedSemaphore(
+        positive_int_env("IHSANVISION_MAX_PENDING", 2, 100)
+    )
+    queue_timeout = float(os.getenv("IHSANVISION_QUEUE_TIMEOUT_SECONDS", "1.0"))
+    if not 0 < queue_timeout <= 30:
+        raise ValueError("IHSANVISION_QUEUE_TIMEOUT_SECONDS must be in (0, 30]")
+    limiter = GlobalSlidingWindow(
+        positive_int_env("IHSANVISION_RATE_LIMIT_PER_MINUTE", 120, 10000)
+    )
+
+    @app.middleware("http")
+    async def request_audit(request: Request, call_next):
+        request_id = uuid4().hex
+        started = time.perf_counter()
+        response = await call_next(request)
+        response.headers["X-Request-ID"] = request_id
+        # Never log body bytes, full URLs/queries, filenames, auth headers or scores.
+        logger.info(
+            "request_id=%s method=%s endpoint=%s status=%s duration_ms=%.2f",
+            request_id, request.method, request.url.path,
+            response.status_code, (time.perf_counter() - started) * 1000
+        )
+        return response
 
     @app.get("/")
     def home():
@@ -127,7 +154,12 @@ def create_app(predict_fn=None) -> FastAPI:
         }
 
     @app.post("/predict", response_model=PredictionResponse)
-    async def predict(file: UploadFile = File(...), model: str | None = Query(default=None)):
+    async def predict(
+        file: UploadFile = File(...),
+        model: str | None = Query(default=None),
+        api_key: str | None = Header(default=None, alias="X-IhsanVision-Key"),
+    ):
+        require_predict_key(api_key)
         if model is not None and model not in MODELS:
             raise HTTPException(400, "Unsupported model. Choose padim or patchcore.")
         configured = _configured_checkpoints()
@@ -136,6 +168,21 @@ def create_app(predict_fn=None) -> FastAPI:
             raise HTTPException(503, "Requested model has no trusted checkpoint configured")
         checkpoint = configured[model_name]
 
+        await limiter.require_slot()
+        try:
+            await asyncio.wait_for(admission_semaphore.acquire(), timeout=queue_timeout)
+        except asyncio.TimeoutError:
+            raise HTTPException(
+                503, "Inference capacity temporarily exhausted",
+                headers={"Retry-After": "1"}
+            ) from None
+
+        try:
+            return await _predict_admitted(file, checkpoint, model_name)
+        finally:
+            admission_semaphore.release()
+
+    async def _predict_admitted(file: UploadFile, checkpoint: Path, model_name: str):
         payload = await file.read(MAX_UPLOAD + 1)
         if not payload:
             raise HTTPException(400, "Empty upload")

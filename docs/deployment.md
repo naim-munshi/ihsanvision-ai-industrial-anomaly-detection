@@ -6,11 +6,13 @@ The FastAPI service and responsive browser dashboard are implemented. Automated 
 
 The current server offloads synchronous Anomalib execution to a worker thread, so the event loop can answer health requests. A semaphore allows **one inference at a time per worker process**. A **new experimental lazy in-memory cache** loads the operator's trusted model checkpoint on the first request and attempts to reuse that same Engine/model instance for subsequent requests in the same process.
 
-**PaDiM caching has now been verified with the user's real Mac checkpoint** (see the recorded first/reused pair), although PatchCore, multi-worker reuse and load-test behavior are still unverified. The previous cold-inference route is still available by setting `IHSANVISION_MODEL_CACHE=0` **before starting Uvicorn**. Changing the environment variable in another shell does not update an existing server process. No bounded request queue, authentication, rate limiting or scale-out capacity exists.
+**PaDiM caching has now been verified with the user's real Mac checkpoint** (see the recorded first/reused pair), although PatchCore, multi-worker reuse and load-test behavior are still unverified. The previous cold-inference route is still available by setting `IHSANVISION_MODEL_CACHE=0` **before starting Uvicorn**. Changing the environment variable in another shell does not update an existing server process. A local-only security baseline now adds optional shared-key authentication, a process-global 60-second rate cap, a finite admission budget, and scrubbed request ID audit logs. These controls do not establish internet-safe deployment, account authorization, distributed quotas or scale-out capacity.
 
 Only bind the service to `127.0.0.1` for initial validation. Do **not** expose this prototype directly to the public internet.
 
 ## Local startup
+
+For optional API-key authentication, configurable per-process rate limits/admission, client header handling and the remaining cloud-security gaps, see [the security baseline](security-baseline.md). The browser sends a key only in an HTTP header, and the localhost CLI tools can read IHSANVISION_CLIENT_API_KEY. Public exposure requires gateway TLS, pre-multipart authentication/body limits and additional infrastructure.
 
 Requirements: Python 3.11/3.12, installed dependencies from `requirements.txt` and a checkpoint **you trust** from the matching model.
 
@@ -102,10 +104,10 @@ The service validates common image formats (PNG, JPEG, WEBP, BMP) by actual cont
 
 **Not suitable for public deployment as is**:
 
-- No API authentication, account management, tenant isolation or rate limiting.
+- An optional shared API key, per-process global rate limit, finite admission and audit request IDs are implemented. They are **not enabled by default for localhost**, and do not provide account management, tenant isolation, distributed quotas, external TLS or public gateway security.
 - Real-Mac-verified PaDiM per-process cache, but without PatchCore, multi-worker, high-load verification, model registry or safe hot-reload lifecycle.
-- Only per-process serialized inference; no bounded queue, streaming limits, monitoring dashboards or service-level objectives.
-- No structured audit logs or user privacy retention policy.
+- Per-process serialized inference and finite application admission exist; the FastAPI multipart parser still processes request bodies before endpoint authentication/admission. No reverse-proxy upload limits, distributed queue, monitoring dashboards or service-level objectives.
+- Minimal scrubbed request-ID audit lines exist; no comprehensive user privacy retention policy or SIEM integration has been reviewed.
 - No hosted deployment smoke test or disaster recovery procedure.
 
 **Never accept arbitrary model/checkpoint files from clients.** A serialized Lightning/PyTorch checkpoint can run code during deserialization. The server must load only a model artifact from a trusted location selected by the operator; it must not be configured by an untrusted HTTP request.

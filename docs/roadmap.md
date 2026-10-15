@@ -13,7 +13,7 @@ This is a **state-based roadmap**, not an assertion that all systems are already
 | M5 | PatchCore comparison on same dataset/protocol | **Kaggle run and smoke passed; Mac archived benchmark audit succeeded** | Eight hashes OK; generated summary from saved comparisons/reports/manifests; separate smoke ZIP integrity passed |
 | M6 | Real FastAPI + browser demo against trusted model | **PaDiM normal/defective and dual-model normal-image UI demonstrated** | New Mac screenshots: both model options predict normal with heatmaps on same displayed filename; defective dual-model follow-up and sample split audit pending |
 | M7 | Persistent serving, tests and performance profiling | **Sequential profiler implemented; real Mac execution pending** | Historical 10-request PaDiM sample; new repeatable p50/p95 HTTP client profiler with mocked CI coverage, no concurrency or memory results yet |
-| M8 | Authentication, rate limit, audit logging | **Pending** | Security tests and privacy policy |
+| M8 | Authentication, rate limit, audit logging | **Local-process baseline implemented; deployment validation pending** | Optional shared API key, global per-process rate cap, finite admission and request ID logs tested offline; identity, proxy/TLS, secrets and load tests pending |
 | M9 | Container packaging and hosted demo | **Pending** | Verified deployment, CI release and rollback |
 | M10 | Portfolio release | **Pending** | Demonstration, figures, reproducibility package and review |
 
@@ -39,7 +39,7 @@ The Mac preflight, checkpoint-backed HTTP API smoke test and a pair of cached re
 
 ### Priority 4 — Improve engineering robustness
 
-A persistent model instance is implemented and observed working with real PaDiM. The `/predict` response now has a Pydantic/OpenAPI schema that rejects invalid scores and latency. Continue with request IDs, structured logs, configurable settings, response timeouts, and upload throttling. Expand integration tests to real-model checks in a dedicated environment.
+A persistent model instance is implemented and observed working with real PaDiM. The `/predict` response now has a Pydantic/OpenAPI schema that rejects invalid scores and latency. Initial request IDs and scrubbed audit logs, optional shared-key authentication, rate cap and admission timeout are implemented in the [local security baseline](security-baseline.md). Continue with gateway upload controls, typed settings, full trace/profiling, account-aware quotas, privacy and cloud-ready operations. Expand integration tests to real-model checks in a dedicated environment.
 
 **Definition of done:** Repeatable p50/p95 load benchmark with documented CPU/GPU and concurrency; no unsafe checkpoint upload path.
 
