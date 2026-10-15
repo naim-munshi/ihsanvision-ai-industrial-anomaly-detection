@@ -115,7 +115,7 @@ def create_app(predict_fn=None) -> FastAPI:
     if not 0 < queue_timeout <= 30:
         raise ValueError("IHSANVISION_QUEUE_TIMEOUT_SECONDS must be in (0, 30]")
     limiter = GlobalSlidingWindow(
-        positive_int_env("IHSANVISION_RATE_LIMIT_PER_MINUTE", 30, 10000)
+        positive_int_env("IHSANVISION_RATE_LIMIT_PER_MINUTE", 120, 10000)
     )
 
     @app.middleware("http")
