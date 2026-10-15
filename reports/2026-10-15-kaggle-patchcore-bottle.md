@@ -2,7 +2,7 @@
 
 ## Evidence status
 
-**Source:** User-provided Kaggle notebook console output on 2026-10-15 (JST). It shows the completion of a real Anomalib 2.5.0 PatchCore fit and held-out evaluation. The raw `comparison.json`, PatchCore `report.json`, `splits.json`, and `model.ckpt` have **not yet been independently copied into or inspected from this source repository**. This report therefore records **observed console evidence**, not an independently archived or replicated result.
+**Source:** User-provided Kaggle notebook console output on 2026-10-15 (JST). It shows a real Anomalib 2.5.0 PatchCore fit, held-out evaluation, and checkpoint-backed smoke inference. Later the user downloaded a Kaggle ZIP and extracted it on their Mac; a macOS `shasum -a 256 -c SHA256SUMS.txt` check returned `OK` for all eight backed-up model/comparison files. The checkpoint binaries and raw JSON **remain outside the public source repository**, and their report contents have not yet been independently cross-checked by the offline summary utility. The original metrics are **console-observed**; the archive is checksum-verified against its bundled manifest, not independently reproduced.
 
 The notebook ended with the following messages:
 
@@ -46,13 +46,38 @@ PatchCore's numerical advantage in this *particular held-out split* is a measure
 - Checkpoint was reloaded for testing, and `comparison.csv` was reported saved.
 - The coreset-selection duration is **not** the complete training time. The two models' training times came from separate sessions and are not directly comparable as a controlled speed benchmark.
 
+## 2026-10-15 follow-up: Mac archive verification and real-image inference
+
+A saved Kaggle output archive, `ihsanvision_benchmark_backup.zip`, was reported as **389.04 MB**, containing eight data/model files plus `SHA256SUMS.txt`. `unzip -t` reported no compressed-data errors. After extracting it into `~/ihsanvision-artifacts/benchmark-bottle-seed42-2026-10-15/`, the user ran `shasum -a 256 -c SHA256SUMS.txt` and all eight entries returned `OK`:
+
+- PaDiM `model.ckpt`, `report.json`, `splits.json`.
+- PatchCore `model.ckpt`, `report.json`, `splits.json`.
+- `comparison.json` and `comparison.csv`.
+
+The bundled manifest is an internal integrity reference; this check alone does **not** independently validate scientific correctness, model security, provenance or the numeric contents of the JSON reports.
+
+The user also executed `scripts.kaggle_smoke_test` for `patchcore` on the saved held-out test manifest. The Kaggle output reports:
+
+| Single-image smoke field | Observed value |
+| --- | --- |
+| Defective held-out input | `/kaggle/input/datasets/ipythonx/mvtec-ad/bottle/test/broken_large/000.png` |
+| Checkpoint | `/kaggle/working/ihsanvision_runs/patchcore-bottle-seed42/model.ckpt` |
+| Predicted anomaly | `true` |
+| Raw anomaly score | `0.9287775754928589` |
+| One-shot inference duration | `4174.69 ms` |
+| Split counts | Train 209 / validation 16 / test 67 |
+| Status | `single-image-inference-passed` |
+| Saved artifacts | `smoke_report.json`, `smoke_overlay.png` |
+
+The user-provided output shows that Lightning loaded the saved model weights and that a valid overlay PNG was generated. The timing includes checkpoint loading overhead and is **not a warm inference speed benchmark**. The score is not a calibrated probability. The newly produced smoke evidence was not part of the first ZIP and still needs a durable private backup.
+
 ## Required follow-up before portfolio publication
 
-1. Preserve **both** checkpoints, reports and split manifests, plus `comparison.json` and `comparison.csv`, outside ephemeral Kaggle `/working` (prefer private storage and a local backup).
-2. Revalidate `comparison.json` and original reports with `python -m scripts.summarize_comparison --runs-dir ...` after updating a local checkout to contain PR #5.
-3. Record hardware/environment provenance via `scripts.environment_snapshot` (PR #6), making clear when it was captured.
-4. Run a separate held-out defective-image PatchCore checkpoint smoke test and archive the overlay. This is **not** equivalent to metric verification.
-5. Avoid uploading MVTec images or Lightning checkpoint binaries into this public source repository.
+1. Keep the Mac ZIP **and extracted checksum-verified files** in private durable storage. Preserve the independent original PaDiM backup too; do not upload checkpoints or MVTec images to public GitHub.
+2. Revalidate `comparison.json` against both saved model reports and exact split manifests with `python -m scripts.summarize_comparison --runs-dir ...` from an updated `main` checkout; this is still pending.
+3. Save the new PatchCore `smoke_report.json` and `smoke_overlay.png` privately before the Kaggle session expires (these files were generated **after** the 389 MB ZIP).
+4. Record hardware/runtime provenance using `scripts.environment_snapshot`; a current snapshot cannot prove the previous PaDiM environment.
+5. Run further independent-sample and deployment tests, including multi-category and multiple-seed analysis. One positive smoke prediction is **qualitative evidence**, not recall or robustness evidence.
 
 ## Evaluation cautions
 
