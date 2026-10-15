@@ -17,7 +17,7 @@
 | Sequential inference latency | 10 reused requests, p50 **135.78 ms**, nearest-rank p95 **1,244.62 ms** | Preliminary, not a load test |
 | PatchCore / PaDiM comparison | PatchCore image AUROC **1.0000**, image F1 **0.9901**, pixel AUROC **0.9857**, pixel F1 **0.7102** | Completed Kaggle log; macOS artifact checksum backup verified |
 | PatchCore checkpoint smoke test | Held-out defective bottle, anomaly detected, overlay generated | Verified in Kaggle; smoke evidence ZIP downloaded and integrity-tested on Mac |
-| Real Mac dual-model dashboard | Both models predicted normal for `normal_bottle.png`, rendered overlays | Observed in Safari; defective dual-model UI test pending |
+| Real Mac dual-model dashboard | Both models predicted normal for `normal_bottle.png`; PaDiM flagged `defective_bottle.png` with an overlay | Observed in Safari; PatchCore on same defective file still pending |
 | Automated code checks | Python 3.11 and 3.12 | GitHub Actions |
 
 These performance and AUROC numbers come from **different protocols and purposes**. The dataset evaluation held out 16 images from MVTec's official test directory for validation, leaving **67 test images**. It is **not directly comparable with the full-test MVTec leaderboard**. The browser examples and synthetic API smoke input must not be presented as additional accuracy measurements.
