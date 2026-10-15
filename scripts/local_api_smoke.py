@@ -13,6 +13,7 @@ import argparse
 import base64
 from io import BytesIO
 import json
+import os
 from pathlib import Path
 import urllib.error
 import urllib.parse
