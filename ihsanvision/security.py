@@ -37,7 +37,7 @@ def require_predict_key(supplied: str | None) -> None:
 class GlobalSlidingWindow:
     """Memory-bounded global 60-second request limit for a *single* process."""
 
-    def __init__(self, limit: int = 30, interval: float = 60.0):
+    def __init__(self, limit: int = 120, interval: float = 60.0):
         if limit < 1 or interval <= 0:
             raise ValueError("Invalid rate limit")
         self.limit = limit
