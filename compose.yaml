@@ -1,0 +1,31 @@
+# Local-only smoke deployment; never route directly to the public internet.
+services:
+  ihsanvision:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      IHSANVISION_PADIM_CHECKPOINT: /models/padim-bottle-seed42/model.ckpt
+      IHSANVISION_PATCHCORE_CHECKPOINT: /models/patchcore-bottle-seed42/model.ckpt
+      IHSANVISION_MODEL: padim
+      IHSANVISION_API_KEY: "${IHSANVISION_API_KEY:?Set a strong private inference key}"
+      IHSANVISION_RATE_LIMIT_PER_MINUTE: "120"
+      IHSANVISION_MAX_PENDING: "2"
+      IHSANVISION_QUEUE_TIMEOUT_SECONDS: "1"
+    volumes:
+      - type: bind
+        source: "${IHSANVISION_MODELS_DIR:?Set the absolute private model artifact directory}"
+        target: /models
+        read_only: true
+    user: "10001:10001"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,size=1g
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    restart: "no"
