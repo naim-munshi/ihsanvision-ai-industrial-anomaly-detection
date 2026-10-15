@@ -77,9 +77,18 @@ For each *new* experiment log:
 4. Inference latency p50/p95 under an explicitly defined warm/cold setup.
 5. A visual comparison of original image, ground-truth mask and predicted heatmap.
 
-## Upcoming comparisons
+## Observed PatchCore/bottle comparison (2026-10-15)
 
-PatchCore/bottle and additional categories are **pending**. The benchmark script exists but no legitimate PatchCore performance data is included. Comparisons require the **same category and exact train/validation/test image paths** and reporting all measurement parameters (especially differing memory and inference costs). The updated `src.benchmark` verifies equality of saved split manifests before emitting `comparison.csv` or `comparison.json`. This check is covered by offline tests, not by a completed PatchCore run.
+The user-provided Kaggle console output shows completed **PatchCore** training, saved-checkpoint reload, held-out evaluation, and `comparison.csv` creation; the PaDiM checkpoint hash equality check also passed. The source repository does **not** yet contain the new run's JSON records or checkpoint; see the [observed evidence report](../reports/2026-10-15-kaggle-patchcore-bottle.md) for provenance and limits.
+
+| Metric | Earlier PaDiM | Newly observed PatchCore |
+| --- | ---: | ---: |
+| Image AUROC | 0.9963235855 | **1.0000000000** |
+| Image F1 | 0.9591836929 | **0.9900990129** |
+| Pixel AUROC | 0.9767602682 | **0.9856935740** |
+| Pixel F1 | 0.6497339010 | **0.7102153301** |
+
+The completed benchmark orchestrator requires identical recorded train/validation/test paths before publishing the comparison. This supports protocol consistency, though source reports and split manifests still require independent verification from a durable backup. Results reflect a single category and seed with validation images held out from the original test directory. They are **not** directly comparable to published full-test MVTec leaderboard scores. Coreset selection took 49 min 8 sec on CPU; this is not total train time and does not establish a controlled PaDiM/PatchCore speed comparison. Future work: archival, held-out smoke test, multiple seeds and categories.
 
 ## Research integrity
 
