@@ -8,7 +8,7 @@ The current server offloads synchronous Anomalib execution to a worker thread, s
 
 **PaDiM caching has now been verified with the user's real Mac checkpoint** (see the recorded first/reused pair), although PatchCore, multi-worker reuse and load-test behavior are still unverified. The previous cold-inference route is still available by setting `IHSANVISION_MODEL_CACHE=0` **before starting Uvicorn**. Changing the environment variable in another shell does not update an existing server process. A local-only security baseline now adds optional shared-key authentication, a process-global 60-second rate cap, a finite admission budget, and scrubbed request ID audit logs. These controls do not establish internet-safe deployment, account authorization, distributed quotas or scale-out capacity.
 
-Only bind the service to `127.0.0.1` for initial validation. Do **not** expose this prototype directly to the public internet.
+Only bind the service to `127.0.0.1` for initial validation. Do **not** expose this prototype directly to the public internet. A [localhost Docker Compose configuration](container-deployment.md) now exists with external readonly model mounts, a nonroot runtime and a required shared key; **real image build and container inference remain unverified**.
 
 ## Local startup
 
