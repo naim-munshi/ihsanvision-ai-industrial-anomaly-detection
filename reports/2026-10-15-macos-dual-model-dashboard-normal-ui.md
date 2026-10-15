@@ -43,10 +43,32 @@ A subsequent user-provided local Safari screenshot shows the same dashboard's **
 | UI-reported prediction span | `674.09 ms` |
 | Overlay | Rendered; localized red highlighting near the visually damaged rim |
 
-This establishes **one observed positive classification** on a user-labeled defective bottle in the browser. The screenshot does not establish that the sample is in the saved held-out test manifest; pixel-level localization has not been compared to a ground-truth mask. This is not an accuracy, recall, cold-start or p95 benchmark. The corresponding **PatchCore result on the exact same defective file is still pending**. The underlying MVTec image is not committed.
+This establishes **one observed positive classification** on a user-labeled defective bottle in the browser. The screenshot does not establish that the sample is in the saved held-out test manifest; pixel-level localization has not been compared to a ground-truth mask. This is not an accuracy, recall, cold-start or p95 benchmark. A subsequent screenshot dated 2026-10-16 now shows the **PatchCore** result for a browser upload with the same visible filename `defective_bottle.png`; see the next section. The underlying MVTec image is not committed.
 
-## Next acceptance test
+## Additional Safari observation — PatchCore defective bottle (screenshot dated 2026-10-16)
 
-Use the **same defective bottle image** in the browser for both model choices; record the predicted labels, raw scores, overlay behavior and the actual source image's membership of the saved held-out test manifest. Repeat a model switch to detect stale results or cache-routing issues. Do not reuse test samples for model selection or threshold tuning. Any future performance comparison requires a controlled warm/cold protocol and enough repeated trials.
+The user provided a subsequent Safari screenshot of the locally served dashboard showing the **PatchCore** option selected with file `defective_bottle.png`. The displayed results are:
+
+| Field | Observed |
+| --- | --- |
+| Selected model | PatchCore |
+| Uploaded filename shown | `defective_bottle.png` |
+| Raw anomaly score | `0.9288` |
+| Prediction | `Flagged anomaly` |
+| UI-reported prediction span | `565.47 ms` |
+| Overlay | Rendered; strong red highlighting near the visibly damaged right/lower rim |
+
+### Four browser-observed examples across both models
+
+| Browser input (visible filename) | PaDiM | PatchCore |
+| --- | --- | --- |
+| `normal_bottle.png` | Predicted normal; score `0.3637`, `611.68 ms` | Predicted normal; score `0.1275`, `694.3 ms` |
+| `defective_bottle.png` | Flagged anomaly; score `0.8633`, `674.09 ms` | Flagged anomaly; score `0.9288`, `565.47 ms` |
+
+**Scope:** Four positive browser UI observations cover both model choices on normal and defective *named* inputs and their localization overlays. The two defect screenshots show matching filename and visually similar input, but the images' byte-identical provenance and saved test-split membership have **not** been independently checked. This does not replace the formal four-request acceptance harness `scripts.dual_model_acceptance`; that harness has not yet been reported as executed on the Mac. These are not estimates of generalization, classification accuracy, pixel IoU or statistical serving performance. Model scores are uncalibrated and non-comparable; the one-off durations do not establish a faster model.
+
+## Remaining M6 acceptance gates
+
+Run the four-request local acceptance harness on the same two user-owned files, retain the resulting SHA-256 report in private storage, verify the inputs' source/split provenance against saved manifests, and inspect errors and heatmap alignment manually. Repeat model switching as an error-state/cache-routing check. Do not tune model or thresholds to the held-out test set. Any future performance comparison requires controlled warm/cold runs with enough trials.
 
 Avoid committing MVTec AD test images or proprietary checkpoint binaries to the repository.
