@@ -77,7 +77,7 @@ GitHub is the source of truth for code and documentation. The dataset and large 
 
 **Inference response:** A raw anomaly score (not calibrated probability), an optional boolean predicted anomaly, inference duration, and optionally a base64 PNG overlay. No bounding boxes or calibrated pixel-level segmentation claims are made.
 
-**Service API:** `GET /health`, `GET /` and `POST /predict`. See [deployment/API details](deployment.md).
+**Service API:** `GET /health`, `GET /models`, `GET /`, and `POST /predict` (optional server-allowlisted `?model=padim|patchcore`). Local checkpoint paths come exclusively from server environment variables, never from browser inputs. See [development.md](development.md#configure-both-model-choices).
 
 ## Design decisions
 
@@ -95,7 +95,7 @@ MVTec AD does not have a separate validation directory by default. The current i
 
 ### Prototype limitations
 
-- The current FastAPI process lazily loads a trusted checkpoint, then **reuses the model/Engine for repeated requests** under a per-process inference semaphore. The initial request includes restoration cost; subsequent warm requests do not normally reload model weights. An environment flag (`IHSANVISION_MODEL_CACHE=0`) restores the original cold-loading path. Multi-worker and PatchCore cache behavior have not been validated.
+- The current FastAPI process lazily loads a trusted checkpoint, then **reuses the model/Engine for repeated requests** under a per-process inference semaphore. The initial request includes restoration cost; subsequent warm requests do not normally reload model weights. The dashboard can select PaDiM or PatchCore only when a trusted checkpoint is configured on the server; changing models evicts the one cached model and incurs a reload. An environment flag (`IHSANVISION_MODEL_CACHE=0`) restores the original cold-loading path. Multi-worker and PatchCore cache behavior have not been validated on Mac.
 - API has no authentication, rate limiting or queueing; external deployment is not yet advised.
 - Experiment backend is Anomalib 2.5.0; upgrading versions may affect checkpoint compatibility.
 - CPU-only Kaggle runs do not establish accelerator portability.

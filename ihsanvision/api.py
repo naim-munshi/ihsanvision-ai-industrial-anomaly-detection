@@ -8,7 +8,7 @@ import tempfile
 from io import BytesIO
 from pathlib import Path
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse
 from PIL import Image, UnidentifiedImageError
@@ -26,6 +26,44 @@ UI = Path(__file__).resolve().parents[1] / "demo" / "index.html"
 
 
 IMAGE_SUFFIXES = {"PNG": ".png", "JPEG": ".jpg", "WEBP": ".webp", "BMP": ".bmp"}
+
+
+def _configured_checkpoints() -> dict[str, Path]:
+    """Resolve trusted server-side checkpoints; clients never supply paths.
+
+    The original IHSANVISION_CHECKPOINT + IHSANVISION_MODEL configuration
+    remains supported. Explicit per-model settings take precedence.
+    """
+    configured: dict[str, Path] = {}
+    legacy_model = os.getenv("IHSANVISION_MODEL", "padim").strip().lower()
+    legacy_path = os.getenv("IHSANVISION_CHECKPOINT", "").strip()
+    if legacy_model in MODELS and legacy_path:
+        candidate = Path(legacy_path).expanduser()
+        if candidate.is_file() and candidate.suffix.lower() == ".ckpt":
+            configured[legacy_model] = candidate
+
+    for name in MODELS:
+        configured_path = os.getenv(f"IHSANVISION_{name.upper()}_CHECKPOINT")
+        if configured_path is None:
+            continue
+        # An explicitly configured path must not silently fall back to the
+        # legacy path if it is missing or invalid.
+        configured.pop(name, None)
+        if configured_path.strip():
+            candidate = Path(configured_path.strip()).expanduser()
+            if candidate.is_file() and candidate.suffix.lower() == ".ckpt":
+                configured[name] = candidate
+    return configured
+
+
+def _default_model(configured: dict[str, Path]) -> str | None:
+    preferred = os.getenv("IHSANVISION_MODEL", "padim").strip().lower()
+    if preferred in configured:
+        return preferred
+    for name in MODELS:
+        if name in configured:
+            return name
+    return None
 
 
 def _validate_image(payload: bytes) -> str:
@@ -73,20 +111,30 @@ def create_app(predict_fn=None) -> FastAPI:
 
     @app.get("/health")
     def health():
-        checkpoint = os.getenv("IHSANVISION_CHECKPOINT", "")
+        configured = _configured_checkpoints()
         return {
             "status": "ok",
-            "model_configured": bool(checkpoint and Path(checkpoint).is_file()),
+            "model_configured": bool(configured),
+        }
+
+    @app.get("/models")
+    def models():
+        """Expose model availability without disclosing local checkpoint paths."""
+        configured = _configured_checkpoints()
+        return {
+            "available_models": [name for name in MODELS if name in configured],
+            "default_model": _default_model(configured),
         }
 
     @app.post("/predict", response_model=PredictionResponse)
-    async def predict(file: UploadFile = File(...)):
-        checkpoint = os.getenv("IHSANVISION_CHECKPOINT")
-        model_name = os.getenv("IHSANVISION_MODEL", "padim").lower()
-        if not checkpoint or not Path(checkpoint).is_file() or model_name not in MODELS:
-            raise HTTPException(
-                503, "Set IHSANVISION_CHECKPOINT to a trusted local .ckpt and IHSANVISION_MODEL"
-            )
+    async def predict(file: UploadFile = File(...), model: str | None = Query(default=None)):
+        if model is not None and model not in MODELS:
+            raise HTTPException(400, "Unsupported model. Choose padim or patchcore.")
+        configured = _configured_checkpoints()
+        model_name = model if model is not None else _default_model(configured)
+        if model_name is None or model_name not in configured:
+            raise HTTPException(503, "Requested model has no trusted checkpoint configured")
+        checkpoint = configured[model_name]
 
         payload = await file.read(MAX_UPLOAD + 1)
         if not payload:
@@ -102,7 +150,7 @@ def create_app(predict_fn=None) -> FastAPI:
         async with inference_semaphore:
             try:
                 return await run_in_threadpool(
-                    _run_prediction, payload, suffix, Path(checkpoint), model_name, predict_fn
+                    _run_prediction, payload, suffix, checkpoint, model_name, predict_fn
                 )
             except Exception:
                 logger.exception("Prediction failed")

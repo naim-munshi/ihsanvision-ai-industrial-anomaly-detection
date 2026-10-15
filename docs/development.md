@@ -139,6 +139,21 @@ Use the **same port** for Uvicorn, the dashboard and the smoke script. If port 8
 
 Blocking inference runs in a threadpool; a per-process semaphore serializes model execution while a trusted checkpoint can be reused within the same server process.
 
+#### Configure both model choices
+
+The dashboard discovers available checkpoints using `GET /models`. Set **trusted local paths on the server** (never in a browser request):
+
+~~~bash
+export IHSANVISION_PADIM_CHECKPOINT="$HOME/ihsanvision-artifacts/benchmark-bottle-seed42-2026-10-15/padim-bottle-seed42/model.ckpt"
+export IHSANVISION_PATCHCORE_CHECKPOINT="$HOME/ihsanvision-artifacts/benchmark-bottle-seed42-2026-10-15/patchcore-bottle-seed42/model.ckpt"
+export IHSANVISION_MODEL=padim
+python -m uvicorn ihsanvision.api:app --host 127.0.0.1 --port 8002
+~~~
+
+Now the UI displays **PaDiM** and **PatchCore** if both files exist. `GET /models` returns `available_models` and `default_model` without checkpoint paths, and `POST /predict?model=patchcore` loads the server-configured PatchCore weights. Without a model query, `POST /predict` uses the preferred available default. `IHSANVISION_CHECKPOINT` with `IHSANVISION_MODEL` still supports the original single-model launch; explicit per-model checkpoint settings take precedence, and invalid/missing configured files remain unavailable. A request for an unsupported model returns HTTP 400; a supported but unconfigured model returns HTTP 503.
+
+The current in-process cache keeps **one checkpoint/model pair**; switching resets it, trading loading latency for bounded model memory. Keep the API bound to localhost until authentication, rate limits and deployment hardening are added. Score units/thresholds can differ across model families; do not compare raw scores directly. The current CI covers API routing via fake predictors. **End-to-end Mac PatchCore dashboard testing is pending**.
+
 ## Contribution procedure
 
 1. Keep changes in a focused branch; submit a PR to `main` and avoid committing to legacy branches.

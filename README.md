@@ -46,6 +46,19 @@ python -m uvicorn ihsanvision.api:app --host 127.0.0.1 --port 8002
 
 Open **http://127.0.0.1:8002/** for the interface and **http://127.0.0.1:8002/docs** for OpenAPI documentation.
 
+### Optional: select between PaDiM and PatchCore on the dashboard
+
+To make both **locally trusted** checkpoints available in the model dropdown, use these server-side environment variables instead of the legacy single-checkpoint variable:
+
+~~~bash
+export IHSANVISION_PADIM_CHECKPOINT="$HOME/ihsanvision-artifacts/benchmark-bottle-seed42-2026-10-15/padim-bottle-seed42/model.ckpt"
+export IHSANVISION_PATCHCORE_CHECKPOINT="$HOME/ihsanvision-artifacts/benchmark-bottle-seed42-2026-10-15/patchcore-bottle-seed42/model.ckpt"
+export IHSANVISION_MODEL=padim
+python -m uvicorn ihsanvision.api:app --host 127.0.0.1 --port 8002
+~~~
+
+Run Uvicorn from a checkout with this feature (after merging, from updated `main`). The existing `IHSANVISION_CHECKPOINT` setting remains supported for single-model users. `GET /models` publishes available model **names only**, never local paths. The browser sends `POST /predict?model=padim` or `?model=patchcore`; unconfigured models are refused. Switching between model types incurs checkpoint reload in the current one-session cache, so first-request latency can be higher. Model scores are uncalibrated and **must not be compared directly across model families**.
+
 From another terminal, run the synthetic API smoke check:
 
 ~~~bash
@@ -140,6 +153,6 @@ CI validates packaging imports, canonical/legacy entry points, API contracts, le
 - MVTec AD dataset rights are distinct from repository source rights. **No dataset images or model binaries are redistributed here.**
 - A source-code license **has not yet been selected**; do not assume code is licensed for unrestricted reuse.
 - Before hosting publicly: implement appropriate authentication, rate limits, request-admission controls, observability and deployment isolation.
-- Pending: independent JSON-content audit, separate PatchCore smoke-overlay/report backup, multiple-seed/robustness analysis, error-state UI QA, and a reviewed portfolio release.
+- Pending: real Mac API/UI validation of the dual-model selector (mocked CI tests are not real checkpoint tests), multiple-seed/robustness analysis, error-state UI QA, and a reviewed portfolio release.
 
 The default branch is `main`. Future changes follow `main` → short-lived `feature/*` or `chore/*` branch → pull request → CI → `main`.
