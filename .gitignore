@@ -11,6 +11,9 @@ results/
 *.bin
 *.log
 .env
+.env.*
+!.env.example
+!.env.docker.example
 .venv/
 venv/
 __pycache__/
