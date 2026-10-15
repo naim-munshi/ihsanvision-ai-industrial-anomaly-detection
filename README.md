@@ -150,6 +150,7 @@ CI validates packaging imports, canonical/legacy entry points, API contracts, le
 - [Sequential localhost serving profiler and methodology](docs/serving-benchmark.md)
 - [Inference API security baseline and limitations](docs/security-baseline.md)
 - [Local-only Docker Compose packaging and verification gates](docs/container-deployment.md)
+- [Read-only benchmark/smoke archive audit and portfolio release gates](docs/portfolio-release-readiness.md)
 - [Deployment, limitations and security](docs/deployment.md)
 - [Milestones and acceptance criteria](docs/roadmap.md)
 - [Repository structure and branch conventions](docs/repository-structure.md)
@@ -172,6 +173,6 @@ CI validates packaging imports, canonical/legacy entry points, API contracts, le
 - MVTec AD dataset rights are distinct from repository source rights. **No dataset images or model binaries are redistributed here.**
 - A source-code license **has not yet been selected**; do not assume code is licensed for unrestricted reuse.
 - For local demos, optional shared API-key authentication, per-process rate limiting, bounded admission and scrubbed request-id audit records are implemented. These **do not** replace TLS, gateway body limits, distributed quotas, identity/tenant authorization or container/network isolation. See the [security baseline](docs/security-baseline.md). Do not expose the local prototype publicly.
-- Pending: real Mac execution of M6 four-request acceptance and M7 serving profiler, **actual container build and inference validation** for M9, multi-seed/robustness analysis, concurrent load/memory testing, error-state UI QA and reviewed portfolio release. Docker files are a packaging proposal, **not a successful hosted deployment**. Real Mac model selection and normal-image inference have been observed, not just mocked.
+- Pending: real Mac execution of M6 four-request acceptance, M7 serving profiler and **M10 private evidence verification**, plus actual M9 Docker build/inference, multi-seed robustness, concurrent load/memory, error-state QA and a user-approved license/release. Packaging and a release gate are implemented, **not a successful hosted/public release**. Real Mac model selection and normal-image inference have been observed, not just mocked.
 
 The default branch is `main`. Future changes follow `main` → short-lived `feature/*` or `chore/*` branch → pull request → CI → `main`.
