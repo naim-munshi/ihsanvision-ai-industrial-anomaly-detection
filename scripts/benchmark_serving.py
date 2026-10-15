@@ -71,7 +71,11 @@ def measure_once(origin: str, model: str, payload: bytes, timeout: float) -> dic
     call = request.Request(
         origin + "/predict?model=" + parse.quote(model),
         data=body,
-        headers={"Content-Type": content_type},
+        headers={
+            "Content-Type": content_type,
+            **({"X-IhsanVision-Key": os.environ["IHSANVISION_CLIENT_API_KEY"]}
+               if os.getenv("IHSANVISION_CLIENT_API_KEY") else {}),
+        },
         method="POST",
     )
     t0 = perf_counter()
