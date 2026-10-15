@@ -50,6 +50,21 @@ A two-thread client submits at most two inference HTTP calls at once, but the cu
 
 Results are specific to the selected model, sample, Python and hardware environment. A rate limit of 120 accepted requests per minute is enabled by default per worker; repeated experiments may hit this boundary. A valid shared API key is sent through IHSANVISION_CLIENT_API_KEY when configured, not written in a report. Do not run multiple benchmarks concurrently, or use these tools against an external host.
 
+## Pairwise audit of saved Mac profiles
+
+Two 2026-10-16 saved Mac profiles have been reported for the **same 900×900 transmitted PNG**, with 3 warmups and 20 measured cached requests per model: [recorded evidence](../reports/2026-10-16-macos-paired-serving-profile.md). The reported HTTP round-trip P50/P95 values are **388.868 / 766.458 ms for PaDiM** versus **493.050 / 514.819 ms for PatchCore**.
+
+The read-only script below checks the original JSON files before generating a new Markdown report (and does not load checkpoints or send HTTP requests):
+
+~~~bash
+python -m scripts.compare_serving_profiles \
+  --padim "$HOME/ihsanvision-artifacts/padim_serving_profile_2026-10-16.json" \
+  --patchcore "$HOME/ihsanvision-artifacts/patchcore_serving_profile_2026-10-16.json" \
+  --output "$HOME/ihsanvision-artifacts/paired_serving_profile_2026-10-16.md"
+~~~
+
+The verifier requires matching transmitted PNG SHA-256, dimensions, workload, warmup count, OS/architecture/Python versions, both successful run statuses, and **all measured predictions reporting cache reuse**. It refuses existing output files; choose a new name to repeat. Until the user runs it and shares the output, the consolidated report is grounded in the pasted Terminal result rather than independently regenerated from the raw JSON by GitHub.
+
 ## Acceptance gates
 
-The code has offline mocked regression tests. Real-checkpoint Mac profiling, full cold-start measurement, memory measurement, concurrent load and error admission tests are **still pending**. A completed script execution is not proof of production capacity.
+The code has offline mocked regression tests. Real-checkpoint Mac **sequential profiling has now been observed** for both models on the same user-supplied image. Paired JSON content-level audit, full cold-start measurement, memory measurement, controlled repeatability, concurrent load and error admission tests are **still pending**. A completed script execution is not proof of production capacity.

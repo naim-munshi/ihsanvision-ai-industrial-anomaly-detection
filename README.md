@@ -14,7 +14,7 @@
 | Prediction + relative heatmap | Saved checkpoint in Kaggle and macOS | Verified |
 | FastAPI + responsive browser inspection | Normal and visibly defective bottle example | Verified locally |
 | Warm model reuse | Same-process Mac PaDiM requests | Verified locally |
-| Sequential inference latency | 10 reused requests, p50 **135.78 ms**, nearest-rank p95 **1,244.62 ms** | Preliminary, not a load test |
+| Sequential inference latency | Both models profiled with same 900×900 image, 3 warmups + 20 cached requests each; HTTP p50 **388.87 ms PaDiM / 493.05 ms PatchCore**, p95 **766.46 / 514.82 ms** | Real Mac user-provided paired runs; not throughput or an SLA |
 | PatchCore / PaDiM comparison | PatchCore image AUROC **1.0000**, image F1 **0.9901**, pixel AUROC **0.9857**, pixel F1 **0.7102** | Completed Kaggle log; macOS artifact checksum backup verified |
 | PatchCore checkpoint smoke test | Held-out defective bottle, anomaly detected, overlay generated | Verified in Kaggle; smoke evidence ZIP downloaded and integrity-tested on Mac |
 | Real Mac dual-model dashboard | Both models predicted normal for `normal_bottle.png` and flagged `defective_bottle.png`; overlays rendered for both | Four Safari observations **and four-request API acceptance passed**; source split provenance pending |
@@ -166,6 +166,7 @@ CI validates packaging imports, canonical/legacy entry points, API contracts, le
 - [Normal and defective bottle UI screenshots — textual observation](reports/2026-10-14-browser-bottle-inspection.md)
 - [macOS dual-model dashboard normal-image observation](reports/2026-10-15-macos-dual-model-dashboard-normal-ui.md)
 - [Real Mac four-request dual-model acceptance](reports/2026-10-16-macos-dual-model-api-acceptance.md)
+- [Real Mac paired warm-serving latency profile](reports/2026-10-16-macos-paired-serving-profile.md)
 
 ## Safety, licensing and next steps
 
@@ -174,6 +175,6 @@ CI validates packaging imports, canonical/legacy entry points, API contracts, le
 - MVTec AD dataset rights are distinct from repository source rights. **No dataset images or model binaries are redistributed here.**
 - A source-code license **has not yet been selected**; do not assume code is licensed for unrestricted reuse.
 - For local demos, optional shared API-key authentication, per-process rate limiting, bounded admission and scrubbed request-id audit records are implemented. These **do not** replace TLS, gateway body limits, distributed quotas, identity/tenant authorization or container/network isolation. See the [security baseline](docs/security-baseline.md). Do not expose the local prototype publicly.
-- Pending: original sample split/provenance validation and M6 error-state QA (formal four-request Mac acceptance passed), M7 serving profiler and **M10 private evidence verification**, plus actual M9 Docker build/inference, multi-seed robustness, concurrent load/memory, error-state QA and a user-approved license/release. Packaging and a release gate are implemented, **not a successful hosted/public release**. Real Mac model selection and normal-image inference have been observed, not just mocked.
+- Pending: original sample split/provenance validation and M6 error-state QA (formal four-request Mac acceptance passed); independent paired JSON audit, **M7 controlled repeated/concurrent and memory profiling** (single-client cached profiles now observed), **M10 private evidence verification**, actual M9 Docker build/inference, multi-seed robustness, and a user-approved license/release. Packaging and a release gate are implemented, **not a successful hosted/public release**. Real Mac model selection and normal-image inference have been observed, not just mocked.
 
 The default branch is `main`. Future changes follow `main` → short-lived `feature/*` or `chore/*` branch → pull request → CI → `main`.
