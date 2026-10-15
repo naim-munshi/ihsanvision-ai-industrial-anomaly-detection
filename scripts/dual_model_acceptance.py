@@ -23,6 +23,7 @@ import base64
 import hashlib
 from io import BytesIO
 import json
+import os
 import math
 from pathlib import Path
 import sys
