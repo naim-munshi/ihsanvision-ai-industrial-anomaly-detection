@@ -60,6 +60,20 @@ python -m uvicorn ihsanvision.api:app --host 127.0.0.1 --port 8002
 
 Run Uvicorn from a checkout with this feature (after merging, from updated `main`). The existing `IHSANVISION_CHECKPOINT` setting remains supported for single-model users. `GET /models` publishes available model **names only**, never local paths. The browser sends `POST /predict?model=padim` or `?model=patchcore`; unconfigured models are refused. Switching between model types incurs checkpoint reload in the current one-session cache, so first-request latency can be higher. Model scores are uncalibrated and **must not be compared directly across model families**.
 
+### Real normal/defective two-model acceptance (M6)
+
+After configuring both trusted checkpoints and starting the local API, provide **two locally available sample images** and capture four real API predictions without retraining. Run from the current code checkout with the same Python virtual environment used to start Uvicorn:
+
+~~~bash
+python -m scripts.dual_model_acceptance \
+  --url http://127.0.0.1:8003 \
+  --normal "/absolute/path/to/normal_bottle.png" \
+  --defective "/absolute/path/to/defective_bottle.png" \
+  --output "$HOME/ihsanvision-artifacts/dual_model_acceptance.json"
+~~~
+
+The script checks that both models are available, each model predicts both images, model routing and PNG overlays are valid, and the normal/defective labels match the manually supplied examples. The non-overwriting JSON report saves sample SHA-256 hashes and compact results **without** base64 images, checkpoint paths or model weights. A missed defect causes a **nonzero exit code** and is recorded as a result, not silently counted as a pass. This is a four-prediction qualitative acceptance check, **not** a claim about accuracy, held-out test membership, calibration or p95 latency. For additional detail, see [M6 acceptance procedure](docs/development.md#m6-real-dual-model-acceptance).
+
 From another terminal, run the synthetic API smoke check:
 
 ~~~bash
