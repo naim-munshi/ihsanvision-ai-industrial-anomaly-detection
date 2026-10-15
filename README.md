@@ -2,7 +2,7 @@
 
 **Industrial anomaly detection research software** featuring a reproducible PaDiM/PatchCore evaluation pipeline, a FastAPI inference service, and a browser-based visual inspection dashboard.
 
-> **Project status:** Research/portfolio prototype. PaDiM and PatchCore **bottle** experiments have now completed in user-observed Kaggle logs. The PatchCore benchmark metrics are recorded, but its checkpoint and underlying comparison artifacts are still awaiting durable archival/independent inspection. Security hardening and hosted production deployment remain unverified.
+> **Project status:** Research/portfolio prototype. PaDiM and PatchCore **bottle** experiments have completed in Kaggle; the saved PatchCore checkpoint passed one held-out defective-image inference smoke test. Both model checkpoints and comparison evidence were backed up to macOS and passed SHA-256 checks against a bundled manifest. Independent JSON-content audit, broader validation, security hardening and hosted production deployment remain pending.
 
 ## What works
 
@@ -15,7 +15,8 @@
 | FastAPI + responsive browser inspection | Normal and visibly defective bottle example | Verified locally |
 | Warm model reuse | Same-process Mac PaDiM requests | Verified locally |
 | Sequential inference latency | 10 reused requests, p50 **135.78 ms**, nearest-rank p95 **1,244.62 ms** | Preliminary, not a load test |
-| PatchCore / PaDiM comparison | PatchCore image AUROC **1.0000**, image F1 **0.9901**, pixel AUROC **0.9857**, pixel F1 **0.7102** | Completed Kaggle log; artifact archival pending |
+| PatchCore / PaDiM comparison | PatchCore image AUROC **1.0000**, image F1 **0.9901**, pixel AUROC **0.9857**, pixel F1 **0.7102** | Completed Kaggle log; macOS artifact checksum backup verified |
+| PatchCore checkpoint smoke test | Held-out defective bottle, anomaly detected, overlay generated | Verified in Kaggle; new smoke files need backup |
 | Automated code checks | Python 3.11 and 3.12 | GitHub Actions |
 
 These performance and AUROC numbers come from **different protocols and purposes**. The dataset evaluation held out 16 images from MVTec's official test directory for validation, leaving **67 test images**. It is **not directly comparable with the full-test MVTec leaderboard**. The browser examples and synthetic API smoke input must not be presented as additional accuracy measurements.
@@ -139,6 +140,6 @@ CI validates packaging imports, canonical/legacy entry points, API contracts, le
 - MVTec AD dataset rights are distinct from repository source rights. **No dataset images or model binaries are redistributed here.**
 - A source-code license **has not yet been selected**; do not assume code is licensed for unrestricted reuse.
 - Before hosting publicly: implement appropriate authentication, rate limits, request-admission controls, observability and deployment isolation.
-- Pending: durable PatchCore artifact backup and audit, checkpoint smoke verification, multiple-seed/robustness analysis, error-state UI QA, and a reviewed portfolio release.
+- Pending: independent JSON-content audit, separate PatchCore smoke-overlay/report backup, multiple-seed/robustness analysis, error-state UI QA, and a reviewed portfolio release.
 
 The default branch is `main`. Future changes follow `main` → short-lived `feature/*` or `chore/*` branch → pull request → CI → `main`.
