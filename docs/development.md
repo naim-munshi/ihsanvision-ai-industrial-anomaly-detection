@@ -154,6 +154,29 @@ Now the UI displays **PaDiM** and **PatchCore** if both files exist. `GET /model
 
 The current in-process cache keeps **one checkpoint/model pair**; switching resets it, trading loading latency for bounded model memory. Keep the API bound to localhost until authentication, rate limits and deployment hardening are added. Score units/thresholds can differ across model families; do not compare raw scores directly. The current CI covers API routing via fake predictors. **End-to-end Mac PatchCore dashboard testing is pending**.
 
+### M6 real dual-model acceptance
+
+Use a Mac terminal with an active Python environment where Pillow and the source package are installed. Start the two-checkpoint local API on port 8003 in a **separate terminal** using the configuration above.
+
+~~~bash
+python -m scripts.dual_model_acceptance \
+  --url http://127.0.0.1:8003 \
+  --normal "/absolute/path/to/normal_bottle.png" \
+  --defective "/absolute/path/to/defective_bottle.png" \
+  --output "$HOME/ihsanvision-artifacts/dual_model_acceptance.json"
+~~~
+
+The check sends **four POST requests**: PaDiM normal, PaDiM defective, PatchCore normal, PatchCore defective. It requires correct model routing, finite raw scores, boolean predictions, valid full-size PNG overlays and expected image labels. It also records request-reported duration and cache-reuse fields, but **does not** calculate controlled performance statistics.
+
+- Both input files must exist and have different bytes. Their raw file SHA-256 hashes are recorded in private JSON evidence; image bytes and overlays are not copied into the JSON.
+- An unexpected label marks the report `label_mismatch` and returns exit code 1 after recording all four predictions. Do not ignore this outcome or tune to the held-out test set.
+- The script **does not** establish whether these manually selected files belong to the saved train/validation/test split. Their source paths and pixel contents require a separate data-provenance audit.
+- Run against `http://127.0.0.1:<port>` or `http://localhost:<port>` only. Do not use publicly hosted URLs, and do not commit demonstration images or large private reports to Git.
+- `--output` never overwrites an existing report. Change the file name for a second run.
+- Manually inspect rendered dashboard heatmaps for localization plausibility and test error states separately. PNG format/size validation is not an intersection-over-union or segmentation-quality test.
+
+A real run of this new script **has not yet been reported**; its offline regression tests validate client-side logic, not model science.
+
 ## Contribution procedure
 
 1. Keep changes in a focused branch; submit a PR to `main` and avoid committing to legacy branches.
