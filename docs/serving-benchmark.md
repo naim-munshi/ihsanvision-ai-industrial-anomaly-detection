@@ -35,6 +35,21 @@ The default input is a synthetic, solid-color 256x256 PNG, intended only for sys
 
 For credible comparisons use the **same** source image, accelerator, hardware, library versions, thermal/power conditions and count. A model switch currently evicts the one-entry checkpoint cache. A warm-only claim requires inspection of all measured reuse flags.
 
+## Optional concurrent admission probe
+
+The companion tool makes **simultaneous** localhost requests to one running API process. Keep its finite workload small enough that you do not inadvertently overload your workstation.
+
+~~~bash
+python -m scripts.benchmark_concurrent \
+  --url http://127.0.0.1:8003 \
+  --model patchcore --concurrency 2 --warmup 2 --requests 20 \
+  --output "$HOME/ihsanvision-artifacts/patchcore_concurrent_probe.json"
+~~~
+
+A two-thread client submits at most two inference HTTP calls at once, but the current server intentionally serializes its Anomalib engine. The report captures **all** submitted responses, including 429/503 and transport failures. p50/p95 metrics only cover successful responses, while `response_status_counts` and `results_failed_or_rejected` show the full outcome. If any request fails, the CLI records the result then exits nonzero. It does not claim sustainable throughput, and a high success rate for only one 20-request run does not establish production scaling.
+
+Results are specific to the selected model, sample, Python and hardware environment. A rate limit of 120 accepted requests per minute is enabled by default per worker; repeated experiments may hit this boundary. A valid shared API key is sent through IHSANVISION_CLIENT_API_KEY when configured, not written in a report. Do not run multiple benchmarks concurrently, or use these tools against an external host.
+
 ## Acceptance gates
 
 The code has offline mocked regression tests. Real-checkpoint Mac profiling, full cold-start measurement, memory measurement, concurrent load and error admission tests are **still pending**. A completed script execution is not proof of production capacity.
