@@ -15,7 +15,7 @@ This is a **state-based roadmap**, not an assertion that all systems are already
 | M7 | Persistent serving, tests and performance profiling | **Sequential profiler implemented; real Mac execution pending** | Historical 10-request PaDiM sample; new repeatable p50/p95 HTTP client profiler with mocked CI coverage, no concurrency or memory results yet |
 | M8 | Authentication, rate limit, audit logging | **Local-process baseline implemented; deployment validation pending** | Optional shared API key, global per-process rate cap, finite admission and request ID logs tested offline; identity, proxy/TLS, secrets and load tests pending |
 | M9 | Container packaging and hosted demo | **Local-only Docker packaging added; build and hosting pending** | Dockerfile + Compose, readonly model mounts and static guardrail tests; real Docker inference, remote TLS/gateway and rollback are unverified |
-| M10 | Portfolio release | **Pending** | Demonstration, figures, reproducibility package and review |
+| M10 | Portfolio release | **Evidence verifier and release checklist implemented; publishing pending** | Read-only local model artifact/benchmark/smoke audit and explicit scientific/legal/security acceptance gates; Mac run, media and license approval pending |
 
 ## Immediate priorities
 
@@ -45,7 +45,7 @@ A persistent model instance is implemented and observed working with real PaDiM.
 
 ### Priority 5 — Portfolio finalization
 
-Consolidate measured results, demo screenshots, software architecture, limitations, reproducibility guide, and a short demonstration video. [Docker packaging](container-deployment.md) now provides a local-only build path but must be built and tested before hosting claims. Select an intentional source-code license after reviewing dependency/dataset terms.
+Consolidate measured results, demo screenshots, software architecture, limitations, reproducibility guide, and a short demonstration video. [Docker packaging](container-deployment.md) now provides a local-only build path but must be built and tested before hosting claims. Select an intentional source-code license after reviewing dependency/dataset terms. A [read-only portfolio evidence verifier and release checklist](portfolio-release-readiness.md) now exist; user approval and actual release verification are still required.
 
 **Definition of done:** Clean GitHub release, green CI, reviewed documentation and a repeatable live demo.
 
