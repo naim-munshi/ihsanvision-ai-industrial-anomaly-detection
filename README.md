@@ -147,7 +147,7 @@ CI validates packaging imports, canonical/legacy entry points, API contracts, le
 - [Incremental Kaggle PatchCore comparison](docs/patchcore-comparison-workflow.md)
 - [Verified PaDiM/PatchCore summary generator](docs/verified-benchmark-summary.md)
 - [Experiment environment snapshot](docs/environment-provenance.md)
-- [Sequential localhost serving profiler and methodology](docs/serving-benchmark.md)
+- [Sequential localhost serving profiler and methodology](docs/serving-benchmark.md) — now includes a limited concurrent load probe
 - [Inference API security baseline and limitations](docs/security-baseline.md)
 - [Local-only Docker Compose packaging and verification gates](docs/container-deployment.md)
 - [Read-only benchmark/smoke archive audit and portfolio release gates](docs/portfolio-release-readiness.md)
