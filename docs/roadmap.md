@@ -10,7 +10,7 @@ This is a **state-based roadmap**, not an assertion that all systems are already
 | M2 | PaDiM training and checkpoint-backed held-out evaluation | **Verified on Kaggle** | Completed notebook run and metric report |
 | M3 | Single-image model inference + heatmap | **Verified on Kaggle** | `single-image-inference-passed`, overlay screenshot |
 | M4 | CI and dependency-isolated tests | **Verified** | Python 3.11/3.12 GitHub Actions pass |
-| M5 | PatchCore comparison on same dataset/protocol | **Completed in Kaggle logs; artifact archive pending** | Observed checkpoint reload, test metrics, preserved PaDiM and generated comparison; durable artifact revalidation next |
+| M5 | PatchCore comparison on same dataset/protocol | **Kaggle run and held-out smoke passed; Mac checksum archive verified** | Saved two checkpoints/reports/splits and comparison in ZIP; all eight hashes OK; numeric report revalidation and smoke-overlay backup pending |
 | M6 | Real FastAPI + browser demo against trusted model | **Browser normal/defective UI demo verified** | Both screenshots show upload preview, PaDiM classification, raw score, and heatmap; sample split membership unverified |
 | M7 | Persistent serving, tests and performance profiling | **Sequential 10-request sample recorded; load profiling pending** | Cached PaDiM p50 135.78 ms, p95 1244.62 ms including one long-tail sample; not throughput/cold-start |
 | M8 | Authentication, rate limit, audit logging | **Pending** | Security tests and privacy policy |
@@ -27,7 +27,7 @@ Export the Kaggle-generated `model.ckpt`, `report.json`, `splits.json`, `smoke_r
 
 ### Priority 2 — PatchCore benchmark
 
-The user-observed Kaggle [PatchCore/bottle run](../reports/2026-10-15-kaggle-patchcore-bottle.md) has now completed after preserving the prior PaDiM checkpoint with `--reuse-existing` and checking exact train/validation/test paths. Results are measured in the console log; next **download and archive** model/report/split/comparison files and independently revalidate their contents with the reporting tool. Do not rerun the successful training merely to regenerate metrics.
+The user-observed Kaggle [PatchCore/bottle run](../reports/2026-10-15-kaggle-patchcore-bottle.md) has now completed after preserving the prior PaDiM checkpoint with `--reuse-existing` and checking exact train/validation/test paths. Results are measured in the console log. The user has **downloaded and extracted** a 389.04 MB ZIP on macOS, with eight artifact hashes successfully matching the included `SHA256SUMS.txt`. A held-out defect-image PatchCore checkpoint smoke test also returned `single-image-inference-passed`. Next, **independently compare** the archived JSON metrics/manifests with the reporting tool and preserve the *newer* smoke overlay/report separately. Do not rerun successful training to regenerate metrics.
 
 **Definition of done:** Real PatchCore report; complete comparison CSV/JSON; clear hardware/split provenance.
 
