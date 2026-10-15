@@ -14,7 +14,7 @@ This is a **state-based roadmap**, not an assertion that all systems are already
 | M6 | Real FastAPI + browser demo against trusted model | **PaDiM normal/defective and dual-model normal-image UI demonstrated** | New Mac screenshots: both model options predict normal with heatmaps on same displayed filename; defective dual-model follow-up and sample split audit pending |
 | M7 | Persistent serving, tests and performance profiling | **Sequential profiler implemented; real Mac execution pending** | Historical 10-request PaDiM sample; new repeatable p50/p95 HTTP client profiler with mocked CI coverage, no concurrency or memory results yet |
 | M8 | Authentication, rate limit, audit logging | **Local-process baseline implemented; deployment validation pending** | Optional shared API key, global per-process rate cap, finite admission and request ID logs tested offline; identity, proxy/TLS, secrets and load tests pending |
-| M9 | Container packaging and hosted demo | **Pending** | Verified deployment, CI release and rollback |
+| M9 | Container packaging and hosted demo | **Local-only Docker packaging added; build and hosting pending** | Dockerfile + Compose, readonly model mounts and static guardrail tests; real Docker inference, remote TLS/gateway and rollback are unverified |
 | M10 | Portfolio release | **Pending** | Demonstration, figures, reproducibility package and review |
 
 ## Immediate priorities
@@ -45,7 +45,7 @@ A persistent model instance is implemented and observed working with real PaDiM.
 
 ### Priority 5 — Portfolio finalization
 
-Consolidate measured results, demo screenshots, software architecture, limitations, reproducibility guide, and a short demonstration video. Select an intentional source-code license after reviewing dependency/dataset terms.
+Consolidate measured results, demo screenshots, software architecture, limitations, reproducibility guide, and a short demonstration video. [Docker packaging](container-deployment.md) now provides a local-only build path but must be built and tested before hosting claims. Select an intentional source-code license after reviewing dependency/dataset terms.
 
 **Definition of done:** Clean GitHub release, green CI, reviewed documentation and a repeatable live demo.
 
