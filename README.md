@@ -17,7 +17,7 @@
 | Sequential inference latency | 10 reused requests, p50 **135.78 ms**, nearest-rank p95 **1,244.62 ms** | Preliminary, not a load test |
 | PatchCore / PaDiM comparison | PatchCore image AUROC **1.0000**, image F1 **0.9901**, pixel AUROC **0.9857**, pixel F1 **0.7102** | Completed Kaggle log; macOS artifact checksum backup verified |
 | PatchCore checkpoint smoke test | Held-out defective bottle, anomaly detected, overlay generated | Verified in Kaggle; smoke evidence ZIP downloaded and integrity-tested on Mac |
-| Real Mac dual-model dashboard | Both models predicted normal for `normal_bottle.png` and flagged `defective_bottle.png`; overlays rendered for both | Four Safari observations; formal artifact/split validation pending |
+| Real Mac dual-model dashboard | Both models predicted normal for `normal_bottle.png` and flagged `defective_bottle.png`; overlays rendered for both | Four Safari observations **and four-request API acceptance passed**; source split provenance pending |
 | Automated code checks | Python 3.11 and 3.12 | GitHub Actions |
 
 These performance and AUROC numbers come from **different protocols and purposes**. The dataset evaluation held out 16 images from MVTec's official test directory for validation, leaving **67 test images**. It is **not directly comparable with the full-test MVTec leaderboard**. The browser examples and synthetic API smoke input must not be presented as additional accuracy measurements.
@@ -165,6 +165,7 @@ CI validates packaging imports, canonical/legacy entry points, API contracts, le
 - [Mac ten-request inference latency sample](reports/2026-10-14-macos-10-request-inference-benchmark.md)
 - [Normal and defective bottle UI screenshots — textual observation](reports/2026-10-14-browser-bottle-inspection.md)
 - [macOS dual-model dashboard normal-image observation](reports/2026-10-15-macos-dual-model-dashboard-normal-ui.md)
+- [Real Mac four-request dual-model acceptance](reports/2026-10-16-macos-dual-model-api-acceptance.md)
 
 ## Safety, licensing and next steps
 
@@ -173,6 +174,6 @@ CI validates packaging imports, canonical/legacy entry points, API contracts, le
 - MVTec AD dataset rights are distinct from repository source rights. **No dataset images or model binaries are redistributed here.**
 - A source-code license **has not yet been selected**; do not assume code is licensed for unrestricted reuse.
 - For local demos, optional shared API-key authentication, per-process rate limiting, bounded admission and scrubbed request-id audit records are implemented. These **do not** replace TLS, gateway body limits, distributed quotas, identity/tenant authorization or container/network isolation. See the [security baseline](docs/security-baseline.md). Do not expose the local prototype publicly.
-- Pending: formal Mac execution of M6 four-request acceptance (despite four successful Safari demonstrations), M7 serving profiler and **M10 private evidence verification**, plus actual M9 Docker build/inference, multi-seed robustness, concurrent load/memory, error-state QA and a user-approved license/release. Packaging and a release gate are implemented, **not a successful hosted/public release**. Real Mac model selection and normal-image inference have been observed, not just mocked.
+- Pending: original sample split/provenance validation and M6 error-state QA (formal four-request Mac acceptance passed), M7 serving profiler and **M10 private evidence verification**, plus actual M9 Docker build/inference, multi-seed robustness, concurrent load/memory, error-state QA and a user-approved license/release. Packaging and a release gate are implemented, **not a successful hosted/public release**. Real Mac model selection and normal-image inference have been observed, not just mocked.
 
 The default branch is `main`. Future changes follow `main` → short-lived `feature/*` or `chore/*` branch → pull request → CI → `main`.
