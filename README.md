@@ -147,6 +147,7 @@ CI validates packaging imports, canonical/legacy entry points, API contracts, le
 - [Incremental Kaggle PatchCore comparison](docs/patchcore-comparison-workflow.md)
 - [Verified PaDiM/PatchCore summary generator](docs/verified-benchmark-summary.md)
 - [Experiment environment snapshot](docs/environment-provenance.md)
+- [Sequential localhost serving profiler and methodology](docs/serving-benchmark.md)
 - [Deployment, limitations and security](docs/deployment.md)
 - [Milestones and acceptance criteria](docs/roadmap.md)
 - [Repository structure and branch conventions](docs/repository-structure.md)
@@ -169,6 +170,6 @@ CI validates packaging imports, canonical/legacy entry points, API contracts, le
 - MVTec AD dataset rights are distinct from repository source rights. **No dataset images or model binaries are redistributed here.**
 - A source-code license **has not yet been selected**; do not assume code is licensed for unrestricted reuse.
 - Before hosting publicly: implement appropriate authentication, rate limits, request-admission controls, observability and deployment isolation.
-- Pending: dual-model **defective-image** browser test, recorded test-split membership, multiple-seed/robustness analysis, error-state UI QA, and a reviewed portfolio release. Real Mac model selection and normal-image inference have been observed, not just mocked.
+- Pending: real Mac execution of M6 four-request acceptance and M7 serving profiler, multi-seed/robustness analysis, true concurrent load/memory testing, error-state UI QA, and a reviewed portfolio release. Real Mac model selection and normal-image inference have been observed, not just mocked.
 
 The default branch is `main`. Future changes follow `main` → short-lived `feature/*` or `chore/*` branch → pull request → CI → `main`.
