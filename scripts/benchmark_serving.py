@@ -16,6 +16,7 @@ import argparse
 from hashlib import sha256
 from io import BytesIO
 import json
+import os
 import math
 from pathlib import Path
 import platform
