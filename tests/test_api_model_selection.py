@@ -19,6 +19,7 @@ def clean_model_env(monkeypatch):
         "IHSANVISION_MODEL",
         "IHSANVISION_PADIM_CHECKPOINT",
         "IHSANVISION_PATCHCORE_CHECKPOINT",
+        "IHSANVISION_MODEL_REGISTRY",
     ):
         monkeypatch.delenv(name, raising=False)
 
@@ -42,6 +43,8 @@ def test_discovery_empty_without_config(monkeypatch):
     client, _ = mock_client()
     assert client.get("/models").json() == {
         "available_models": [], "default_model": None,
+        "available_categories": [], "default_category": None,
+        "models_by_category": {},
     }
     assert client.get("/health").json()["model_configured"] is False
 
@@ -54,6 +57,8 @@ def test_legacy_single_model_still_works(monkeypatch, tmp_path):
     client, called = mock_client()
     assert client.get("/models").json() == {
         "available_models": ["padim"], "default_model": "padim",
+        "available_categories": ["bottle"], "default_category": "bottle",
+        "models_by_category": {"bottle": ["padim"]},
     }
     result = client.post("/predict", files={"file": ("bottle.png", png(), "image/png")})
     assert result.status_code == 200
@@ -74,6 +79,8 @@ def test_two_models_dispatch_exact_checkpoint(monkeypatch, tmp_path):
     assert available.status_code == 200
     assert available.json() == {
         "available_models": ["padim", "patchcore"], "default_model": "padim",
+        "available_categories": ["bottle"], "default_category": "bottle",
+        "models_by_category": {"bottle": ["padim", "patchcore"]},
     }
     assert str(tmp_path) not in available.text
     assert client.get("/health").json()["model_configured"] is True
