@@ -31,6 +31,15 @@ models**. Training, saved model quality, inspection workflows, production MLOps
 and deployments still need implementation and real data/evidence. Do not
 confuse a functioning bottle-only portfolio prototype with this full vision.
 
+## Browser batch inspection milestone
+
+A new operator-facing `/batch` dashboard now provides bounded multi-image
+selection, trained category/model routing, sequential localhost predictions,
+per-image classification/error status and private browser CSV export.
+Automatic regression tests cover selection, invalid batches, injected filenames,
+HTTP errors and category consistency. Actual macOS browser testing and
+persistent lot history remain pending.
+
 ## Operator batch inspection software milestone
 
 The repository now includes a **finite folder inspection workflow** with
