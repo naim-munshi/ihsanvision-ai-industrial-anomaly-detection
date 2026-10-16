@@ -138,6 +138,12 @@ def inspect(directory: Path, category: str, model: str, url: str,
         try:
             png, item["sha256"], dimensions = _sample_png(path)
             response = sender(origin, category, model, png, timeout)
+            if not isinstance(response, dict):
+                raise RuntimeError("Invalid prediction response")
+            if response.get("category") not in (None, category) or (
+                category != "bottle" and response.get("category") != category
+            ):
+                raise RuntimeError("Prediction category mismatch")
             evidence = validate_prediction(response, model, dimensions)
             # The strict acceptance validator requires a saved classification
             # threshold; a missing label is an explicit error, not "normal".
@@ -197,21 +203,23 @@ def save_private_report(result: dict, prefix: Path) -> tuple[Path, Path]:
     if json_path.exists() or csv_path.exists():
         raise ValueError("A report already exists; refusing to overwrite existing evidence")
     prefix.parent.mkdir(parents=True, exist_ok=True)
-    json_created = False
+    json_created = csv_created = False
     try:
         with json_path.open("x", encoding="utf-8") as out:
+            json_created = True
             json.dump(result, out, indent=2, allow_nan=False)
             out.write("\n")
-        json_created = True
         with csv_path.open("x", encoding="utf-8", newline="") as out:
+            csv_created = True
             writer = csv.DictWriter(out, fieldnames=COLUMNS, extrasaction="ignore")
             writer.writeheader()
             for row in result["results"]:
                 writer.writerow({name: _excel_safe(row.get(name)) for name in COLUMNS})
     except Exception:
-        # Preserve previously existing artifacts; remove only the newly created
-        # JSON when writing the CSV failed.
-        if json_created and not csv_path.exists():
+        # Remove only files this call exclusively created, never prior reports.
+        if csv_created:
+            csv_path.unlink()
+        if json_created:
             json_path.unlink()
         raise
     return json_path, csv_path
