@@ -69,3 +69,13 @@ def test_demo_route():
     response = client.get("/")
     assert response.status_code == 200
     assert "IhsanVision" in response.text
+
+
+def test_batch_dashboard_route_contains_accessible_workflow():
+    client = TestClient(create_app())
+    response = client.get("/batch")
+    assert response.status_code == 200
+    assert 'id="images"' in response.text
+    assert 'id="download"' in response.text
+    assert 'id="category"' in response.text
+    assert 'href="/"' in response.text
