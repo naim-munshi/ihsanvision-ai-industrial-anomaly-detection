@@ -14,24 +14,27 @@
 <div class="main-grid">
 <section class="panel"><h2>Inspect an image</h2><p>Choose one PNG, JPG, WEBP or BMP image (up to 10 MiB).</p><div class="model-control"><label for="model-choice">Detection model</label><select id="model-choice" disabled><option value="">Checking available models...</option></select><small id="model-hint">Only server-configured, trusted model checkpoints can be selected.</small></div>
 <div class="api-key-control"><label for="api-key">API key (only when your server requires one)</label><input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Optional for local development"><small>Kept only in this browser tab's memory, never stored in the page or URL. Use HTTPS for any remote access.</small></div>
-<div class="upload"><input id="file" type="file" accept="image/png,image/jpeg,image/webp,image/bmp"><strong>Click to select a product image</strong><small id="filename">No image selected</small></div><img id="preview" class="preview" alt="Selected image preview">
+<div class="upload"><input id="file" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" aria-describedby="filename error"><strong>Click to select a product image</strong><small id="filename">No image selected</small></div><img id="preview" class="preview" alt="Selected image preview">
 <button class="action" id="analyze" disabled>Analyze image</button><p id="error" role="alert"></p></section>
 <section class="panel"><h2>Inspection output</h2><div id="empty"><p>Your result will appear here when the model finishes inference.</p></div>
-<div class="result" id="result"><div class="eyebrow">Raw anomaly score</div><div id="score" class="score">—</div><div class="meta"><span id="label" class="chip"></span><span id="model" class="chip"></span><span id="latency" class="chip"></span></div><h2>Relative anomaly localization</h2><img class="map" id="heatmap" alt="Anomaly visualization overlay"><p class="note">Score is not a probability. Overlay contrast is normalized per image and is not a binary segmentation mask.</p></div>
+<div class="result" id="result" aria-live="polite"><div class="eyebrow">Raw anomaly score</div><div id="score" class="score">—</div><div class="meta"><span id="label" class="chip"></span><span id="model" class="chip"></span><span id="result-file" class="chip"></span><span id="latency" class="chip"></span></div><h2>Relative anomaly localization</h2><img class="map" id="heatmap" alt="Anomaly visualization overlay"><p class="note">Score is not a probability. Overlay contrast is normalized per image and is not a binary segmentation mask.</p></div>
 </section></div>
 <footer class="foot">IhsanVision AI · Research/demo use only · Inspect predictions manually before making manufacturing decisions</footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);
 const fileInput=$("file"), analyzeButton=$("analyze"), modelChoice=$("model-choice");
-let previewUrl, modelsAvailable=false, inFlight=false;
+const MAX_IMAGE_BYTES=10*1024*1024;
+const SUPPORTED_IMAGE_TYPES=new Set(["image/png","image/jpeg","image/webp","image/bmp"]);
+let previewUrl, modelsAvailable=false, inFlight=false, fileValid=false;
 const modelLabel=name=>name==="padim"?"PaDiM":name==="patchcore"?"PatchCore":name;
 function resetResult(){
   $("result").style.display="none";
   $("empty").style.display="block";
+  $("heatmap").removeAttribute("src");
 }
 function updateAnalyzeButton(){
-  analyzeButton.disabled=inFlight || !modelsAvailable || !fileInput.files[0] || !modelChoice.value;
+  analyzeButton.disabled=inFlight || !modelsAvailable || !fileValid || !modelChoice.value;
 }
 async function loadModels(){
   try{
@@ -75,24 +78,40 @@ modelChoice.addEventListener("change",()=>{
   updateAnalyzeButton();
 });
 fileInput.addEventListener("change",()=>{
+  if(inFlight)return;
   const file=fileInput.files[0];
   $("filename").textContent=file?file.name:"No image selected";
   if(previewUrl)URL.revokeObjectURL(previewUrl);
   previewUrl=undefined;
-  if(file){
+  fileValid=false;
+  resetResult();
+  $("error").textContent="";
+  if(!file){
+    $("preview").removeAttribute("src");
+    $("preview").style.display="none";
+  }else if(file.size===0){
+    $("error").textContent="The selected file is empty. Choose a product image.";
+  }else if(file.size>MAX_IMAGE_BYTES){
+    $("error").textContent="This image exceeds the 10 MiB upload limit.";
+  }else if(!SUPPORTED_IMAGE_TYPES.has(file.type)){
+    $("error").textContent="Unsupported image type. Choose PNG, JPEG, WEBP or BMP.";
+  }else{
+    fileValid=true;
     previewUrl=URL.createObjectURL(file);
     $("preview").src=previewUrl;
     $("preview").style.display="block";
-  }else{
+  }
+  if(!fileValid){
+    $("preview").removeAttribute("src");
     $("preview").style.display="none";
   }
-  resetResult();
-  $("error").textContent="";
   updateAnalyzeButton();
 });
 analyzeButton.addEventListener("click",async()=>{
-  if(!fileInput.files[0] || !modelsAvailable || !modelChoice.value || inFlight)return;
+  if(!fileValid || !modelsAvailable || !modelChoice.value || inFlight)return;
+  const selectedFile=fileInput.files[0];
   inFlight=true;
+  fileInput.disabled=true;
   updateAnalyzeButton();
   modelChoice.disabled=true;
   analyzeButton.textContent="Analyzing...";
@@ -100,18 +119,31 @@ analyzeButton.addEventListener("click",async()=>{
   resetResult();
   const selectedModel=modelChoice.value;
   const form=new FormData();
-  form.append("file",fileInput.files[0]);
+  form.append("file",selectedFile);
   try{
     const headers={};
     if($("api-key").value)headers["X-IhsanVision-Key"]=$("api-key").value;
     const response=await fetch("/predict?model="+encodeURIComponent(selectedModel),{method:"POST",body:form,headers});
-    const data=await response.json();
-    if(!response.ok)throw new Error(typeof data.detail==="string"?data.detail:"Request failed");
+    let data;
+    try{
+      data=await response.json();
+    }catch{
+      throw new Error("The server returned a response that is not valid JSON (HTTP "+response.status+").");
+    }
+    if(!response.ok){
+      if(response.status===401 || response.status===403)
+        throw new Error("API key is missing or invalid. Check the API key field.");
+      throw new Error(typeof data.detail==="string"?data.detail:"Request failed (HTTP "+response.status+").");
+    }
+    if(typeof data.anomaly_score!=="number" || !Number.isFinite(data.anomaly_score) ||
+       typeof data.model!=="string" || data.model!==selectedModel)
+      throw new Error("The inference response is invalid or does not match the selected model.");
     $("empty").style.display="none";
     $("result").style.display="block";
     $("score").textContent=Number(data.anomaly_score).toFixed(4);
     $("label").textContent=data.predicted_anomaly===null?"Threshold unavailable":data.predicted_anomaly?"Flagged anomaly":"Predicted normal";
     $("model").textContent=modelLabel(data.model);
+    $("result-file").textContent=selectedFile.name;
     $("latency").textContent=data.latency_ms==null?"Latency unavailable":data.latency_ms+" ms";
     if(data.heatmap_png_base64){
       $("heatmap").src="data:image/png;base64,"+data.heatmap_png_base64;
@@ -123,6 +155,7 @@ analyzeButton.addEventListener("click",async()=>{
     $("error").textContent=error.message;
   }finally{
     inFlight=false;
+    fileInput.disabled=false;
     modelChoice.disabled=!modelsAvailable;
     analyzeButton.textContent="Analyze image";
     updateAnalyzeButton();
