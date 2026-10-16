@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 MAX_UPLOAD = 10 * 1024 * 1024
 MAX_PIXELS = 25_000_000
 UI = Path(__file__).resolve().parents[1] / "demo" / "index.html"
+BATCH_UI = Path(__file__).resolve().parents[1] / "demo" / "batch.html"
 
 
 IMAGE_SUFFIXES = {"PNG": ".png", "JPEG": ".jpg", "WEBP": ".webp", "BMP": ".bmp"}
@@ -136,6 +137,11 @@ def create_app(predict_fn=None) -> FastAPI:
     @app.get("/")
     def home():
         return FileResponse(UI, media_type="text/html")
+
+    @app.get("/batch")
+    def batch_dashboard():
+        """Local operator UI; actual predictions use protected /predict."""
+        return FileResponse(BATCH_UI, media_type="text/html")
 
     @app.get("/health")
     def health():

@@ -63,7 +63,20 @@ JSON/CSV pair. Give a different `--output-prefix` for each inspection lot.
 
 ## Limits and next engineering milestones
 
-This is a **local CLI workflow**, not a networked factory management system.
+### Operator-facing browser workflow
+
+Visit **http://127.0.0.1:8003/batch** while your local IhsanVision server
+is running. The page discovers configured trusted model/category pairs from
+`GET /models`, allows selection of up to **20** same-category product images
+and sends one `POST /predict` per image **sequentially**. The operator sees a
+table of normal/anomaly/review/error outcomes, raw scores and prediction span,
+and can download a locally generated CSV. An error never becomes a normal
+decision. File names are rendered as plain text instead of untrusted HTML and
+CSV formula-like filenames are neutralized. The API key stays in the current
+browser session memory and is not saved in the CSV. The batch page is still a
+local supervised demo, and live Mac/browser acceptance is pending.
+
+This is a **local CLI and browser workflow**, not a networked factory management system.
 It does not store user accounts, inspection history in PostgreSQL, image
 annotations, work orders, model monitoring or training lifecycle. It does not
 establish correctness without calibrated thresholds and independent ground
