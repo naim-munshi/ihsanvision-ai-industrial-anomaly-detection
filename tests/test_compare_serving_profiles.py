@@ -52,6 +52,7 @@ def test_valid_pair_generates_grounded_report(tmp_path):
     assert "3 warmup requests" in report
     assert "900 × 900" in report
     assert SHA in report
+    assert "\\`" not in report, "Markdown code spans must not be backslash-escaped"
     assert "450.123" in report
     assert "390.234" in report
     assert "740.345" in report

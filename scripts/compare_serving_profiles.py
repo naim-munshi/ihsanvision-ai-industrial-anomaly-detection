@@ -92,9 +92,9 @@ def compare(padim_path: Path, patchcore_path: Path) -> str:
         "",
         f"- Both saved profiles completed, **{num} measured requests per model** after "
         f"**{warmup} warmup requests**.",
-        f"- Identical transmitted PNG SHA-256: \`{padim['sample_sha256_of_transmitted_png']}\`.",
+        f"- Identical transmitted PNG SHA-256: `{padim['sample_sha256_of_transmitted_png']}`.",
         f"- Identical sample dimensions: **{dims[0]} × {dims[1]}**; type: "
-        f"\`{padim['sample_type']}\`.",
+        f"`{padim['sample_type']}`.",
         f"- Environment: {padim['system']['os']}, {padim['system']['machine']}, "
         f"Python {padim['system']['python_version']}. "
         "No independent hardware/accelerator audit was performed.",
