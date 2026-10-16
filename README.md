@@ -36,6 +36,18 @@ python -m pip install -r requirements.txt
 python -m pip install -e . --no-deps
 ~~~
 
+### Launch the complete local dual-model demo (one command)
+
+Once the runtime dependencies are installed and both **personally trusted** checkpoint files are stored in the documented private artifact directory, run:
+
+~~~bash
+python -m scripts.run_local_demo
+~~~
+
+The launcher checks that `padim-bottle-seed42/model.ckpt` and `patchcore-bottle-seed42/model.ckpt` exist under `~/ihsanvision-artifacts/benchmark-bottle-seed42-2026-10-15/`, configures both models, starts a loopback-only API at **http://127.0.0.1:8003/** and opens the dashboard when ready. **Ctrl+C stops the server**. It does not train or download data or change model artifacts. Override the private model folder with `--artifacts-dir /absolute/private/folder`, use `--port 8004` if the default is already in use, or `--no-browser` on headless systems. Never load untrusted Lightning checkpoints or publish the localhost service to the internet.
+
+This reduces startup to one command; real Mac end-to-end launcher verification is still required before calling its operation verified on the user's device.
+
 **Repository default branch: `main` (verified 2026-10-14).** New contributors should use `main` and create focused `feature/*` branches. The historical `MdNaim` and integrated feature branches are kept temporarily for local checkout migration and audit history.
 
 Configure the **trusted** checkpoint outside Git (never upload a checkpoint through the HTTP API):
