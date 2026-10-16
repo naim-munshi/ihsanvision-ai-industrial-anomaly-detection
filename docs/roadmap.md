@@ -17,6 +17,20 @@ This is a **state-based roadmap**, not an assertion that all systems are already
 | M9 | Container packaging and hosted demo | **Local-only Docker packaging added; build and hosting pending** | Dockerfile + Compose, readonly model mounts and static guardrail tests; real Docker inference, remote TLS/gateway and rollback are unverified |
 | M10 | Portfolio release | **Evidence verifier and release checklist implemented; publishing pending** | Read-only local model artifact/benchmark/smoke audit and explicit scientific/legal/security acceptance gates; Mac run, media and license approval pending |
 
+## Full original platform vision (beyond bottle-only demo)
+
+The original end state is an industrial quality-inspection software platform:
+**normal-only training on the 15 MVTec AD categories**, selected MVTec AD 2
+categories (separate dataset adapter and rights review), validated **PaDiM and
+PatchCore category-specific inference** with raw scores, normal/defective
+decisions and pixel-level localization, and an operator-friendly application
+with configurable models, repeatable tests, reports, deployment and governance.
+The first [multi-category registry implementation](multicategory-model-registry.md)
+adds safe checkpoint discovery and routing, **not pre-trained multi-category
+models**. Training, saved model quality, inspection workflows, production MLOps
+and deployments still need implementation and real data/evidence. Do not
+confuse a functioning bottle-only portfolio prototype with this full vision.
+
 ## Immediate priorities
 
 ### Priority 1 — Preserve verified model artifacts
