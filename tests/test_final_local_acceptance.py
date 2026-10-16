@@ -65,6 +65,14 @@ def test_wrong_rejection_code_fails_closed(monkeypatch):
         final.check_service_and_errors("http://127.0.0.1:8003")
 
 
+def test_api_key_auth_failure_has_actionable_private_diagnostic(monkeypatch):
+    mock_local_api(monkeypatch, bad_status=401)
+    with pytest.raises(RuntimeError, match="IHSANVISION_CLIENT_API_KEY") as exc:
+        final.check_service_and_errors("http://127.0.0.1:8003")
+    assert "HTTP 401" in str(exc.value)
+    assert "private-secret-example" not in str(exc.value)
+
+
 def test_reject_remote_host_before_network(monkeypatch):
     monkeypatch.setattr(final.request, "urlopen", lambda *_args, **_kw: pytest.fail("network attempted"))
     with pytest.raises(ValueError, match="localhost"):
