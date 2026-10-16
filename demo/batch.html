@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IhsanVision.AI | Batch Inspection</title>
+<style>
+:root{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#ecf3ff;background:#0b1323}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top left,#1c3454,#0b1323 65%);min-height:100vh}
+main{max-width:1050px;margin:auto;padding:32px 24px 70px}.top{display:flex;justify-content:space-between;gap:14px;align-items:center}
+.brand{font-weight:800;letter-spacing:-.04em;font-size:22px}.brand span{color:#67d9c2}a{color:#71e2cb}
+h1{font-size:clamp(30px,5vw,48px);letter-spacing:-.045em;margin:38px 0 12px}.eyebrow{color:#67d9c2;letter-spacing:.12em;text-transform:uppercase;font-size:12px;font-weight:700}
+p{color:#a5b4cd;line-height:1.6}.panel{background:#14243a;border:1px solid #29405b;border-radius:18px;padding:24px;margin-top:24px}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:16px}label{display:block;font-weight:700;font-size:13px;color:#dae8fa;margin:12px 0 8px}
+select,input{width:100%;padding:12px;color:#ecf3ff;background:#102035;border:1px solid #496785;border-radius:10px;font:inherit}
+input[type=file]{border:2px dashed #496785;padding:25px}.actions{display:flex;gap:12px;flex-wrap:wrap;margin:18px 0}
+button{background:#5ce0bf;color:#062434;border:0;border-radius:11px;padding:12px 18px;font-weight:800;cursor:pointer}
+button.secondary{background:#263b52;color:#e8f4ff}button:disabled,select:disabled,input:disabled{opacity:.5;cursor:not-allowed}
+#error{color:#ffb6ac;min-height:22px}#progress{color:#a5b4cd}small{color:#9eb0c6}
+.table-wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13px;text-align:left}
+th,td{padding:12px 10px;border-bottom:1px solid #29405b;white-space:nowrap}th{color:#9cb7ce}td{color:#ecf3ff}.anomaly{color:#ffb6ac}.normal{color:#67d9c2}.error{color:#ffb6ac}
+.foot{margin-top:28px;font-size:12px;color:#708ba4}@media(max-width:680px){.controls{grid-template-columns:1fr}.panel{padding:18px}}
+</style>
+</head>
+<body><main>
+<header class="top"><div class="brand">Ihsan<span>Vision</span>.AI</div><a href="/">Single-image inspection</a></header>
+<div class="eyebrow" style="margin-top:40px">Quality inspection workflow</div>
+<h1>Inspect a product batch.</h1>
+<p>Select up to 20 images for the same trained product category. The browser sends one image at a time to the local model, records defect decisions and allows you to export a CSV report. Human review is required.</p>
+<section class="panel" aria-label="Batch input settings">
+<div class="controls">
+<div><label for="category">Product category</label><select id="category" disabled><option>Checking models...</option></select></div>
+<div><label for="model">Detection model</label><select id="model" disabled><option>Checking models...</option></select></div>
+</div>
+<label for="images">Product images (max 20; PNG, JPG, WEBP, BMP; 10 MiB each)</label>
+<input id="images" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" multiple aria-describedby="selection error">
+<small id="selection">No images selected</small>
+<label for="api-key">API key (only if configured on your local server)</label>
+<input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Optional private inference key">
+<div class="actions"><button id="run" disabled>Inspect images</button><button id="download" class="secondary" disabled>Export CSV</button></div>
+<p id="error" role="alert"></p><p id="progress" aria-live="polite">Waiting for trained model discovery.</p>
+</section>
+<section class="panel"><h2>Inspection lot results</h2>
+<div class="table-wrap"><table><caption>Individual model predictions; raw scores are not calibrated probabilities.</caption>
+<thead><tr><th scope="col">Image</th><th scope="col">Result</th><th scope="col">Raw score</th><th scope="col">Prediction (ms)</th><th scope="col">Details</th></tr></thead>
+<tbody id="rows"></tbody></table></div>
+<p><small>Errors never count as normal. The report contains image filenames and model scores but not source image bytes, heatmaps, API credentials, or checkpoints. Keep reports private. This is a local inspection tool, not proof of industrial accuracy.</small></p>
+</section>
+<div class="foot">IhsanVision.AI · Research and operator-supervised inspection only</div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const category=$("category"), model=$("model"), images=$("images"), run=$("run"), download=$("download");
+const MAX_FILES=20, MAX_BYTES=10*1024*1024;
+const ALLOWED=new Set(["image/png","image/jpeg","image/webp","image/bmp"]);
+let catalog={}, busy=false, lastRows=[];
+const readable=name=>name==="padim"?"PaDiM":name==="patchcore"?"PatchCore":name.replace(/_/g," ");
+function appendOption(select,value,label){
+  const option=document.createElement("option");
+  option.value=value;
+  option.textContent=label;
+  select.appendChild(option);
+}
+function resetResults(){
+  lastRows=[];
+  $("rows").replaceChildren();
+  download.disabled=true;
+}
+function validationError(){
+  const selected=Array.from(images.files||[]);
+  if(!selected.length)return "Select at least one inspection image.";
+  if(selected.length>MAX_FILES)return "Choose no more than 20 images per batch.";
+  if(selected.some(f=>!f.size || f.size>MAX_BYTES || !ALLOWED.has(f.type)))
+    return "Each image must be PNG, JPEG, WEBP or BMP, nonempty and at most 10 MiB.";
+  if(!catalog[category.value] || !catalog[category.value].includes(model.value))
+    return "Select a trained category and model.";
+  return "";
+}
+function updateControls(){
+  run.disabled=busy || Boolean(validationError());
+  category.disabled=busy || Object.keys(catalog).length===0;
+  model.disabled=busy || !catalog[category.value]?.length;
+  images.disabled=busy;
+  download.disabled=busy || lastRows.length===0;
+}
+function refreshModels(preferred){
+  model.replaceChildren();
+  const options=catalog[category.value]||[];
+  for(const name of options)appendOption(model,name,readable(name));
+  model.value=options.includes(preferred)?preferred:(options[0]||"");
+  resetResults();
+  updateControls();
+}
+async function discover(){
+  try{
+    const response=await fetch("/models");
+    if(!response.ok)throw new Error("Cannot discover trained checkpoints.");
+    const payload=await response.json();
+    const legacy=Array.isArray(payload.available_models)?payload.available_models:[];
+    const configured=payload.models_by_category && typeof payload.models_by_category==="object"
+      ?payload.models_by_category:{bottle:legacy};
+    catalog={};
+    for(const [name, models] of Object.entries(configured)){
+      if(!/^[a-z][a-z0-9_]*$/.test(name)||!Array.isArray(models))continue;
+      const allowed=[...new Set(models.filter(m=>m==="padim"||m==="patchcore"))];
+      if(allowed.length)catalog[name]=allowed;
+    }
+    category.replaceChildren();
+    for(const name of Object.keys(catalog))appendOption(category,name,readable(name));
+    category.value=catalog[payload.default_category]?payload.default_category:(Object.keys(catalog)[0]||"");
+    refreshModels(payload.default_model);
+    $("progress").textContent=Object.keys(catalog).length
+      ?"Ready. Choose a product lot and inspect.":"No trusted model is configured.";
+  }catch{
+    $("error").textContent="Model discovery failed. Start the local IhsanVision server.";
+    $("progress").textContent="Service unavailable.";
+    catalog={};
+    updateControls();
+  }
+}
+function appendResult(row){
+  const tr=document.createElement("tr");
+  for(const [value,className] of [
+    [row.filename,""],
+    [row.status,row.status],
+    [row.score==null?"—":row.score.toFixed(4),""],
+    [row.latency==null?"—":String(row.latency),""],
+    [row.error||"—",""],
+  ]){
+    const td=document.createElement("td");
+    td.textContent=value;
+    if(className)td.className=className;
+    tr.appendChild(td);
+  }
+  $("rows").appendChild(tr);
+}
+function csvCell(value){
+  let v=String(value==null?"":value);
+  if(/^[=+@\-\t\r\n]/.test(v))v="'"+v;
+  return '"'+v.replace(/"/g,'""')+'"';
+}
+function csvText(rows){
+  const cols=["filename","category","model","status","raw_score","prediction_ms","error"];
+  return [cols.join(","),...rows.map(r=>[
+    r.filename,r.category,r.model,r.status,r.score,r.latency,r.error,
+  ].map(csvCell).join(","))].join("\r\n")+"\r\n";
+}
+async function inspect(){
+  const problem=validationError();
+  if(busy || problem){$("error").textContent=problem;return;}
+  const files=Array.from(images.files), selectedModel=model.value, selectedCategory=category.value;
+  busy=true;
+  resetResults();
+  $("error").textContent="";
+  updateControls();
+  for(let i=0;i<files.length;i++){
+    const file=files[i], row={
+      filename:file.name,category:selectedCategory,model:selectedModel,
+      status:"error",score:null,latency:null,error:"",
+    };
+    $("progress").textContent="Inspecting "+(i+1)+" / "+files.length+"…";
+    try{
+      const form=new FormData();
+      form.append("file",file);
+      const headers={};
+      if($("api-key").value)headers["X-IhsanVision-Key"]=$("api-key").value;
+      const url="/predict?model="+encodeURIComponent(selectedModel)
+        +(selectedCategory==="bottle"?"":"&category="+encodeURIComponent(selectedCategory));
+      const response=await fetch(url,{method:"POST",body:form,headers});
+      let result;
+      try{result=await response.json();}
+      catch{throw new Error("Invalid JSON from inference service");}
+      if(!response.ok)throw new Error("HTTP "+response.status);
+      if(result.model!==selectedModel || (result.category && result.category!==selectedCategory)
+         || (selectedCategory!=="bottle" && result.category!==selectedCategory)
+         || typeof result.anomaly_score!=="number" || !Number.isFinite(result.anomaly_score)
+         || ![true,false,null].includes(result.predicted_anomaly))
+        throw new Error("Invalid model/category/prediction response");
+      row.score=result.anomaly_score;
+      row.latency=typeof result.latency_ms==="number" && Number.isFinite(result.latency_ms)
+        ?result.latency_ms:null;
+      row.status=result.predicted_anomaly===null?"review"
+        :(result.predicted_anomaly?"anomaly":"normal");
+    }catch(err){
+      row.error=err.message.startsWith("HTTP ") ? err.message : "Invalid response or connection";
+    }
+    lastRows.push(row);
+    appendResult(row);
+  }
+  busy=false;
+  updateControls();
+  const faults=lastRows.filter(row=>row.status==="error").length;
+  const anomalies=lastRows.filter(row=>row.status==="anomaly").length;
+  $("progress").textContent="Finished "+lastRows.length+" images; "+anomalies+
+    " flagged; "+faults+" errors. Review each result before taking action.";
+}
+category.addEventListener("change",()=>{if(busy)return;refreshModels(null);$("error").textContent="";});
+model.addEventListener("change",()=>{resetResults();$("error").textContent="";updateControls();});
+images.addEventListener("change",()=>{
+  if(busy)return;
+  resetResults();
+  $("selection").textContent=(images.files?.length||0)+" files selected";
+  $("error").textContent=validationError();
+  updateControls();
+});
+run.addEventListener("click",inspect);
+download.addEventListener("click",()=>{
+  if(busy || !lastRows.length)return;
+  const csv=csvText(lastRows);
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const anchor=document.createElement("a");
+  anchor.href=url;anchor.download="ihsanvision-batch-inspection.csv";
+  anchor.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
+discover();
+</script></body></html>
