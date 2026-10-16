@@ -19,7 +19,7 @@
 | PatchCore checkpoint smoke test | Held-out defective bottle, anomaly detected, overlay generated | Verified in Kaggle; smoke evidence ZIP downloaded and integrity-tested on Mac |
 | Real Mac dual-model dashboard | Both models predicted normal for `normal_bottle.png` and flagged `defective_bottle.png`; overlays rendered for both | Four Safari observations **and four-request API acceptance passed**; source split provenance pending |
 | Bounded local PaDiM concurrency | 2 parallel HTTP submissions, 10 measured requests: **10/10 HTTP 200**, **0 failures**, 10/10 cached; HTTP p50/p95 **633.59/1,019.31 ms** | Observed on Mac; no maximum-QPS/SLA claim |
-| Batch inspection and private reports | Finite localhost image-folder inference via selected model/category, individual results, JSON + CSV export, fail-closed per-image errors | Implemented and offline-tested; real Mac execution pending |
+| Batch inspection and private reports | Browser batch inspection at `/batch` (up to 20 selected images, per-item results, local CSV export) plus bounded folder CLI JSON/CSV export | Implemented and offline-tested; real Mac execution pending |
 | Automated code checks | Python 3.11 and 3.12 | GitHub Actions |
 
 These performance and AUROC numbers come from **different protocols and purposes**. The dataset evaluation held out 16 images from MVTec's official test directory for validation, leaving **67 test images**. It is **not directly comparable with the full-test MVTec leaderboard**. The browser examples and synthetic API smoke input must not be presented as additional accuracy measurements.
@@ -36,6 +36,17 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 python -m pip install -e . --no-deps
 ~~~
+
+### Browser inspection workflow for product lots
+
+The local server now serves **http://127.0.0.1:8003/batch** for supervised
+multi-image inspection: choose a trained category and model, select up to 20
+images, review one result/error per image and download a CSV **locally in your
+browser**. Inference requests are sequential to bound server load. No image
+pixels, checkpoints or heatmap bytes are included in the downloaded CSV. The
+separate [batch inspection CLI](docs/batch-inspection.md) supports larger bounded
+folders and private JSON/CSV evidence. All browser code has offline behavior
+tests; live Mac browser acceptance is still pending.
 
 ### Multi-category trained model routing
 
