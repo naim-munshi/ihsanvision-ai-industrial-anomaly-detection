@@ -69,3 +69,44 @@ def test_demo_route():
     response = client.get("/")
     assert response.status_code == 200
     assert "IhsanVision" in response.text
+
+
+def test_unknown_model_returns_clear_error_before_prediction(monkeypatch, tmp_path):
+    checkpoint = tmp_path / "trusted.ckpt"
+    checkpoint.touch()
+    monkeypatch.setenv("IHSANVISION_CHECKPOINT", str(checkpoint))
+    monkeypatch.setenv("IHSANVISION_MODEL", "padim")
+    calls = []
+
+    def fake_predict(*args):
+        calls.append(args)
+        raise AssertionError("Prediction must not run for an invalid model")
+
+    client = TestClient(create_app(predict_fn=fake_predict))
+    response = client.post(
+        "/predict?model=unsupported",
+        files={"file": ("example.png", example_png(), "image/png")},
+    )
+    assert response.status_code == 400
+    assert "Unsupported model" in response.json()["detail"]
+    assert len(response.headers["X-Request-ID"]) == 32
+    assert calls == []
+
+
+def test_empty_upload_returns_400_without_prediction(monkeypatch, tmp_path):
+    checkpoint = tmp_path / "trusted.ckpt"
+    checkpoint.touch()
+    monkeypatch.setenv("IHSANVISION_CHECKPOINT", str(checkpoint))
+    monkeypatch.setenv("IHSANVISION_MODEL", "padim")
+
+    def fake_predict(*args):
+        raise AssertionError("Prediction must not run on empty image")
+
+    client = TestClient(create_app(predict_fn=fake_predict))
+    response = client.post(
+        "/predict?model=padim",
+        files={"file": ("empty.png", b"", "image/png")},
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Empty upload"
+    assert len(response.headers["X-Request-ID"]) == 32
