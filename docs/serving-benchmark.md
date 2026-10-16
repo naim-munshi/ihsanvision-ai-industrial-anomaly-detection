@@ -63,7 +63,7 @@ python -m scripts.compare_serving_profiles \
   --output "$HOME/ihsanvision-artifacts/paired_serving_profile_2026-10-16.md"
 ~~~
 
-The verifier requires matching transmitted PNG SHA-256, dimensions, workload, warmup count, OS/architecture/Python versions, both successful run statuses, and **all measured predictions reporting cache reuse**. It refuses existing output files; choose a new name to repeat. Until the user runs it and shares the output, the consolidated report is grounded in the pasted Terminal result rather than independently regenerated from the raw JSON by GitHub.
+The verifier requires matching transmitted PNG SHA-256, dimensions, workload, warmup count, OS/architecture/Python versions, both successful run statuses, and **all measured predictions reporting cache reuse**. It refuses existing output files; choose a new name to repeat. The user **ran this tool successfully on macOS** on 2026-10-16 and shared its output. The paired saved-JSON comparison passed, finding the same transmitted image hash `4d58bce0bf8242420879a4222ad9efe933784684a5eadc4d3f42b3594b0cd76d`, 900×900 dimensions, Darwin arm64 / Python 3.12.4, 3 warmups and 20 fully cached measurements per model. This verifies internal JSON compatibility; the author has not received the underlying JSON files and cannot independently authenticate their origins. The original generated Markdown contained cosmetic backtick escaping, now corrected for future report generation.
 
 ## Acceptance gates
 
