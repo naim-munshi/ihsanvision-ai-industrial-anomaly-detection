@@ -31,6 +31,17 @@ models**. Training, saved model quality, inspection workflows, production MLOps
 and deployments still need implementation and real data/evidence. Do not
 confuse a functioning bottle-only portfolio prototype with this full vision.
 
+## Operator batch inspection software milestone
+
+The repository now includes a **finite folder inspection workflow** with
+selected product category/model, per-image defect decisions, raw scores,
+validated heatmaps and separate JSON/CSV operator reports. This is a functional
+manufacturing-workflow building block, not another latency benchmark. Offline
+regression tests cover success, mixed errors, size bounds, filename safety and
+non-overwriting. **Mac real-checkpoint end-to-end execution is pending**, as
+are a web batch dashboard, review history, traceability, data rights and
+deployment verification. See [batch inspection guide](batch-inspection.md).
+
 ## Immediate priorities
 
 ### Priority 1 — Preserve verified model artifacts
