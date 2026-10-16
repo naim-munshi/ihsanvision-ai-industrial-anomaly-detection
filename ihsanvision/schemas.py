@@ -10,6 +10,10 @@ class PredictionResponse(BaseModel):
     model: Literal["padim", "patchcore"] = Field(
         description="Anomaly detection model family used for inference."
     )
+    category: str = Field(
+        default="bottle",
+        description="Operator-registered industrial product category used for inference.",
+    )
     anomaly_score: FiniteFloat = Field(
         description="Raw uncalibrated anomaly score; NOT a probability."
     )

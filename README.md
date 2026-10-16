@@ -1,6 +1,6 @@
 # IhsanVision.AI
 
-**Industrial anomaly detection research software** featuring a reproducible PaDiM/PatchCore evaluation pipeline, a FastAPI inference service, and a browser-based visual inspection dashboard.
+**Industrial anomaly detection platform in development** featuring reproducible PaDiM/PatchCore training and evaluation, a FastAPI inference service, a browser inspection dashboard and an operator-controlled registry for additional trained product categories.
 
 > **Project status:** Research/portfolio prototype. PaDiM and PatchCore **bottle** experiments have completed in Kaggle; the saved PatchCore checkpoint passed one held-out defective-image inference smoke test. Both model checkpoints and comparison evidence were backed up to macOS and passed SHA-256 checks against a bundled manifest. Independent JSON-content audit, broader validation, security hardening and hosted production deployment remain pending.
 
@@ -35,6 +35,10 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 python -m pip install -e . --no-deps
 ~~~
+
+### Multi-category trained model routing
+
+Beyond the verified `bottle` models, the application can now register **trusted, independently trained checkpoints per industrial product category and model family**. The API and browser display only configured categories; untrained classes are not advertised as available. The original scope includes 15 MVTec AD categories plus selected MVTec AD 2 categories; **only the bottle models have experimental evidence in this repository so far**. See the [multi-category registry setup, API and evaluation gates](docs/multicategory-model-registry.md). Additional categories must be trained and scientifically verified before claiming coverage.
 
 ### Launch the complete local dual-model demo (one command)
 
@@ -154,6 +158,7 @@ CI validates packaging imports, canonical/legacy entry points, API contracts, le
 ## Project documentation
 
 - [Architecture and design choices](docs/architecture.md)
+- [Operator-configured multi-category model registry](docs/multicategory-model-registry.md)
 - [Developer setup and execution](docs/development.md)
 - [Evaluation methodology and measured results](docs/evaluation.md)
 - [Trained PaDiM model card](docs/model-card.md)
