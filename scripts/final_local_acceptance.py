@@ -46,6 +46,12 @@ def _expect_http_error(origin: str, label: str, endpoint: str,
         status = exc.code
         exc.close()
     if status != expected:
+        if status == 401:
+            raise RuntimeError(
+                f"{label}: local inference API requires authentication (HTTP 401). "
+                "Set IHSANVISION_CLIENT_API_KEY to the private key configured on "
+                "the local server; do not put the key in commands or reports."
+            )
         raise RuntimeError(
             f"{label}: expected HTTP {expected}, received {status}"
         )
