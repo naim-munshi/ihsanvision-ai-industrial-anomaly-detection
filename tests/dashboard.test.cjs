@@ -162,3 +162,64 @@ test("ignores in-flight file-change events and unlocks after response", async ()
   assert.equal(ui.elem("model-choice").disabled, false);
   assert.equal(ui.elem("result-file").textContent, validFile.name);
 });
+
+test("multi-category selector routes only configured category/model and resets result", async () => {
+  const categories = {
+    available_models: ["padim"], default_model: "padim",
+    default_category: "bottle",
+    available_categories: ["bottle", "cable"],
+    models_by_category: {bottle: ["padim"], cable: ["patchcore"]},
+  };
+  const ui = await mount({
+    models: categories,
+    response: async () => ({
+      ok: true, status: 200,
+      json: async () => ({
+        category: "cable", model: "patchcore", anomaly_score: 0.912,
+        predicted_anomaly: true, latency_ms: 21, heatmap_png_base64: "QUJD",
+      }),
+    }),
+  });
+  assert.equal(ui.elem("category-choice").value, "bottle");
+  assert.equal(ui.elem("model-choice").value, "padim");
+  assert.equal(ui.elem("category-choice").children.length, 2);
+  selectFile(ui, validFile);
+  ui.elem("category-choice").value = "cable";
+  ui.elem("category-choice").listeners.change();
+  assert.equal(ui.elem("model-choice").value, "patchcore");
+  assert.equal(ui.elem("model-choice").children.length, 1);
+  await ui.elem("analyze").listeners.click();
+  assert.equal(ui.elem("result").style.display, "block");
+  assert.equal(ui.elem("result-category").textContent, "cable");
+  assert.equal(ui.elem("score").textContent, "0.9120");
+  assert.ok(ui.fetchCalls.some(row => row.url === "/predict?model=patchcore&category=cable"));
+  ui.elem("category-choice").value = "bottle";
+  ui.elem("category-choice").listeners.change();
+  assert.equal(ui.elem("result").style.display, "none");
+  assert.equal(ui.elem("heatmap").src, undefined);
+});
+
+test("rejects response that reports the wrong category", async () => {
+  const ui = await mount({
+    models: {available_models: [], default_category: "cable",
+      models_by_category: {cable: ["patchcore"]}},
+    response: async () => ({ok: true, status: 200,
+      json: async () => ({
+        category: "bottle", model: "patchcore", anomaly_score: 0.4,
+        predicted_anomaly: true, latency_ms: 15,
+      }),
+    }),
+  });
+  selectFile(ui, validFile);
+  await ui.elem("analyze").listeners.click();
+  assert.match(ui.elem("error").textContent, /invalid or does not match/);
+  assert.equal(ui.elem("result").style.display, "none");
+});
+
+test("legacy /models response still defaults to bottle without category query", async () => {
+  const ui = await mount();
+  assert.equal(ui.elem("category-choice").value, "bottle");
+  selectFile(ui, validFile);
+  await ui.elem("analyze").listeners.click();
+  assert.ok(ui.fetchCalls.some(row => row.url === "/predict?model=padim"));
+});
