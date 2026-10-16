@@ -115,9 +115,9 @@ def test_invalid_response_model_category_and_heatmap_are_errors(tmp_path):
             return response
         result = inspect_batch.inspect(tmp_path, "bottle", "padim",
                                        "http://127.0.0.1:8003", sender=sender)
-        # inspect(sender=...) expects the injected sender to behave as a wire
-        # response and does not rerun network-side category validation.
         assert result["files_attempted"] == 1
+        assert result["counts"]["errors"] == 1
+        assert result["results"][0]["error_code"] == "invalid_image_or_response"
 
 
 def test_filename_csv_formula_escaped(tmp_path):
@@ -140,8 +140,10 @@ def test_refuses_symlinks_and_unbounded_batches(tmp_path):
     alias.symlink_to(tmp_path / "a.png")
     with pytest.raises(ValueError, match="symlinks"):
         inspect_batch.image_paths(tmp_path, 10)
+    folder_alias = tmp_path.parent / (tmp_path.name + "-alias")
+    folder_alias.symlink_to(tmp_path, target_is_directory=True)
     with pytest.raises(ValueError, match="symlink"):
-        inspect_batch.image_paths(tmp_path / "link", 10) if (tmp_path / "link").is_symlink() else inspect_batch.image_paths(alias, 10)
+        inspect_batch.image_paths(folder_alias, 10)
 
 
 def test_refuse_to_overwrite_private_evidence(tmp_path):
