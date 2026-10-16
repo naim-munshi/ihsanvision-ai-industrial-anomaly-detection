@@ -19,6 +19,7 @@
 | PatchCore checkpoint smoke test | Held-out defective bottle, anomaly detected, overlay generated | Verified in Kaggle; smoke evidence ZIP downloaded and integrity-tested on Mac |
 | Real Mac dual-model dashboard | Both models predicted normal for `normal_bottle.png` and flagged `defective_bottle.png`; overlays rendered for both | Four Safari observations **and four-request API acceptance passed**; source split provenance pending |
 | Bounded local PaDiM concurrency | 2 parallel HTTP submissions, 10 measured requests: **10/10 HTTP 200**, **0 failures**, 10/10 cached; HTTP p50/p95 **633.59/1,019.31 ms** | Observed on Mac; no maximum-QPS/SLA claim |
+| Batch inspection and private reports | Finite localhost image-folder inference via selected model/category, individual results, JSON + CSV export, fail-closed per-image errors | Implemented and offline-tested; real Mac execution pending |
 | Automated code checks | Python 3.11 and 3.12 | GitHub Actions |
 
 These performance and AUROC numbers come from **different protocols and purposes**. The dataset evaluation held out 16 images from MVTec's official test directory for validation, leaving **67 test images**. It is **not directly comparable with the full-test MVTec leaderboard**. The browser examples and synthetic API smoke input must not be presented as additional accuracy measurements.
@@ -159,6 +160,7 @@ CI validates packaging imports, canonical/legacy entry points, API contracts, le
 
 - [Architecture and design choices](docs/architecture.md)
 - [Operator-configured multi-category model registry](docs/multicategory-model-registry.md)
+- [Batch inspection CLI and JSON/CSV operator reports](docs/batch-inspection.md)
 - [Developer setup and execution](docs/development.md)
 - [Evaluation methodology and measured results](docs/evaluation.md)
 - [Trained PaDiM model card](docs/model-card.md)
