@@ -32,7 +32,7 @@ On the Mac that holds the two trusted saved checkpoints, update the checkout and
 python -m scripts.run_local_demo --port 8004
 ~~~
 
-The launcher should open the local dashboard and expose both models. Manually confirm one normal and one defective example per model, confirm error feedback when an invalid file is selected, and stop the server with Ctrl+C. Use port 8004 only if the previously running server still occupies 8003.
+The launcher should open the local dashboard and expose both models. Manually confirm one normal and one defective example per model, confirm an informative error when an invalid file is submitted, and stop the server with Ctrl+C. Use port 8004 only if the previously running server still occupies 8003.
 
 **Not yet verified:** fresh real-Mac run of the one-command launcher; all error states in the real browser; source-image membership in the archived held-out split; final media/screenshots. Offline CI passing does not satisfy these device-specific gates.
 
