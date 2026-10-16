@@ -12,21 +12,21 @@
 <header class="top"><div class="brand">Ihsan<span>Vision</span>.AI</div><div class="status" id="status">Checking model...</div></header>
 <section class="hero"><div class="eyebrow">Industrial anomaly detection</div><h1>Visual quality intelligence, built for engineers.</h1><p>Inspect a product image with a trained PaDiM or PatchCore model. Review its anomaly score and a localization overlay. Prototype only; human verification is required.</p></section>
 <div class="main-grid">
-<section class="panel"><h2>Inspect an image</h2><p>Choose one PNG, JPG, WEBP or BMP image (up to 10 MiB).</p><div class="model-control"><label for="model-choice">Detection model</label><select id="model-choice" disabled><option value="">Checking available models...</option></select><small id="model-hint">Only server-configured, trusted model checkpoints can be selected.</small></div>
+<section class="panel"><h2>Inspect an image</h2><p>Choose one PNG, JPG, WEBP or BMP image (up to 10 MiB).</p><div class="model-control"><label for="category-choice">Product category</label><select id="category-choice" disabled><option value="">Checking trained categories...</option></select><small id="category-hint">Only trained categories registered by the operator are available.</small></div><div class="model-control"><label for="model-choice">Detection model</label><select id="model-choice" disabled><option value="">Checking available models...</option></select><small id="model-hint">Only server-configured, trusted model checkpoints can be selected.</small></div>
 <div class="api-key-control"><label for="api-key">API key (only when your server requires one)</label><input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Optional for local development"><small>Kept only in this browser tab's memory, never stored in the page or URL. Use HTTPS for any remote access.</small></div>
 <div class="upload"><input id="file" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" aria-describedby="filename error"><strong>Click to select a product image</strong><small id="filename">No image selected</small></div><img id="preview" class="preview" alt="Selected image preview">
 <button class="action" id="analyze" disabled>Analyze image</button><p id="error" role="alert"></p></section>
 <section class="panel"><h2>Inspection output</h2><div id="empty"><p>Your result will appear here when the model finishes inference.</p></div>
-<div class="result" id="result" aria-live="polite"><div class="eyebrow">Raw anomaly score</div><div id="score" class="score">—</div><div class="meta"><span id="label" class="chip"></span><span id="model" class="chip"></span><span id="result-file" class="chip"></span><span id="latency" class="chip"></span></div><h2>Relative anomaly localization</h2><img class="map" id="heatmap" alt="Anomaly visualization overlay"><p class="note">Score is not a probability. Overlay contrast is normalized per image and is not a binary segmentation mask.</p></div>
+<div class="result" id="result" aria-live="polite"><div class="eyebrow">Raw anomaly score</div><div id="score" class="score">—</div><div class="meta"><span id="label" class="chip"></span><span id="model" class="chip"></span><span id="result-category" class="chip"></span><span id="result-file" class="chip"></span><span id="latency" class="chip"></span></div><h2>Relative anomaly localization</h2><img class="map" id="heatmap" alt="Anomaly visualization overlay"><p class="note">Score is not a probability. Overlay contrast is normalized per image and is not a binary segmentation mask.</p></div>
 </section></div>
 <footer class="foot">IhsanVision AI · Research/demo use only · Inspect predictions manually before making manufacturing decisions</footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const fileInput=$("file"), analyzeButton=$("analyze"), modelChoice=$("model-choice");
+const fileInput=$("file"), analyzeButton=$("analyze"), modelChoice=$("model-choice"), categoryChoice=$("category-choice");
 const MAX_IMAGE_BYTES=10*1024*1024;
 const SUPPORTED_IMAGE_TYPES=new Set(["image/png","image/jpeg","image/webp","image/bmp"]);
-let previewUrl, modelsAvailable=false, inFlight=false, fileValid=false;
+let previewUrl, modelsAvailable=false, inFlight=false, fileValid=false, modelsByCategory={};
 const modelLabel=name=>name==="padim"?"PaDiM":name==="patchcore"?"PatchCore":name;
 function resetResult(){
   $("result").style.display="none";
@@ -36,42 +36,82 @@ function resetResult(){
 function updateAnalyzeButton(){
   analyzeButton.disabled=inFlight || !modelsAvailable || !fileValid || !modelChoice.value;
 }
+function refreshAvailableModels(preferred){
+  const category=categoryChoice.value;
+  const available=modelsByCategory[category]||[];
+  modelChoice.replaceChildren();
+  modelsAvailable=available.length>0;
+  if(modelsAvailable){
+    for(const name of available){
+      const option=document.createElement("option");
+      option.value=name;
+      option.textContent=modelLabel(name);
+      modelChoice.appendChild(option);
+    }
+    modelChoice.value=available.includes(preferred)?preferred:available[0];
+    modelChoice.disabled=inFlight;
+    $("status").textContent=category.replace(/_/g," ")+" · "+available.map(modelLabel).join(" + ")+" ready";
+    $("model-hint").textContent="Each category uses its own trained checkpoint. Raw scores are not comparable across models or categories.";
+  }else{
+    const option=document.createElement("option");
+    option.value="";
+    option.textContent="No trained model configured";
+    modelChoice.appendChild(option);
+    modelChoice.disabled=true;
+    $("status").textContent="Checkpoint not configured";
+    $("model-hint").textContent="Configure a trusted checkpoint for this category on the server.";
+  }
+  updateAnalyzeButton();
+}
 async function loadModels(){
   try{
     const response=await fetch("/models");
     if(!response.ok)throw new Error("Model discovery failed");
     const data=await response.json();
-    const available=Array.isArray(data.available_models)?data.available_models.filter(name=>name==="padim"||name==="patchcore"):[];
-    modelsAvailable=available.length>0;
-    modelChoice.replaceChildren();
-    if(modelsAvailable){
-      for(const name of available){
-        const option=document.createElement("option");
-        option.value=name;
-        option.textContent=modelLabel(name);
-        modelChoice.appendChild(option);
-      }
-      modelChoice.value=available.includes(data.default_model)?data.default_model:available[0];
-      modelChoice.disabled=false;
-      $("status").textContent=available.map(modelLabel).join(" + ")+" ready";
-      $("model-hint").textContent="Switching models may reload weights on the next prediction. Raw scores cannot be compared directly.";
-    }else{
+    const legacy=Array.isArray(data.available_models)?data.available_models.filter(name=>name==="padim"||name==="patchcore"):[];
+    const byCategory=data.models_by_category && typeof data.models_by_category==="object" ? data.models_by_category : {bottle:legacy};
+    modelsByCategory={};
+    for(const [category, models] of Object.entries(byCategory)){
+      if(!/^[a-z][a-z0-9_]*$/.test(category) || !Array.isArray(models))continue;
+      const trained=[...new Set(models.filter(name=>name==="padim"||name==="patchcore"))];
+      if(trained.length)modelsByCategory[category]=trained;
+    }
+    const categories=Object.keys(modelsByCategory);
+    categoryChoice.replaceChildren();
+    for(const name of categories){
       const option=document.createElement("option");
-      option.value="";
-      option.textContent="No model configured";
-      modelChoice.appendChild(option);
+      option.value=name;
+      option.textContent=name.replace(/_/g," ");
+      categoryChoice.appendChild(option);
+    }
+    if(categories.length){
+      categoryChoice.value=categories.includes(data.default_category)?data.default_category:categories[0];
+      categoryChoice.disabled=false;
+      $("category-hint").textContent="Only categories with configured trusted checkpoints are listed.";
+      refreshAvailableModels(data.default_model);
+    }else{
+      categoryChoice.disabled=true;
+      modelsAvailable=false;
+      modelChoice.replaceChildren();
       modelChoice.disabled=true;
       $("status").textContent="Checkpoint not configured";
-      $("model-hint").textContent="Configure a trusted PaDiM and/or PatchCore checkpoint on the server.";
+      $("category-hint").textContent="No trained model categories are available on this server.";
     }
   }catch{
     modelsAvailable=false;
+    categoryChoice.disabled=true;
     modelChoice.disabled=true;
     $("status").textContent="Service unavailable";
     $("model-hint").textContent="Cannot retrieve available models. Check the API server.";
   }
   updateAnalyzeButton();
 }
+categoryChoice.addEventListener("change",()=>{
+  if(inFlight)return;
+  refreshAvailableModels(null);
+  resetResult();
+  $("error").textContent="";
+});
 modelChoice.addEventListener("change",()=>{
   resetResult();
   $("error").textContent="";
@@ -114,16 +154,20 @@ analyzeButton.addEventListener("click",async()=>{
   fileInput.disabled=true;
   updateAnalyzeButton();
   modelChoice.disabled=true;
+  categoryChoice.disabled=true;
   analyzeButton.textContent="Analyzing...";
   $("error").textContent="";
   resetResult();
   const selectedModel=modelChoice.value;
+  const selectedCategory=categoryChoice.value;
   const form=new FormData();
   form.append("file",selectedFile);
   try{
     const headers={};
     if($("api-key").value)headers["X-IhsanVision-Key"]=$("api-key").value;
-    const response=await fetch("/predict?model="+encodeURIComponent(selectedModel),{method:"POST",body:form,headers});
+    const route="/predict?model="+encodeURIComponent(selectedModel)
+      +(selectedCategory==="bottle"?"":"&category="+encodeURIComponent(selectedCategory));
+    const response=await fetch(route,{method:"POST",body:form,headers});
     let data;
     try{
       data=await response.json();
@@ -136,13 +180,16 @@ analyzeButton.addEventListener("click",async()=>{
       throw new Error(typeof data.detail==="string"?data.detail:"Request failed (HTTP "+response.status+").");
     }
     if(typeof data.anomaly_score!=="number" || !Number.isFinite(data.anomaly_score) ||
-       typeof data.model!=="string" || data.model!==selectedModel)
+       typeof data.model!=="string" || data.model!==selectedModel ||
+       (selectedCategory!=="bottle" && data.category!==selectedCategory) ||
+       (data.category && data.category!==selectedCategory))
       throw new Error("The inference response is invalid or does not match the selected model.");
     $("empty").style.display="none";
     $("result").style.display="block";
     $("score").textContent=Number(data.anomaly_score).toFixed(4);
     $("label").textContent=data.predicted_anomaly===null?"Threshold unavailable":data.predicted_anomaly?"Flagged anomaly":"Predicted normal";
     $("model").textContent=modelLabel(data.model);
+    $("result-category").textContent=selectedCategory.replace(/_/g," ");
     $("result-file").textContent=selectedFile.name;
     $("latency").textContent=data.latency_ms==null?"Latency unavailable":data.latency_ms+" ms";
     if(data.heatmap_png_base64){
@@ -157,6 +204,7 @@ analyzeButton.addEventListener("click",async()=>{
     inFlight=false;
     fileInput.disabled=false;
     modelChoice.disabled=!modelsAvailable;
+    categoryChoice.disabled=Object.keys(modelsByCategory).length===0;
     analyzeButton.textContent="Analyze image";
     updateAnalyzeButton();
   }
