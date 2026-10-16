@@ -81,6 +81,17 @@ Do not push MVTec images or the checkpoint binary into this Git repository. Do n
 
 ## Local development
 
+### One-command demo startup
+
+In an existing checkout with runtime dependencies installed and both trusted model checkpoints archived locally, run:
+
+~~~bash
+python -m scripts.run_local_demo
+~~~
+
+This binds only `127.0.0.1:8003`, opens the browser after localhost readiness, and refuses missing/empty model files or an occupied port without killing other processes. Override the default model archive directory with `--artifacts-dir`; use `--port 8004` for a free port; add `--no-browser` to suppress the new tab. The Python process must stay running while the dashboard is used; press Ctrl+C to stop it. This is a developer/local demonstration, not a public deployment or a substitute for the M8 security controls.
+
+
 ~~~bash
 git clone https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection.git
 cd ihsanvision-ai-industrial-anomaly-detection
