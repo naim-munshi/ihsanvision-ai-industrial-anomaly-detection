@@ -197,10 +197,12 @@ def save_private_report(result: dict, prefix: Path) -> tuple[Path, Path]:
     if json_path.exists() or csv_path.exists():
         raise ValueError("A report already exists; refusing to overwrite existing evidence")
     prefix.parent.mkdir(parents=True, exist_ok=True)
+    json_created = False
     try:
         with json_path.open("x", encoding="utf-8") as out:
             json.dump(result, out, indent=2, allow_nan=False)
             out.write("\n")
+        json_created = True
         with csv_path.open("x", encoding="utf-8", newline="") as out:
             writer = csv.DictWriter(out, fieldnames=COLUMNS, extrasaction="ignore")
             writer.writeheader()
@@ -209,7 +211,7 @@ def save_private_report(result: dict, prefix: Path) -> tuple[Path, Path]:
     except Exception:
         # Preserve previously existing artifacts; remove only the newly created
         # JSON when writing the CSV failed.
-        if json_path.exists() and not csv_path.exists():
+        if json_created and not csv_path.exists():
             json_path.unlink()
         raise
     return json_path, csv_path
