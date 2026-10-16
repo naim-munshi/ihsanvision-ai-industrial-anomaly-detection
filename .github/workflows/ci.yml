@@ -32,3 +32,9 @@ jobs:
         run: python -m compileall -q ihsanvision src scripts tests
       - name: Run tests
         run: python -m pytest -q
+      - name: Configure Node for dependency-free dashboard behavior tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Exercise dashboard DOM state and API error handling
+        run: node --test tests/dashboard.test.cjs
