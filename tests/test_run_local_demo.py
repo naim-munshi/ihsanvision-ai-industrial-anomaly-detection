@@ -65,6 +65,9 @@ def test_main_sets_both_paths_before_starting_loopback_uvicorn(
             model_folder / "patchcore-bottle-seed42" / "model.ckpt"
         )
     monkeypatch.setitem(sys.modules, "uvicorn", SimpleNamespace(run=fake_run))
+    for variable in ("IHSANVISION_PADIM_CHECKPOINT", "IHSANVISION_PATCHCORE_CHECKPOINT",
+                     "IHSANVISION_MODEL"):
+        monkeypatch.delenv(variable, raising=False)
     monkeypatch.setenv("IHSANVISION_CHECKPOINT", "/old/legacy.ckpt")
     launcher.main([
         "--artifacts-dir", str(model_folder),
