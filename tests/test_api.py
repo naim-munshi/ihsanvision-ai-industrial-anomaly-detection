@@ -110,3 +110,23 @@ def test_empty_upload_returns_400_without_prediction(monkeypatch, tmp_path):
     assert response.status_code == 400
     assert response.json()["detail"] == "Empty upload"
     assert len(response.headers["X-Request-ID"]) == 32
+
+
+def test_internal_inference_failure_is_safe_for_client(monkeypatch, tmp_path):
+    checkpoint = tmp_path / "trusted.ckpt"
+    checkpoint.touch()
+    monkeypatch.setenv("IHSANVISION_CHECKPOINT", str(checkpoint))
+    monkeypatch.setenv("IHSANVISION_MODEL", "padim")
+
+    def fake_predict(*args):
+        raise RuntimeError("internal backend exception")
+
+    client = TestClient(create_app(predict_fn=fake_predict))
+    response = client.post(
+        "/predict?model=padim",
+        files={"file": ("sample.png", example_png(), "image/png")},
+    )
+    assert response.status_code == 500
+    assert response.json()["detail"] == "Inference failed; inspect server logs"
+    assert "internal backend exception" not in response.text
+    assert len(response.headers["X-Request-ID"]) == 32
