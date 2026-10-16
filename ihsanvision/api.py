@@ -16,6 +16,7 @@ from fastapi.responses import FileResponse
 from PIL import Image, UnidentifiedImageError
 
 from .config import MODELS
+from .registry import SUPPORTED_CATEGORIES, model_catalog, public_catalog
 from .serving import PersistentModelPredictor
 from .predict import predict_image
 from .schemas import PredictionResponse
@@ -138,34 +139,38 @@ def create_app(predict_fn=None) -> FastAPI:
 
     @app.get("/health")
     def health():
-        configured = _configured_checkpoints()
+        catalog = model_catalog(_configured_checkpoints())
         return {
             "status": "ok",
-            "model_configured": bool(configured),
+            "model_configured": bool(catalog),
         }
 
     @app.get("/models")
     def models():
-        """Expose model availability without disclosing local checkpoint paths."""
-        configured = _configured_checkpoints()
-        return {
-            "available_models": [name for name in MODELS if name in configured],
-            "default_model": _default_model(configured),
-        }
+        """Expose available model/category IDs; never expose local checkpoint paths."""
+        return public_catalog(
+            model_catalog(_configured_checkpoints()),
+            preferred_model=os.getenv("IHSANVISION_MODEL", "padim").strip().lower(),
+        )
 
     @app.post("/predict", response_model=PredictionResponse)
     async def predict(
         file: UploadFile = File(...),
         model: str | None = Query(default=None),
+        category: str | None = Query(default=None),
         api_key: str | None = Header(default=None, alias="X-IhsanVision-Key"),
     ):
         require_predict_key(api_key)
         if model is not None and model not in MODELS:
             raise HTTPException(400, "Unsupported model. Choose padim or patchcore.")
-        configured = _configured_checkpoints()
+        if category is not None and category not in SUPPORTED_CATEGORIES:
+            raise HTTPException(400, "Unsupported product category")
+        catalog = model_catalog(_configured_checkpoints())
+        selected_category = category or ("bottle" if "bottle" in catalog else next(iter(catalog), "bottle"))
+        configured = catalog.get(selected_category, {})
         model_name = model if model is not None else _default_model(configured)
         if model_name is None or model_name not in configured:
-            raise HTTPException(503, "Requested model has no trusted checkpoint configured")
+            raise HTTPException(503, "Requested category/model has no trusted checkpoint configured")
         checkpoint = configured[model_name]
 
         await limiter.require_slot()
@@ -178,11 +183,11 @@ def create_app(predict_fn=None) -> FastAPI:
             ) from None
 
         try:
-            return await _predict_admitted(file, checkpoint, model_name)
+            return await _predict_admitted(file, checkpoint, model_name, selected_category)
         finally:
             admission_semaphore.release()
 
-    async def _predict_admitted(file: UploadFile, checkpoint: Path, model_name: str):
+    async def _predict_admitted(file: UploadFile, checkpoint: Path, model_name: str, category: str):
         payload = await file.read(MAX_UPLOAD + 1)
         if not payload:
             raise HTTPException(400, "Empty upload")
@@ -196,9 +201,12 @@ def create_app(predict_fn=None) -> FastAPI:
         # blocking FastAPI's event loop, so /health stays responsive during inference.
         async with inference_semaphore:
             try:
-                return await run_in_threadpool(
+                result = await run_in_threadpool(
                     _run_prediction, payload, suffix, checkpoint, model_name, predict_fn
                 )
+                # The category is selected exclusively through the server's
+                # trusted registry, never inferred from an arbitrary upload name.
+                return {**result, "category": category}
             except Exception:
                 logger.exception("Prediction failed")
                 # Do not expose internal exception messages/checkpoint paths to clients.
