@@ -53,6 +53,7 @@ let offset=0, busy=false, total=0, active=false;
 const headers=()=>({"X-IhsanVision-Key":$("api-key").value});
 function setBusy(value){
   busy=value;
+  $("api-key").disabled=value;
   $("load").disabled=value;
   $("prev").disabled=value||!active||offset===0;
   $("next").disabled=value||!active||offset+LIMIT>=total;
