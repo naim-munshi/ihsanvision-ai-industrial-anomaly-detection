@@ -23,8 +23,8 @@ USER 10001:10001
 WORKDIR /tmp
 EXPOSE 8080
 
-# Configuration probe, NOT a full checkpoint deserialization/inference readiness test.
+# Config and optionally operator-approved SHA probe; NOT a real inference check.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=45s --retries=3 \
-  CMD python -c "import json,urllib.request; h=json.load(urllib.request.urlopen('http://127.0.0.1:8080/health',timeout=3)); assert h.get('model_configured')" || exit 1
+  CMD python -c "import json,urllib.request; h=json.load(urllib.request.urlopen('http://127.0.0.1:8080/ready',timeout=3)); assert h.get('status') == 'config_ready'" || exit 1
 
 CMD ["python","-m","uvicorn","ihsanvision.api:app","--host","0.0.0.0","--port","8080","--workers","1"]

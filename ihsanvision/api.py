@@ -185,6 +185,37 @@ def create_app(predict_fn=None) -> FastAPI:
             "model_configured": bool(catalog),
         }
 
+    @app.get("/ready")
+    async def ready():
+        """Configuration/approved-integrity readiness, NOT model inference."""
+        catalog = restrict_catalog(model_catalog(_configured_checkpoints()), approved_models)
+        pairs = {(category, model): checkpoint
+                 for category, models in catalog.items() for model, checkpoint in models.items()}
+        if not pairs:
+            raise HTTPException(503, "No trusted checkpoints are configured")
+        for checkpoint in pairs.values():
+            if not checkpoint.is_file() or checkpoint.stat().st_size == 0:
+                raise HTTPException(503, "Configured checkpoint is missing or empty")
+        if approved_models is not None:
+            if set(pairs) != set(approved_models):
+                raise HTTPException(503, "Approved checkpoint inventory incomplete")
+            for pair, checkpoint in pairs.items():
+                try:
+                    identity = await run_in_threadpool(fingerprinter.identify, checkpoint)
+                    if identity.digest != approved_models[pair]:
+                        raise HTTPException(503, "Configured checkpoint failed approved integrity")
+                    await run_in_threadpool(fingerprinter.verify_unchanged, checkpoint, identity)
+                except HTTPException:
+                    raise
+                except (OSError, RuntimeError, ValueError):
+                    raise HTTPException(503, "Checkpoint integrity unavailable") from None
+        return {
+            "status": "config_ready",
+            "model_pairs": len(pairs),
+            "approved_sha256_verified": approved_models is not None,
+            "inference_verified": False,
+        }
+
     @app.get("/models")
     def models():
         """Expose available model/category IDs; never expose local checkpoint paths."""
