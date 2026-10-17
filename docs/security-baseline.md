@@ -4,7 +4,7 @@
 
 The service offers **optional** server-configured API-key protection for POST /predict, a process-global sliding-window rate cap, finite inference admission, and short opaque request IDs in HTTP response headers and sanitized server logs. These are first-stage defense-in-depth controls, **not sufficient for public internet hosting**. The default no-key mode exists solely for backwards-compatible localhost development.
 
-The key is a shared application secret, not account authorization or tenant separation. With multiple Uvicorn workers, each worker has separate rate/admission budgets. A per-process counter is not a distributed limiter. Authentication in the route takes place **after the ASGI multipart parser**, so an untrusted internet-facing service still requires proxy-level body-size limits and pre-request gateway authentication. A real internet service also needs HTTPS, managed secrets, origin/CSRF review, monitoring, dependency scanning, container isolation, incident response and a user/data retention policy.
+The key is a shared application secret, not account authorization or tenant separation. With multiple Uvicorn workers, each worker has separate rate/admission budgets. A per-process counter is not a distributed limiter. An additional pure-ASGI pre-parser guard now checks the shared API key and bounds the total /predict HTTP request body **before** FastAPI parses multipart data, including uploads without Content-Length. This guard buffers up to 10 MiB + 64 KiB per in-flight request and complements (rather than replaces) proxy-level request limits and gateway authentication. Account authorization, distributed rate limits, proxy TLS, and high-load validation remain pending. A real internet service also needs HTTPS, managed secrets, origin/CSRF review, monitoring, dependency scanning, container isolation, incident response and a user/data retention policy.
 
 ## Configure localhost optional authentication
 
@@ -35,7 +35,7 @@ Never include a key in a command-line URL, test fixture, report, screenshot, pub
 | Missing/incorrect key when server key set | HTTP 401; never invokes the model |
 | More than configured requests in 60 seconds | HTTP 429 with Retry-After |
 | Inference admission unavailable beyond configured wait | HTTP 503 with Retry-After |
-| Image over 10 MiB (route-level) or >25 million decoded pixels | Existing 413 behavior |
+| HTTP multipart body over 10 MiB + 64 KiB (before parsing), image over 10 MiB (route), or >25 million decoded pixels | HTTP 413 |
 | Every normal HTTP response | Opaque X-Request-ID header; no client-chosen ID trusted |
 
 The rate limit defaults to **120 accepted inference requests per minute per process**, adjustable to 1–10000. The admission limit defaults to **2 concurrent admitted requests** with a **1-second** deadline. The existing one-at-a-time Anomalib inference semaphore still protects the model instance. Admission permits a small amount of waiting; no claim about gateway-scale queue-bounding is made.
@@ -45,6 +45,6 @@ A structured audit line logs only generated request ID, HTTP method, endpoint **
 ## Remaining acceptance gates
 
 - Automated offline 401/429/audit/privacy/configuration tests are included; real concurrency/load tests remain pending.
-- Real reverse-proxy TLS and request-body authentication/limits remain pending.
+- Pre-parser key and bounded body checks are implemented with offline regression tests; real reverse-proxy TLS, distributed admission and gateway authentication/limits remain pending.
 - Secret rotation, account-aware roles, per-user quotas, distributed limiter, incident monitoring and deployment privacy policy remain pending.
 - Do not change Uvicorn from 127.0.0.1 to 0.0.0.0 based on this PR alone.
