@@ -76,6 +76,18 @@ separate [batch inspection CLI](docs/batch-inspection.md) supports larger bounde
 folders and private JSON/CSV evidence. All browser code has offline behavior
 tests; live Mac browser acceptance is still pending.
 
+### Safe resume of multi-category MVTec AD experiments
+
+Classic MVTec AD training already supports each of the 15 categories.
+The new `scripts.resume_mvtec_training` tool checks all requested dataset
+directories, verifies completed PaDiM/PatchCore reports and image-split
+equivalence, and plans only missing category/model runs. **Dry-run is the
+default**; `--execute --max-jobs 1` explicitly trains one missing job,
+refusing partial output directories instead of overwriting existing
+checkpoints. It never downloads or publishes datasets for you. See
+[resumable multi-category training](docs/resumable-multicategory-training.md).
+Actual training of the remaining categories has **not** happened yet.
+
 ### Multi-category trained model routing
 
 Beyond the verified `bottle` models, the application can now register **trusted, independently trained checkpoints per industrial product category and model family**. The API and browser display only configured categories; untrained classes are not advertised as available. The original scope includes 15 MVTec AD categories plus selected MVTec AD 2 categories; **only the bottle models have experimental evidence in this repository so far**. See the [multi-category registry setup, API and evaluation gates](docs/multicategory-model-registry.md). Additional categories must be trained and scientifically verified before claiming coverage.
