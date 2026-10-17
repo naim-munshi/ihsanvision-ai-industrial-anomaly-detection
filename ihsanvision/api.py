@@ -204,6 +204,21 @@ def create_app(predict_fn=None) -> FastAPI:
         require_predict_key(api_key)
         return await run_in_threadpool(history.list_lots, limit, offset)
 
+    @app.get("/inspection-model-versions")
+    async def inspection_model_versions(
+        limit: int = Query(default=50, ge=1, le=100),
+        offset: int = Query(default=0, ge=0, le=1_000_000),
+        lot_id: str | None = Query(default=None, pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]{2,39}$"),
+        api_key: str | None = Header(default=None, alias="X-IhsanVision-Key"),
+    ):
+        """Private model-version observation; never expose checkpoints or paths."""
+        if history is None:
+            raise HTTPException(503, "Private inspection history is disabled")
+        require_predict_key(api_key)
+        return await run_in_threadpool(
+            history.list_model_versions, limit, offset, lot_id
+        )
+
     @app.delete("/inspections/{inspection_id}")
     async def delete_inspection(
         inspection_id: str,
