@@ -22,6 +22,7 @@
 | Batch inspection and private reports | Browser batch inspection at `/batch` (up to 20 selected images, per-item results, local CSV export) plus bounded folder CLI JSON/CSV export | Implemented and offline-tested; real Mac execution pending |
 | Human-reviewed inspection history (opt-in) | Private SQLite metadata ledger, authenticated browse/delete/review API, `/history` human verdict workflow; AI result preserved independently | Implemented with regression tests; real Mac acceptance pending |
 | Production lot traceability | Optional opaque lot IDs in browser batch flow, persisted metadata links, authenticated per-lot inspection queries and human-vs-AI disagreement summary | Implemented and offline-tested; real Mac integration pending |
+| Checkpoint version identity | SHA-256 of actual trusted checkpoint, attached to each successful private history-backed inference; file-snapshot checks and non-destructive ledger migration | Implemented with offline tests; real Mac checkpoint verification pending |
 | Automated code checks | Python 3.11 and 3.12 | GitHub Actions |
 
 These performance and AUROC numbers come from **different protocols and purposes**. The dataset evaluation held out 16 images from MVTec's official test directory for validation, leaving **67 test images**. It is **not directly comparable with the full-test MVTec leaderboard**. The browser examples and synthetic API smoke input must not be presented as additional accuracy measurements.
@@ -50,6 +51,19 @@ or flag for follow-up, and delete individual records. **Disabled
 by default.** Raw images, filenames, heatmaps, weights and credentials are
 never stored by this feature. Read the [private inspection history security
 and setup guide](docs/private-inspection-history.md) before enabling it.
+
+### Checkpoint version identity for private inspections
+
+With private inspection history enabled, successful predictions now include a
+`checkpoint_sha256` field containing the exact SHA-256 fingerprint of the
+trusted local checkpoint file selected for that inference. The private
+`/history` dashboard shows this identity alongside each record, so operators
+can distinguish two differently trained or replaced checkpoints even if both
+are named `padim` or `patchcore`. Legacy records have an explicit unknown
+identity; no image bytes, paths or weight contents are saved. See the
+[model fingerprint implementation and limits](docs/checkpoint-provenance.md).
+An SHA-256 digest **does not validate** training quality, provenance of the
+original data, checkpoint deserialization safety or model approval.
 
 ### Trace production inspection lots
 

@@ -14,8 +14,12 @@ A human operator may independently mark `confirmed_normal`,
 `confirmed_anomaly`, or `needs_followup` after reviewing the inspected
 item; a separate `reviewed_at` timestamp is recorded. The original model
 prediction and score remain unchanged. Clearing a review returns it to null.
-No raw image bytes, heatmaps, source filenames, SHA-256 fingerprints,
-checkpoint files/paths, browser credentials or API keys are stored.
+No raw image bytes, heatmaps, source filenames, **image** SHA-256 fingerprints,
+checkpoint files/paths, browser credentials or API keys are stored. An
+**SHA-256 checksum of the trusted checkpoint file** is additionally saved for
+new successful predictions, allowing model-version traceability. Existing
+historical records keep a null fingerprint. This digest is not proof of safe
+model provenance; see [checkpoint identity](checkpoint-provenance.md).
 
 By default **history is OFF**; ordinary inference and batch inspection remain
 fully functional and no SQLite file is created.
@@ -74,9 +78,11 @@ The same operations are available as HTTP:
   are refused. This update never modifies the saved AI result.
 - `DELETE /inspections/{inspection_id}` with the same key deletes **one**
   record and returns `{"deleted": true, "inspection_id": "..."}`.
-- `POST /predict` returns `inspection_id` only when a successful inference
-  was recorded. Disabled history returns `null`; `GET/DELETE` returns 503
-  while disabled.
+- `POST /predict` returns `inspection_id` and `checkpoint_sha256` only
+  when a successful private inference was recorded. SHA-256 fingerprints are
+  computed from the actual selected trusted local file, *not* a name, label or
+  pre-submitted hash. Disabled history returns `null` for both fields;
+  `GET/DELETE` returns 503 while disabled.
 
 Deleting a record is irreversible; make a **private** database backup first
 if it is needed. Errors, model exceptions and invalid inference outputs do

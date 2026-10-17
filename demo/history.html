@@ -54,10 +54,10 @@ small{color:#9eb0c6}.foot{margin-top:25px;font-size:12px;color:#708ba4}
 <h2>Saved successful predictions</h2>
 <div class="table-wrap"><table>
 <caption>Latest 25 metadata-only inspections per page. Raw anomaly scores are not calibrated probabilities.</caption>
-<thead><tr><th scope="col">UTC timestamp</th><th scope="col">Lot</th><th scope="col">Category</th><th scope="col">Model</th><th scope="col">AI decision</th><th scope="col">Raw score</th><th scope="col">Latency</th><th scope="col">Human review</th><th scope="col">Remove</th></tr></thead>
+<thead><tr><th scope="col">UTC timestamp</th><th scope="col">Lot</th><th scope="col">Category</th><th scope="col">Model</th><th scope="col">AI decision</th><th scope="col">Raw score</th><th scope="col">Latency</th><th scope="col">Checkpoint SHA-256</th><th scope="col">Human review</th><th scope="col">Remove</th></tr></thead>
 <tbody id="rows"></tbody>
 </table></div>
-<p><small>Human review is stored separately from the original AI decision and score. Use Confirm normal, Confirm anomaly, or Needs follow-up after an independent inspection. Clear review returns the record to unreviewed. Remove permanently deletes metadata and cannot be undone. This is not a certified audit log or multiuser system.</small></p>
+<p><small>Checkpoint SHA-256 identifies the exact trusted checkpoint bytes used for history-backed inference; it does not verify the training dataset, provenance, or model accuracy. Older records may show unknown. Human review is stored separately from the original AI decision and score. Use Confirm normal, Confirm anomaly, or Needs follow-up after an independent inspection. Clear review returns the record to unreviewed. Remove permanently deletes metadata and cannot be undone. This is not a certified audit log or multiuser system.</small></p>
 </section>
 <div class="foot">IhsanVision.AI · Local operator-only prototype</div>
 </main>
@@ -99,6 +99,11 @@ function renderRecord(record){
   cell(tr,status,record.predicted_anomaly===true?"flagged":"normal");
   cell(tr,typeof record.anomaly_score==="number"?record.anomaly_score.toFixed(4):"—");
   cell(tr,record.latency_ms===null?"—":record.latency_ms+" ms");
+  const digest=record.checkpoint_sha256;
+  const version=cell(tr,typeof digest==="string" && /^[0-9a-f]{64}$/.test(digest)
+    ?digest.slice(0,12)+"…" : "Unknown (legacy)");
+  if(typeof digest==="string" && /^[0-9a-f]{64}$/.test(digest))
+    version.title=digest;
   const reviewCell=cell(tr,"");
   const selector=document.createElement("select");
   selector.setAttribute("aria-label","Human review for inspection "+record.id);

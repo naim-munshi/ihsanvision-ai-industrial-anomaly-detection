@@ -17,6 +17,7 @@ from PIL import Image, UnidentifiedImageError
 
 from .config import MODELS
 from .history import InspectionHistory
+from .provenance import CheckpointFingerprinter
 from .registry import SUPPORTED_CATEGORIES, model_catalog, public_catalog
 from .serving import PersistentModelPredictor
 from .predict import predict_image
@@ -134,6 +135,7 @@ def create_app(predict_fn=None) -> FastAPI:
                 "with at least 16 characters"
             )
         history = InspectionHistory(Path(history_path))
+    fingerprinter = CheckpointFingerprinter() if history is not None else None
 
     @app.middleware("http")
     async def request_audit(request: Request, call_next):
@@ -281,9 +283,20 @@ def create_app(predict_fn=None) -> FastAPI:
         # blocking FastAPI's event loop, so /health stays responsive during inference.
         async with inference_semaphore:
             try:
+                # When history is enabled, bind this prediction to the exact
+                # selected checkpoint contents. Only hash a previously unseen
+                # on-disk snapshot; inspect in a worker to keep /health responsive.
+                identity = (
+                    await run_in_threadpool(fingerprinter.identify, checkpoint)
+                    if fingerprinter is not None else None
+                )
                 result = await run_in_threadpool(
                     _run_prediction, payload, suffix, checkpoint, model_name, predict_fn
                 )
+                if identity is not None:
+                    await run_in_threadpool(
+                        fingerprinter.verify_unchanged, checkpoint, identity
+                    )
                 # The category is selected exclusively through the server's
                 # trusted registry, never inferred from an arbitrary upload name.
                 validated = PredictionResponse.model_validate({
@@ -293,6 +306,9 @@ def create_app(predict_fn=None) -> FastAPI:
                     raise ValueError("Inference result model does not match selected checkpoint")
                 if history is None:
                     return validated
+                validated = validated.model_copy(
+                    update={"checkpoint_sha256": identity.digest}
+                )
                 inspection_id = await run_in_threadpool(
                     history.record, category, model_name, validated.model_dump(), lot_id
                 )

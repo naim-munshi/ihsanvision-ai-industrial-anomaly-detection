@@ -113,7 +113,7 @@ def test_record_list_pagination_auth_and_deletion(monkeypatch, tmp_path):
     assert set(page.json()["records"][0]) == {
         "id", "created_at", "category", "model",
         "predicted_anomaly", "anomaly_score", "latency_ms", "model_reused",
-        "operator_verdict", "reviewed_at", "lot_id"
+        "operator_verdict", "reviewed_at", "lot_id", "checkpoint_sha256"
     }
     assert page.json()["records"][0]["predicted_anomaly"] is True
     assert page.json()["records"][0]["model_reused"] is False
