@@ -24,6 +24,7 @@
 | Production lot traceability | Optional opaque lot IDs in browser batch flow, persisted metadata links, authenticated per-lot inspection queries and human-vs-AI disagreement summary | Implemented and offline-tested; real Mac integration pending |
 | Checkpoint version identity | SHA-256 of actual trusted checkpoint, attached to each successful private history-backed inference; file-snapshot checks and non-destructive ledger migration | Implemented with offline tests; real Mac checkpoint verification pending |
 | Model-version inspection analytics | Private per-category/model/checkpoint hash groups with lot filter, human review disagreement and operator dashboard | Implemented with offline tests; real Mac review pending |
+| Approved checkpoint pinning (opt-in) | Operator-approved exact SHA-256 per category/model, authenticated inference, mismatch rejected before model execution | Implemented with offline tests; real checkpoint Mac acceptance pending |
 | Automated code checks | Python 3.11 and 3.12 | GitHub Actions |
 
 These performance and AUROC numbers come from **different protocols and purposes**. The dataset evaluation held out 16 images from MVTec's official test directory for validation, leaving **67 test images**. It is **not directly comparable with the full-test MVTec leaderboard**. The browser examples and synthetic API smoke input must not be presented as additional accuracy measurements.
@@ -52,6 +53,18 @@ or flag for follow-up, and delete individual records. **Disabled
 by default.** Raw images, filenames, heatmaps, weights and credentials are
 never stored by this feature. Read the [private inspection history security
 and setup guide](docs/private-inspection-history.md) before enabling it.
+
+### Approved checkpoint pinning (operator opt-in)
+
+An operator may explicitly enable `IHSANVISION_APPROVED_MODELS` with a private
+JSON manifest of **reviewed category/model SHA-256 pins** plus a mandatory
+`IHSANVISION_API_KEY`. Only pinned pairs are discoverable, and a replaced
+or unexpected checkpoint is blocked **before inference** with HTTP 503.
+The legacy developer demo remains unchanged when approval mode is unset.
+Approval pins do **not** by themselves prove quality, dataset rights or
+tamper-proof model provenance. Read the
+[approval mode security and operator guide](docs/approved-checkpoint-pinning.md)
+before enabling it; real Mac validation is still pending.
 
 ### Checkpoint version identity for private inspections
 
