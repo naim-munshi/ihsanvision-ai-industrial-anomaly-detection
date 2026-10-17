@@ -13,7 +13,7 @@ The container is intended for **localhost experimentation only**. It is delibera
 - A **private, externally stored** benchmark directory is mounted **read-only** as /models; the container configuration points to both model checkpoints inside that tree.
 - The service runs as UID 10001, drops Linux capabilities, enables no-new-privileges, uses a read-only root filesystem and keeps runtime Anomalib logs/tmp files in an in-memory /tmp directory.
 - Compose requires IHSANVISION_API_KEY to be set. Do not use a demo/example key, do not commit it, and do not send it in chat.
-- The /health container check verifies **only that a local checkpoint path is configured and exists**. It does not prove checkpoint deserialization/inference, correct tensor outputs or availability under load.
+- The container healthcheck now calls **GET /ready**: it checks configured nonempty local checkpoints, and if approval mode is on, verifies expected SHA-256 pins and rejects missing approved model pairs. **GET /health** remains a liveness-only endpoint. Neither endpoint deserializes a checkpoint, runs inference or proves availability under load.
 
 ## Prepare on macOS
 
@@ -41,6 +41,7 @@ docker compose -f compose.yaml build
 docker compose -f compose.yaml up -d
 docker compose -f compose.yaml ps
 curl -fsS http://127.0.0.1:8080/health
+curl -fsS http://127.0.0.1:8080/ready
 curl -fsS http://127.0.0.1:8080/models
 ~~~
 
@@ -57,7 +58,7 @@ The host's external checkpoint directory is read-only to the container and is no
 ## Verification gates before calling M9 complete
 
 1. Docker daemon responds; compose config resolves the absolute model directory and key without printing any secret publicly.
-2. Image builds on the target architecture and healthcheck becomes healthy; no model weights or input images appear in the image layers.
+2. Image builds on the target architecture and the readiness healthcheck becomes healthy; no model weights or input images appear in image layers. The readiness response explicitly marks inference_verified=false.
 3. Both checkpoints are visible and **actual inference**, including heatmap, succeeds via the container on normal and defective images.
 4. Container filesystem/UID/capability/read-only mount restrictions work without breaking runtime.
 5. Failure and restart behavior, startup/cold-load, memory use, and graceful shutdown are documented with real outputs.
