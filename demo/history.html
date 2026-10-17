@@ -34,6 +34,7 @@ small{color:#9eb0c6}.foot{margin-top:25px;font-size:12px;color:#708ba4}
 <div class="toolbar">
 <button id="load">Load private history</button>
 <button id="lot-summary" class="secondary">Show lot overview</button>
+<button id="version-summary" class="secondary">Show model versions</button>
 <button id="prev" class="secondary" disabled>Previous</button>
 <button id="next" class="secondary" disabled>Next</button>
 <small id="page-info">No records loaded</small>
@@ -49,6 +50,18 @@ small{color:#9eb0c6}.foot{margin-top:25px;font-size:12px;color:#708ba4}
 <th scope="col">Confirmed normal</th><th scope="col">Confirmed anomaly</th>
 <th scope="col">Follow-up</th><th scope="col">Unreviewed</th><th scope="col">Human / AI disagreement</th>
 </tr></thead><tbody id="lot-rows"></tbody></table></div>
+</section>
+<section class="panel" aria-label="Private model version summary">
+<h2>Inspection outcomes by checkpoint version</h2>
+<p>Each row identifies a separate checkpoint hash and product category.
+Unknown legacy hashes are isolated. Human/AI disagreements are review flags,
+not proven model accuracy.</p>
+<p id="version-error" role="alert"></p>
+<div class="table-wrap"><table><thead><tr>
+<th scope="col">Category</th><th scope="col">Model</th><th scope="col">Checkpoint SHA-256</th>
+<th scope="col">Inspected</th><th scope="col">AI flagged</th><th scope="col">Follow-up</th>
+<th scope="col">Unreviewed</th><th scope="col">Human/AI disagreement</th>
+</tr></thead><tbody id="version-rows"></tbody></table></div>
 </section>
 <section class="panel">
 <h2>Saved successful predictions</h2>
@@ -71,6 +84,7 @@ function setBusy(value){
   $("api-key").disabled=value;
   $("load").disabled=value;
   $("lot-summary").disabled=value;
+  $("version-summary").disabled=value;
   $("lot-filter").disabled=value;
   $("prev").disabled=value||!active||offset===0;
   $("next").disabled=value||!active||offset+LIMIT>=total;
@@ -239,6 +253,51 @@ async function loadLotOverview(){
   }finally{setBusy(false);}
 }
 $("lot-summary").addEventListener("click",loadLotOverview);
+async function loadVersionSummary(){
+  if(busy||!$("api-key").value){
+    $("version-error").textContent="Enter the private operator API key first.";
+    return;
+  }
+  const key=$("lot-filter").value;
+  if(key && !/^[A-Za-z0-9][A-Za-z0-9_-]{2,39}$/.test(key)){
+    $("version-error").textContent="Invalid lot ID format.";
+    return;
+  }
+  setBusy(true);
+  $("version-error").textContent="";
+  try{
+    const url="/inspection-model-versions?limit=100&offset=0"+
+      (key?"&lot_id="+encodeURIComponent(key):"");
+    const response=await fetch(url,{headers:headers()});
+    if(!response.ok)throw new Error(response.status===401?
+      "Invalid operator API key.":"Cannot load model versions (HTTP "+response.status+").");
+    const payload=await response.json();
+    if(!payload||!Array.isArray(payload.groups)||!Number.isInteger(payload.total))
+      throw new Error("Invalid model version summary response.");
+    $("version-rows").replaceChildren();
+    for(const group of payload.groups){
+      const tr=document.createElement("tr");
+      cell(tr,group.category);
+      cell(tr,group.model);
+      const hash=group.checkpoint_sha256;
+      const td=cell(tr,typeof hash==="string" && /^[0-9a-f]{64}$/.test(hash)
+        ?hash.slice(0,12)+"…" : "Unknown (legacy)");
+      if(typeof hash==="string" && /^[0-9a-f]{64}$/.test(hash))td.title=hash;
+      for(const value of [
+        group.inspected,group.ai_flagged,group.needs_followup,
+        group.unreviewed,group.human_ai_disagreements
+      ])cell(tr,value);
+      $("version-rows").appendChild(tr);
+    }
+    if(payload.total>100)$("version-error").textContent=
+      "Showing first 100 model-version groups; use the authenticated API for more pages.";
+  }catch(error){
+    $("version-rows").replaceChildren();
+    $("version-error").textContent=error.message;
+  }finally{setBusy(false);}
+}
+$("version-summary").addEventListener("click",loadVersionSummary);
+
 $("lot-filter").addEventListener("input",()=>{clearRows();$("error").textContent="";});
 $("load").addEventListener("click",()=>loadPage(0));
 $("prev").addEventListener("click",()=>loadPage(Math.max(0,offset-LIMIT)));
