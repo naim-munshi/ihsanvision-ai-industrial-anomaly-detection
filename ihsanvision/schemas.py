@@ -33,3 +33,7 @@ class PredictionResponse(BaseModel):
         description="True when an already-restored checkpoint was reused in this server process.",
     )
     notes: str | None = Field(default=None, description="Warnings about score semantics.")
+    inspection_id: str | None = Field(
+        default=None,
+        description="Private operator history record ID only when opt-in persistence is enabled.",
+    )
