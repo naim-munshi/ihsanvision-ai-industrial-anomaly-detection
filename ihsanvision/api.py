@@ -258,6 +258,8 @@ def create_app(predict_fn=None) -> FastAPI:
                 validated = PredictionResponse.model_validate({
                     **result, "category": category
                 })
+                if validated.model != model_name:
+                    raise ValueError("Inference result model does not match selected checkpoint")
                 if history is None:
                     return validated
                 inspection_id = await run_in_threadpool(
