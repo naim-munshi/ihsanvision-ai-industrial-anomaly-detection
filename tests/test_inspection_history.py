@@ -112,7 +112,8 @@ def test_record_list_pagination_auth_and_deletion(monkeypatch, tmp_path):
     assert page.json()["limit"] == 1 and len(page.json()["records"]) == 1
     assert set(page.json()["records"][0]) == {
         "id", "created_at", "category", "model",
-        "predicted_anomaly", "anomaly_score", "latency_ms", "model_reused"
+        "predicted_anomaly", "anomaly_score", "latency_ms", "model_reused",
+        "operator_verdict", "reviewed_at"
     }
     assert page.json()["records"][0]["predicted_anomaly"] is True
     assert page.json()["records"][0]["model_reused"] is False
@@ -202,3 +203,97 @@ def test_threshold_unavailable_remains_null(monkeypatch, tmp_path):
     }).json()["records"]
     assert records[0]["predicted_anomaly"] is None
     assert records[0]["model_reused"] is True
+
+
+def test_review_auth_validation_and_original_prediction_immutability(monkeypatch, tmp_path):
+    configure(monkeypatch, tmp_path)
+    client = TestClient(create_app(predict_fn=predictor))
+    recorded = post(client)
+    assert recorded.status_code == 200
+    inspection_id = recorded.json()["inspection_id"]
+    endpoint = "/inspections/" + inspection_id + "/review"
+    headers = {"X-IhsanVision-Key": "private-test-operator-secret"}
+
+    assert client.patch(endpoint, json={"verdict": "confirmed_anomaly"}).status_code == 401
+    assert client.patch(endpoint, headers={"X-IhsanVision-Key": "wrong"},
+                        json={"verdict": "confirmed_anomaly"}).status_code == 401
+    assert client.patch(endpoint, headers=headers,
+                        json={"verdict": "maybe"}).status_code == 422
+    assert client.patch(endpoint, headers=headers,
+                        json={"verdict": "confirmed_normal", "secret_note": "PII"}).status_code == 422
+    assert client.patch("/inspections/" + "0" * 32 + "/review", headers=headers,
+                        json={"verdict": "confirmed_normal"}).status_code == 404
+
+    change = client.patch(endpoint, headers=headers, json={"verdict": "confirmed_normal"})
+    assert change.status_code == 200
+    assert change.json() == {"updated": True, "inspection_id": inspection_id,
+                              "verdict": "confirmed_normal"}
+
+    row = client.get("/inspections", headers=headers).json()["records"][0]
+    assert row["operator_verdict"] == "confirmed_normal"
+    assert row["reviewed_at"] is not None
+    assert row["predicted_anomaly"] is True
+    assert row["anomaly_score"] == 0.73
+    assert row["model"] == "padim"
+
+    # Simulate an application restart; human decision persists independently.
+    restarted = TestClient(create_app(predict_fn=predictor))
+    assert restarted.get("/inspections", headers=headers).json()["records"][0][
+        "operator_verdict"
+    ] == "confirmed_normal"
+
+    assert restarted.patch(endpoint, headers=headers,
+                           json={"verdict": "needs_followup"}).status_code == 200
+    assert restarted.get("/inspections", headers=headers).json()["records"][0][
+        "operator_verdict"
+    ] == "needs_followup"
+    assert restarted.patch(endpoint, headers=headers,
+                           json={"verdict": None}).status_code == 200
+    reset = restarted.get("/inspections", headers=headers).json()["records"][0]
+    assert reset["operator_verdict"] is None
+    assert reset["reviewed_at"] is None
+    assert reset["predicted_anomaly"] is True
+
+
+def test_review_migrates_existing_private_history_without_loss(monkeypatch, tmp_path):
+    db = configure(monkeypatch, tmp_path)
+    # Existing PR #28 database has no operator-review fields.
+    with sqlite3.connect(db) as connection:
+        connection.executescript("""
+            CREATE TABLE inspections (
+                id TEXT PRIMARY KEY, created_at TEXT NOT NULL,
+                category TEXT NOT NULL, model TEXT NOT NULL,
+                predicted_anomaly INTEGER, anomaly_score REAL NOT NULL,
+                latency_ms REAL, model_reused INTEGER
+            );
+        """)
+        connection.execute(
+            "INSERT INTO inspections VALUES (?,?,?,?,?,?,?,?)",
+            ("a" * 32, "2026-10-16T01:00:00+00:00", "bottle", "padim", 0, 0.15, 20.0, 1),
+        )
+    db.chmod(0o600)
+    client = TestClient(create_app(predict_fn=predictor))
+    headers = {"X-IhsanVision-Key": "private-test-operator-secret"}
+    rows = client.get("/inspections", headers=headers).json()["records"]
+    assert len(rows) == 1
+    assert rows[0]["anomaly_score"] == 0.15
+    assert rows[0]["operator_verdict"] is None
+    assert client.patch("/inspections/" + "a" * 32 + "/review",
+                        headers=headers, json={"verdict": "confirmed_normal"}).status_code == 200
+    # Running the migration a second time must be idempotent.
+    newer = TestClient(create_app(predict_fn=predictor))
+    persisted = newer.get("/inspections", headers=headers).json()["records"]
+    assert persisted[0]["operator_verdict"] == "confirmed_normal"
+    assert persisted[0]["predicted_anomaly"] is False
+
+
+def test_history_page_has_human_review_controls(monkeypatch, tmp_path):
+    configure(monkeypatch, tmp_path, history=False)
+    response = TestClient(create_app(predict_fn=predictor)).get("/history")
+    assert response.status_code == 200
+    assert "Human review" in response.text
+    assert "Confirm anomaly" in response.text
+    assert "Needs follow-up" in response.text
+    assert 'method:"PATCH"' in response.text
+    assert "saveReview" in response.text
+    assert 'localStorage' not in response.text.split("<script>")[-1]
