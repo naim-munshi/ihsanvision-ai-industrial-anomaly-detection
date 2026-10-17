@@ -62,9 +62,9 @@ def plan(dataset_root: Path, runs_dir: Path, categories: list[str],
                     "inspect or archive them before resuming."
                 )
             if len(artifacts) == len(ARTIFACTS):
-                # Fail closed on malformed manifests, bad checksums/provenance
-                # metadata or unusable saved metrics; never infer completion from
-                # mere file existence.
+                # Reject malformed saved reports, overlapping or missing
+                # split manifests, wrong seeds and unusable metrics; this does
+                # not cryptographically verify checkpoint authenticity.
                 _, manifest = read_completed_run(folder, model, category, seed)
                 manifests[model] = manifest
                 present[model] = True
