@@ -57,3 +57,33 @@ def test_cli_refuses_output_inside_runs(tmp_path: Path) -> None:
     with pytest.raises(SystemExit, match="outside experiment runs"):
         main(["--runs-dir", str(runs), "--categories", "bottle",
               "--output", str(runs / "candidate.json")])
+
+
+def test_candidate_export_rejects_unfair_model_splits(tmp_path: Path) -> None:
+    root = tmp_path / "runs"
+    for model in ("padim", "patchcore"):
+        folder = root / f"{model}-bottle-seed42"
+        folder.mkdir(parents=True)
+        (folder / "model.ckpt").write_bytes(model.encode())
+    base = {"train": ["train.png"], "val": ["val.png"], "test": ["test.png"]}
+    different = {"train": ["other-train.png"], "val": ["val.png"], "test": ["test.png"]}
+    with patch("scripts.build_registry_candidates.read_completed_run",
+               side_effect=[({"evaluation": {"protocol": "heldout"}}, base),
+                            ({"evaluation": {"protocol": "heldout"}}, different)]):
+        with pytest.raises(RuntimeError, match="image paths differ"):
+            build_candidates(root, ["bottle"], 42)
+
+
+def test_candidate_export_accepts_identical_model_splits(tmp_path: Path) -> None:
+    root = tmp_path / "runs"
+    for model in ("padim", "patchcore"):
+        folder = root / f"{model}-bottle-seed42"
+        folder.mkdir(parents=True)
+        (folder / "model.ckpt").write_bytes(model.encode())
+    base = {"train": ["train.png"], "val": ["val.png"], "test": ["test.png"]}
+    with patch("scripts.build_registry_candidates.read_completed_run",
+               side_effect=[({"evaluation": {"protocol": "heldout"}}, base),
+                            ({"evaluation": {"protocol": "heldout"}}, base)]):
+        candidates = build_candidates(root, ["bottle"], 42)
+    assert candidates["status"] == "candidates_only_not_approved"
+    assert len(candidates["models"]) == 2
