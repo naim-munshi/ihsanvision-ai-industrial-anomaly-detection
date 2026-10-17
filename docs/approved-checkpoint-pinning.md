@@ -91,6 +91,9 @@ once at startup so permissions do not change in the middle of a request.
   is separately enabled, the digest is also stored in private SQLite
   metadata. Do not confuse a valid SHA with approval of source data or
   demonstrated model performance.
+- **Explicitly empty approval setting**: an environment variable that is set
+  but blank is treated as a startup error, **not** a request to disable
+  checkpoint approval. Unset the variable entirely to return to legacy mode.
 - **Invalid manifest**: missing/relative/symlink file, unknown category,
   duplicate approval, non-lowercase SHA-256, wrong schema and oversized
   manifest **prevent app startup** instead of silently disabling the policy.
