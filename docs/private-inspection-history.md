@@ -84,6 +84,26 @@ The same operations are available as HTTP:
   pre-submitted hash. Disabled history returns `null` for both fields;
   `GET/DELETE` returns 503 while disabled.
 
+### Private CSV report export
+
+With history enabled, click **Export private CSV** in the operator dashboard.
+It downloads up to 500 of the newest metadata-only records, optionally filtered
+by an opaque lot ID. The browser sends the operator key only in the request
+header. The server refuses unauthenticated exports, sets `Cache-Control:
+no-store`, and never includes source filenames, images, checkpoints,
+model paths, credentials or heatmaps.
+
+API: `GET /inspections/export.csv?limit=500&lot_id=LOT-2026-A01`
+with the same `X-IhsanVision-Key` header as private history. Output headers
+`X-Export-Rows` and `X-Export-Truncated` report the bounded result size.
+If records exceed the limit, the export is partial; use paginated authenticated
+`GET /inspections` to retrieve the remaining records. CSV cells receive
+spreadsheet-formula protection. Keep exported files private; they include
+lot IDs, review outcomes, raw scores and checkpoint SHA identities.
+
+This is a human-review/reporting convenience, not a transactionally
+snapshotted audit export, signed compliance ledger or proof of accuracy.
+
 Deleting a record is irreversible; make a **private** database backup first
 if it is needed. Errors, model exceptions and invalid inference outputs do
 **not** create successful records. The client should not interpret missing

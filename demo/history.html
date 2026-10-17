@@ -35,6 +35,7 @@ small{color:#9eb0c6}.foot{margin-top:25px;font-size:12px;color:#708ba4}
 <button id="load">Load private history</button>
 <button id="lot-summary" class="secondary">Show lot overview</button>
 <button id="version-summary" class="secondary">Show model versions</button>
+<button id="export-csv" class="secondary" type="button">Export private CSV</button>
 <button id="prev" class="secondary" disabled>Previous</button>
 <button id="next" class="secondary" disabled>Next</button>
 <small id="page-info">No records loaded</small>
@@ -85,6 +86,7 @@ function setBusy(value){
   $("load").disabled=value;
   $("lot-summary").disabled=value;
   $("version-summary").disabled=value;
+  $("export-csv").disabled=value;
   $("lot-filter").disabled=value;
   $("prev").disabled=value||!active||offset===0;
   $("next").disabled=value||!active||offset+LIMIT>=total;
@@ -297,6 +299,39 @@ async function loadVersionSummary(){
   }finally{setBusy(false);}
 }
 $("version-summary").addEventListener("click",loadVersionSummary);
+async function exportPrivateCsv(){
+  if(busy||!$("api-key").value){
+    $("error").textContent="Enter your operator API key first.";
+    return;
+  }
+  const key=$("lot-filter").value;
+  if(key && !/^[A-Za-z0-9][A-Za-z0-9_-]{2,39}$/.test(key)){
+    $("error").textContent="Invalid lot ID format.";
+    return;
+  }
+  setBusy(true);
+  $("error").textContent="";
+  try{
+    const route="/inspections/export.csv?limit=500"+(key?"&lot_id="+encodeURIComponent(key):"");
+    const response=await fetch(route,{headers:headers(),cache:"no-store"});
+    if(!response.ok)throw new Error(response.status===401?
+      "Invalid operator API key.":"Private export failed (HTTP "+response.status+").");
+    const data=await response.blob();
+    const resource=URL.createObjectURL(data);
+    const anchor=document.createElement("a");
+    anchor.href=resource;
+    anchor.download="ihsanvision-inspections.csv";
+    anchor.click();
+    setTimeout(()=>URL.revokeObjectURL(resource),1000);
+    $("status").textContent="Exported "+(response.headers.get("X-Export-Rows")||"up to 500")+
+      " private records."+(response.headers.get("X-Export-Truncated")==="true"?
+      " Export limited to 500; use authenticated API for additional pages.":"");
+  }catch(error){
+    $("error").textContent=error.message;
+  }finally{setBusy(false);}
+}
+$("export-csv").addEventListener("click",exportPrivateCsv);
+
 
 $("lot-filter").addEventListener("input",()=>{clearRows();$("error").textContent="";});
 $("load").addEventListener("click",()=>loadPage(0));
