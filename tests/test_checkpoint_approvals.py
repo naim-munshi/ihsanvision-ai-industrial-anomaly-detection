@@ -215,3 +215,46 @@ def test_opt_in_off_preserves_legacy_unrestricted_demo(monkeypatch, tmp_path):
     assert r.json()["checkpoint_sha256"] is None
     assert post(client, "patchcore").status_code == 200
     assert len(calls) == 2
+
+
+def test_approvals_scope_model_and_category_not_only_family(monkeypatch, tmp_path):
+    bottle, _, manifest = fixture(monkeypatch, tmp_path)
+    cable = tmp_path / "cable-padim.ckpt"
+    cable.write_bytes(b"independent-cable-model-fixture")
+    registry = tmp_path / "model-registry.json"
+    registry.write_text(json.dumps({
+        "version": 1,
+        "models": [{
+            "category": "cable", "model": "padim",
+            "checkpoint": str(cable),
+        }],
+    }))
+    monkeypatch.setenv("IHSANVISION_MODEL_REGISTRY", str(registry))
+    recorded = []
+    first = TestClient(create_app(predict_fn=mock_predict(recorded)))
+    assert first.get("/models").json()["available_categories"] == ["bottle"]
+    assert first.post(
+        "/predict?model=padim&category=cable", headers=HEADERS,
+        files={"file": ("image.png", png(), "image/png")},
+    ).status_code == 503
+    assert recorded == []
+
+    manifest.write_text(json.dumps({
+        "version": 1,
+        "approvals": [
+            {"category": "bottle", "model": "padim",
+             "checkpoint_sha256": sha256(bottle.read_bytes()).hexdigest()},
+            {"category": "cable", "model": "padim",
+             "checkpoint_sha256": sha256(cable.read_bytes()).hexdigest()},
+        ],
+    }))
+    second = TestClient(create_app(predict_fn=mock_predict(recorded)))
+    assert second.get("/models").json()["available_categories"] == ["bottle", "cable"]
+    result = second.post(
+        "/predict?model=padim&category=cable", headers=HEADERS,
+        files={"file": ("image.png", png(), "image/png")},
+    )
+    assert result.status_code == 200
+    assert result.json()["category"] == "cable"
+    assert result.json()["checkpoint_sha256"] == sha256(cable.read_bytes()).hexdigest()
+    assert recorded == [(cable.resolve(), "padim")]
