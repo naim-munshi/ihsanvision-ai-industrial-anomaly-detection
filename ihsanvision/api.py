@@ -16,6 +16,7 @@ from fastapi.responses import FileResponse
 from PIL import Image, UnidentifiedImageError
 
 from .config import MODELS
+from .approvals import configured_approvals, restrict_catalog
 from .history import InspectionHistory
 from .provenance import CheckpointFingerprinter
 from .registry import SUPPORTED_CATEGORIES, model_catalog, public_catalog
@@ -122,6 +123,9 @@ def create_app(predict_fn=None) -> FastAPI:
     limiter = GlobalSlidingWindow(
         positive_int_env("IHSANVISION_RATE_LIMIT_PER_MINUTE", 120, 10000)
     )
+    # Empty/unset: backwards-compatible local prototype. When explicitly set,
+    # only operator-pinned exact checkpoint versions may run.
+    approved_models = configured_approvals()
     history_path = os.getenv("IHSANVISION_HISTORY_DB", "").strip()
     history = None
     if history_path:
@@ -135,7 +139,7 @@ def create_app(predict_fn=None) -> FastAPI:
                 "with at least 16 characters"
             )
         history = InspectionHistory(Path(history_path))
-    fingerprinter = CheckpointFingerprinter() if history is not None else None
+    fingerprinter = CheckpointFingerprinter() if (history is not None or approved_models is not None) else None
 
     @app.middleware("http")
     async def request_audit(request: Request, call_next):
@@ -167,7 +171,7 @@ def create_app(predict_fn=None) -> FastAPI:
 
     @app.get("/health")
     def health():
-        catalog = model_catalog(_configured_checkpoints())
+        catalog = restrict_catalog(model_catalog(_configured_checkpoints()), approved_models)
         return {
             "status": "ok",
             "model_configured": bool(catalog),
@@ -177,7 +181,7 @@ def create_app(predict_fn=None) -> FastAPI:
     def models():
         """Expose available model/category IDs; never expose local checkpoint paths."""
         return public_catalog(
-            model_catalog(_configured_checkpoints()),
+            restrict_catalog(model_catalog(_configured_checkpoints()), approved_models),
             preferred_model=os.getenv("IHSANVISION_MODEL", "padim").strip().lower(),
         )
 
@@ -261,7 +265,7 @@ def create_app(predict_fn=None) -> FastAPI:
             raise HTTPException(400, "Unsupported model. Choose padim or patchcore.")
         if category is not None and category not in SUPPORTED_CATEGORIES:
             raise HTTPException(400, "Unsupported product category")
-        catalog = model_catalog(_configured_checkpoints())
+        catalog = restrict_catalog(model_catalog(_configured_checkpoints()), approved_models)
         selected_category = category or ("bottle" if "bottle" in catalog else next(iter(catalog), "bottle"))
         configured = catalog.get(selected_category, {})
         model_name = model if model is not None else _default_model(configured)
@@ -298,13 +302,19 @@ def create_app(predict_fn=None) -> FastAPI:
         # blocking FastAPI's event loop, so /health stays responsive during inference.
         async with inference_semaphore:
             try:
-                # When history is enabled, bind this prediction to the exact
-                # selected checkpoint contents. Only hash a previously unseen
-                # on-disk snapshot; inspect in a worker to keep /health responsive.
+                # For private history OR opt-in approval mode, bind inference
+                # to the actual checkpoint bytes. Identity runs in a worker
+                # so /health stays responsive; unchanged file snapshots are cached.
                 identity = (
                     await run_in_threadpool(fingerprinter.identify, checkpoint)
                     if fingerprinter is not None else None
                 )
+                if approved_models is not None and (
+                    identity is None or identity.digest != approved_models.get((category, model_name))
+                ):
+                    raise HTTPException(
+                        503, "Selected checkpoint version is not operator-approved"
+                    )
                 result = await run_in_threadpool(
                     _run_prediction, payload, suffix, checkpoint, model_name, predict_fn
                 )
@@ -319,15 +329,18 @@ def create_app(predict_fn=None) -> FastAPI:
                 })
                 if validated.model != model_name:
                     raise ValueError("Inference result model does not match selected checkpoint")
+                if identity is not None:
+                    validated = validated.model_copy(
+                        update={"checkpoint_sha256": identity.digest}
+                    )
                 if history is None:
                     return validated
-                validated = validated.model_copy(
-                    update={"checkpoint_sha256": identity.digest}
-                )
                 inspection_id = await run_in_threadpool(
                     history.record, category, model_name, validated.model_dump(), lot_id
                 )
                 return validated.model_copy(update={"inspection_id": inspection_id})
+            except HTTPException:
+                raise
             except Exception:
                 logger.exception("Prediction failed")
                 # Do not expose internal exception messages/checkpoint paths to clients.
