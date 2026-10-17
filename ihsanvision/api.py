@@ -20,7 +20,7 @@ from .history import InspectionHistory
 from .registry import SUPPORTED_CATEGORIES, model_catalog, public_catalog
 from .serving import PersistentModelPredictor
 from .predict import predict_image
-from .schemas import PredictionResponse
+from .schemas import PredictionResponse, InspectionReviewUpdate
 from .security import GlobalSlidingWindow, positive_int_env, require_predict_key
 
 logger = logging.getLogger(__name__)
@@ -201,6 +201,21 @@ def create_app(predict_fn=None) -> FastAPI:
         if not await run_in_threadpool(history.delete_record, inspection_id):
             raise HTTPException(404, "Inspection record not found")
         return {"deleted": True, "inspection_id": inspection_id}
+
+    @app.patch("/inspections/{inspection_id}/review")
+    async def review_inspection(
+        inspection_id: str,
+        review: InspectionReviewUpdate,
+        api_key: str | None = Header(default=None, alias="X-IhsanVision-Key"),
+    ):
+        if history is None:
+            raise HTTPException(503, "Private inspection history is disabled")
+        require_predict_key(api_key)
+        if not await run_in_threadpool(
+            history.update_review, inspection_id, review.verdict
+        ):
+            raise HTTPException(404, "Inspection record not found")
+        return {"updated": True, "inspection_id": inspection_id, "verdict": review.verdict}
 
     @app.post("/predict", response_model=PredictionResponse)
     async def predict(
