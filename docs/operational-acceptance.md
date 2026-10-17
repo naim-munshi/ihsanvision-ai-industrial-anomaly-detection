@@ -1,0 +1,54 @@
+# M6/M8/M9 — Real localhost stack acceptance (no training)
+
+A consolidated acceptance runner checks the **already running** IhsanVision
+service without doing any training or checkpoint deserialization itself.
+
+It checks liveness, /ready configuration integrity, actual PaDiM and PatchCore
+Bottle model discovery, single/batch/history dashboard HTTP routes, and the
+existing four **real** checkpoint-backed predictions (normal/defect samples
+through both models with validated heatmap PNGs). These checks cannot be run
+in lightweight GitHub Actions: the actual model weights live privately on the
+operator machine.
+
+## On your Mac (one command after starting the server)
+
+Start `python -m scripts.run_local_demo --no-browser` with both trusted Bottle
+weights installed, or start the local container described in
+[container-deployment.md](container-deployment.md).
+
+Set `IHSANVISION_CLIENT_API_KEY` privately to your server key if using
+authenticated inference; never commit or paste it into issue text.
+
+```bash
+python -m scripts.local_stack_acceptance \
+  --url http://127.0.0.1:8003 \
+  --normal /absolute/private/normal_bottle.png \
+  --defective /absolute/private/defective_bottle.png \
+  --output "$HOME/ihsanvision-artifacts/local-stack-acceptance.json" \
+  --require-auth
+```
+
+Remove `--require-auth` only for the unkeyed **localhost developer** setup.
+The authenticated mode checks an unauthenticated upload is rejected with 401
+and that the client has its own key for successful inference.
+
+## Docker validation
+
+First successfully run `docker compose -f compose.yaml build` and
+`docker compose -f compose.yaml up -d` with your private read-only checkpoint
+mount. Run the **same** command with `--url http://127.0.0.1:8080`. A
+passing report then demonstrates inference through that port, but you must
+separately confirm `docker compose ps`, user 10001, readonly mounts,
+container restart, memory and cold-start behavior. A successful lightweight
+GitHub CI test cannot replace a real Docker build.
+
+The JSON report is private, created exclusively, POSIX 0600, and contains
+the two sample **filenames and SHA-256 hashes**, no image bytes,
+base64 heatmaps, weights, absolute checkpoint paths or API keys.
+Existing reports are never overwritten. Unexpected predictions exit nonzero
+and stay recorded as a failure.
+
+**Not established:** held-out split membership, robustness, calibration,
+long-running camera throughput, browser UI interaction, actual Docker
+internals, accessibility or production internet security. Manual review
+of overlays and image provenance is still required.
