@@ -22,6 +22,8 @@ def _csv_safe(value) -> str:
         return ""
     if type(value) is bool:
         return "true" if value else "false"
+    if type(value) in (int, float):
+        return str(value)
     text = str(value)
     # Prevent spreadsheet formula execution even if a corrupted historic
     # record contains a malicious string. CSV escaping alone is insufficient.
