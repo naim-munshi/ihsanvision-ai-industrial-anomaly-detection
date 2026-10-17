@@ -52,6 +52,30 @@ shasum -a 256 /absolute/private/path/to/trusted/model.ckpt
 The complete digest should equal the API's `checkpoint_sha256` for the
 corresponding model. **Do not upload checkpoint files to a public verifier.**
 
+## Operator inspection analytics by version
+
+The authenticated `GET /inspection-model-versions?limit=50&offset=0`
+endpoint groups only successfully saved history records by **category,
+model family, and exact checkpoint SHA-256**. Optionally use
+`&lot_id=LOT-2026-A01` to limit the groups to a production lot.
+This avoids mixing observations from differently trained checkpoints
+with a reused `padim` / `patchcore` label.
+
+Each group reports counts of AI normal/flagged/unknown, independent human
+normal/anomaly/follow-up/unreviewed and the number of known human/AI
+disagreements. These are **workflow counts**, not defect sensitivity or
+model-accuracy estimates, and raw model scores are not averaged.
+
+The operator-only `/history` dashboard has a **Show model versions** button.
+It shows at most the first 100 groups for quick operator review; the
+authenticated API offers bounded pagination for further pages. It may
+also use the existing lot-filter input. Null SHA-256 is a separate
+**Unknown (legacy)** group and cannot be equated to an existing model.
+
+No source images, checkpoint paths or weights are returned through the
+aggregation. Operator API key authentication and local-only deployment
+limitations continue to apply.
+
 ## Limits and next safeguards
 
 SHA-256 identifies **file contents**, not whether the checkpoint was trained
