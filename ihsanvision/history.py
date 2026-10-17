@@ -223,6 +223,69 @@ class InspectionHistory:
             "offset": offset,
         }
 
+    def list_model_versions(self, limit: int = 50, offset: int = 0,
+                            lot_id: str | None = None) -> dict:
+        """Group saved inspections by exact checkpoint identity and category.
+
+        A missing legacy fingerprint is its own explicit unknown group, never
+        merged with an identified checkpoint. No raw score comparisons are
+        implied across model families, datasets or learned thresholds.
+        """
+        if type(limit) is not int or not 1 <= limit <= 100:
+            raise ValueError("limit must be between 1 and 100")
+        if type(offset) is not int or not 0 <= offset <= 1_000_000:
+            raise ValueError("offset must be between 0 and 1000000")
+        lot_id = self.validate_lot(lot_id)
+        where = " WHERE lot_id = ?" if lot_id is not None else ""
+        params = (lot_id,) if lot_id is not None else ()
+        with self._connect() as connection:
+            total = connection.execute(
+                "SELECT COUNT(*) FROM (SELECT category, model, checkpoint_sha256 "
+                "FROM inspections" + where
+                + " GROUP BY category, model, checkpoint_sha256)",
+                params,
+            ).fetchone()[0]
+            rows = connection.execute(
+                """SELECT category, model, checkpoint_sha256,
+                          COUNT(*) AS inspected,
+                          MAX(created_at) AS last_inspection_utc,
+                          SUM(CASE WHEN predicted_anomaly = 1 THEN 1 ELSE 0 END) AS ai_flagged,
+                          SUM(CASE WHEN predicted_anomaly = 0 THEN 1 ELSE 0 END) AS ai_normal,
+                          SUM(CASE WHEN predicted_anomaly IS NULL THEN 1 ELSE 0 END) AS ai_unknown,
+                          SUM(CASE WHEN operator_verdict = 'confirmed_normal'
+                                   THEN 1 ELSE 0 END) AS human_normal,
+                          SUM(CASE WHEN operator_verdict = 'confirmed_anomaly'
+                                   THEN 1 ELSE 0 END) AS human_anomaly,
+                          SUM(CASE WHEN operator_verdict = 'needs_followup'
+                                   THEN 1 ELSE 0 END) AS needs_followup,
+                          SUM(CASE WHEN operator_verdict IS NULL THEN 1 ELSE 0 END) AS unreviewed,
+                          SUM(CASE WHEN
+                              (operator_verdict = 'confirmed_normal' AND predicted_anomaly = 1)
+                              OR (operator_verdict = 'confirmed_anomaly' AND predicted_anomaly = 0)
+                              THEN 1 ELSE 0 END) AS human_ai_disagreements
+                   FROM inspections"""
+                + where
+                + """ GROUP BY category, model, checkpoint_sha256
+                       ORDER BY last_inspection_utc DESC,
+                                category ASC, model ASC, checkpoint_sha256 ASC
+                       LIMIT ? OFFSET ?""",
+                (*params, limit, offset),
+            ).fetchall()
+        names = (
+            "category", "model", "checkpoint_sha256", "inspected",
+            "last_inspection_utc", "ai_flagged", "ai_normal", "ai_unknown",
+            "human_normal", "human_anomaly", "needs_followup",
+            "unreviewed", "human_ai_disagreements",
+        )
+        return {
+            "groups": [dict(zip(names, row)) for row in rows],
+            "total": total, "limit": limit, "offset": offset, "lot_id": lot_id,
+            "notes": (
+                "Exact checkpoint hash groups, including unknown legacy fingerprints. "
+                "Disagreements are human review flags, not accuracy measurements."
+            ),
+        }
+
     def update_review(self, record_id: str, verdict: str | None) -> bool:
         """Human adjudication is separate from immutable model prediction fields.
 
