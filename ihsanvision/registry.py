@@ -14,7 +14,12 @@ from .config import CATEGORIES, MODELS
 
 # AD2 classes are supported as registry labels only when the operator
 # independently trains and evaluates the corresponding weights.
-AD2_CATEGORIES = ("sheet_metal", "can", "wall_plugs")
+# Actual dataset directory names from Anomalib's MVTecAD2Dataset.
+# The formerly documented "wall_plugs" spelling is not a dataset category.
+AD2_CATEGORIES = (
+    "can", "fabric", "fruit_jelly", "rice",
+    "sheet_metal", "vial", "wallplugs", "walnuts",
+)
 SUPPORTED_CATEGORIES = CATEGORIES + AD2_CATEGORIES
 
 
