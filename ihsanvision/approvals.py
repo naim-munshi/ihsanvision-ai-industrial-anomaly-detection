@@ -33,9 +33,15 @@ def configured_approvals() -> dict[tuple[str, str], str] | None:
     Approvals are snapshotted once on app startup. A modified manifest
     requires server restart; inference rechecks checkpoint identity per request.
     """
-    raw = os.environ.get("IHSANVISION_APPROVED_MODELS", "").strip()
-    if not raw:
+    raw_setting = os.environ.get("IHSANVISION_APPROVED_MODELS")
+    if raw_setting is None:
         return None
+    raw = raw_setting.strip()
+    if not raw:
+        raise ValueError(
+            "IHSANVISION_APPROVED_MODELS was set but empty: "
+            "refusing to silently disable approval enforcement"
+        )
     path = Path(raw).expanduser()
     if not path.is_absolute():
         raise ValueError("IHSANVISION_APPROVED_MODELS requires an absolute local file")
