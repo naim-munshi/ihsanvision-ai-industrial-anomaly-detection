@@ -258,3 +258,12 @@ def test_approvals_scope_model_and_category_not_only_family(monkeypatch, tmp_pat
     assert result.json()["category"] == "cable"
     assert result.json()["checkpoint_sha256"] == sha256(cable.read_bytes()).hexdigest()
     assert recorded == [(cable.resolve(), "padim")]
+
+
+def test_explicitly_empty_approval_env_never_silently_disables_pin_guard(
+    monkeypatch, tmp_path
+):
+    fixture(monkeypatch, tmp_path)
+    monkeypatch.setenv("IHSANVISION_APPROVED_MODELS", "   ")
+    with pytest.raises(ValueError, match="set but empty"):
+        create_app(predict_fn=mock_predict([]))
