@@ -112,3 +112,57 @@ def test_reject_duplicate_key_headers_before_parser(monkeypatch):
                          headers=[("X-IhsanVision-Key", "secure-key-for-private-demo"),
                                   ("X-IhsanVision-Key", "secure-key-for-private-demo")])
     assert result.status_code == 400
+
+
+def test_second_upload_is_rejected_while_first_holds_prebody_admission(monkeypatch):
+    monkeypatch.delenv("IHSANVISION_API_KEY", raising=False)
+
+    async def scenario():
+        entered = asyncio.Event()
+        release = asyncio.Event()
+        first_sent, second_sent = [], []
+
+        async def app(scope, receive, send):
+            entered.set()
+            await release.wait()
+
+        async def receive_once():
+            return {"type": "http.request", "body": b"a", "more_body": False}
+
+        async def first_send(message):
+            first_sent.append(message)
+
+        async def second_send(message):
+            second_sent.append(message)
+
+        scope = {"type": "http", "method": "POST", "path": "/predict",
+                 "headers": []}
+        guard = PredictBodyGuard(app, max_body_bytes=8, max_inflight=1, timeout=0.01)
+        first_task = asyncio.create_task(guard(scope, receive_once, first_send))
+        await asyncio.wait_for(entered.wait(), timeout=1)
+        await guard(scope, receive_once, second_send)
+        assert second_sent[0]["status"] == 503
+        release.set()
+        await first_task
+
+    asyncio.run(scenario())
+
+
+def test_rejected_credentials_do_not_consume_upload_admission(monkeypatch):
+    monkeypatch.setenv("IHSANVISION_API_KEY", "secure-key-for-private-demo")
+    sent = []
+
+    async def app(scope, receive, send):
+        raise AssertionError("Unauthorized request may not reach app")
+
+    async def never_receive():
+        raise AssertionError("Unauthorized request may not consume body")
+
+    async def send(message):
+        sent.append(message)
+
+    scope = {"type": "http", "method": "POST", "path": "/predict", "headers": []}
+    asyncio.run(PredictBodyGuard(app, max_inflight=1)(
+        scope, never_receive, send,
+    ))
+    assert sent[0]["status"] == 401
