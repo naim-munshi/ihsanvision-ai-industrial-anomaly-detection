@@ -10,7 +10,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from ihsanvision.benchmark import read_completed_run, run_folder
+from ihsanvision.benchmark import read_completed_run, require_matching_splits, run_folder
 from ihsanvision.config import CATEGORIES
 
 
@@ -32,9 +32,11 @@ def build_candidates(runs_dir: Path, categories: list[str], seed: int) -> dict:
         raise ValueError("Invalid seed")
     models = []
     for category in categories:
+        manifests = {}
         for model in ("padim", "patchcore"):
             folder = run_folder(Path(runs_dir), model, category, seed)
-            report, _ = read_completed_run(folder, model, category, seed)
+            report, manifest = read_completed_run(folder, model, category, seed)
+            manifests[model] = manifest
             checkpoint = folder / "model.ckpt"
             if checkpoint.is_symlink() or not checkpoint.is_file():
                 raise ValueError("Checkpoint must be a regular non-symlink file")
@@ -52,6 +54,9 @@ def build_candidates(runs_dir: Path, categories: list[str], seed: int) -> dict:
                 "checkpoint": str(resolved), "sha256": digest,
                 "seed": seed, "protocol": report["evaluation"].get("protocol"),
             })
+        # A candidate pair is scientifically invalid when its train/val/test
+        # samples differ, even if both individual reports are well-formed.
+        require_matching_splits(category, manifests)
     return {"version": 1, "status": "candidates_only_not_approved", "models": models}
 
 
