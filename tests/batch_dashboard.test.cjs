@@ -142,3 +142,37 @@ test("rejects category mismatched responses and preserves legacy model discovery
   assert.equal(ui.get("rows").children[0].children[1].textContent,"error");
   assert.equal(ui.fetchCalls.find(call=>call.url.startsWith("/predict")).url,"/predict?model=padim");
 });
+
+test("accepts opaque tracked lot ID and exports it without altering image decisions", async () => {
+  const ui = await mount();
+  ui.get("lot-id").value = "LOT-2026-A01";
+  ui.get("lot-id").handlers.input();
+  ui.get("images").files = [sample("item.png")];
+  ui.get("images").handlers.change();
+  assert.equal(ui.get("run").disabled, false);
+  await ui.get("run").handlers.click();
+  const attempts = ui.fetchCalls.filter(x => x.url.startsWith("/predict"));
+  assert.equal(attempts.length, 1);
+  assert.equal(attempts[0].url, "/predict?model=padim&lot_id=LOT-2026-A01");
+  ui.get("download").handlers.click();
+  assert.match(ui.blobs[0].parts[0], /lot_id/);
+  assert.match(ui.blobs[0].parts[0], /LOT-2026-A01/);
+});
+
+test("rejects unsafe lot identifiers and preserves untracked legacy behavior", async () => {
+  const ui = await mount();
+  ui.get("images").files = [sample("item.png")];
+  ui.get("images").handlers.change();
+  for (const bad of ["AB", "=HYPERLINK", "../secrets", "has space", "x".repeat(41)]) {
+    ui.get("lot-id").value = bad;
+    ui.get("lot-id").handlers.input();
+    assert.equal(ui.get("run").disabled, true, bad);
+  }
+  assert.equal(ui.fetchCalls.filter(x => x.url.startsWith("/predict")).length, 0);
+  ui.get("lot-id").value = "";
+  ui.get("lot-id").handlers.input();
+  assert.equal(ui.get("run").disabled, false);
+  await ui.get("run").handlers.click();
+  assert.equal(ui.fetchCalls.find(x => x.url.startsWith("/predict")).url,
+               "/predict?model=padim");
+});
