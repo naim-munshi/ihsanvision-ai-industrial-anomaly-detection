@@ -161,6 +161,34 @@ def test_failed_or_invalid_inference_is_never_saved(monkeypatch, tmp_path):
     assert client.get("/inspections", headers=headers).json()["total"] == 0
 
 
+def test_model_mismatch_never_creates_history_record(monkeypatch, tmp_path):
+    configure(monkeypatch, tmp_path)
+    def wrong_model(_image, _checkpoint, _model):
+        return {"model": "patchcore", "anomaly_score": 0.9,
+                "predicted_anomaly": True, "latency_ms": 2.0}
+    client = TestClient(create_app(predict_fn=wrong_model))
+    assert post(client).status_code == 500
+    assert client.get("/inspections", headers={
+        "X-IhsanVision-Key": "private-test-operator-secret"
+    }).json()["total"] == 0
+
+
+def test_history_ui_ships_metadata_only_operator_view(monkeypatch, tmp_path):
+    configure(monkeypatch, tmp_path, history=False)
+    client = TestClient(create_app(predict_fn=predictor))
+    page = client.get("/history")
+    assert page.status_code == 200
+    assert 'id="api-key"' in page.text
+    assert 'id="rows"' in page.text
+    assert 'id="load"' in page.text
+    assert 'href="/batch"' in page.text
+    assert '"/inspections?limit="' in page.text
+    assert 'window.confirm' in page.text
+    assert 'localStorage' not in page.text.split("<script>")[-1]
+    assert 'sessionStorage' not in page.text.split("<script>")[-1]
+
+
+
 def test_threshold_unavailable_remains_null(monkeypatch, tmp_path):
     db = configure(monkeypatch, tmp_path)
     def no_threshold(_image, _checkpoint, model):
