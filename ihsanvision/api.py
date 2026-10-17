@@ -12,13 +12,14 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, Header, HTTPException, Query, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from PIL import Image, UnidentifiedImageError
 
 from .config import MODELS
 from .approvals import configured_approvals, restrict_catalog
 from .history import InspectionHistory
 from .provenance import CheckpointFingerprinter
+from .report_export import export_history_csv
 from .registry import SUPPORTED_CATEGORIES, model_catalog, public_catalog
 from .serving import PersistentModelPredictor
 from .predict import predict_image
@@ -235,6 +236,29 @@ def create_app(predict_fn=None) -> FastAPI:
             raise HTTPException(503, "Private inspection history is disabled")
         require_predict_key(api_key)
         return await run_in_threadpool(history.list_records, limit, offset, lot_id)
+
+    @app.get("/inspections/export.csv")
+    async def export_inspections(
+        limit: int = Query(default=100, ge=1, le=500),
+        lot_id: str | None = Query(default=None, pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]{2,39}$"),
+        api_key: str | None = Header(default=None, alias="X-IhsanVision-Key"),
+    ):
+        """Export up to 500 metadata-only private inspections with CSV formula protection."""
+        if history is None:
+            raise HTTPException(503, "Private inspection history is disabled")
+        require_predict_key(api_key)
+        content, count, truncated = await run_in_threadpool(
+            export_history_csv, history, limit=limit, lot_id=lot_id
+        )
+        return Response(
+            content=content, media_type="text/csv",
+            headers={
+                "Content-Disposition": 'attachment; filename="ihsanvision-inspections.csv"',
+                "Cache-Control": "no-store",
+                "X-Export-Rows": str(count),
+                "X-Export-Truncated": "true" if truncated else "false",
+            },
+        )
 
     @app.get("/inspection-lots")
     async def inspection_lots(
