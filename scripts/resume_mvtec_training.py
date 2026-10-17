@@ -26,6 +26,14 @@ from scripts.kaggle_preflight import scan_dataset
 
 ARTIFACTS = ("model.ckpt", "report.json", "splits.json")
 
+def require_external_runs(dataset_root: Path, runs_dir: Path) -> None:
+    """Reject output directories inside the source tree, including symlink aliases."""
+    source = Path(dataset_root).expanduser().resolve()
+    destination = Path(runs_dir).expanduser().resolve()
+    if destination == source or source in destination.parents:
+        raise ValueError("Training runs directory must be outside the dataset root")
+
+
 
 def plan(dataset_root: Path, runs_dir: Path, categories: list[str],
          seed: int) -> dict:
@@ -38,6 +46,7 @@ def plan(dataset_root: Path, runs_dir: Path, categories: list[str],
         raise ValueError("Seed must be a nonnegative integer")
     dataset_root = Path(dataset_root).expanduser()
     runs_dir = Path(runs_dir).expanduser()
+    require_external_runs(dataset_root, runs_dir)
     jobs: list[dict] = []
     existing_pairs: list[dict] = []
     input_counts: list[dict] = []
@@ -103,6 +112,7 @@ def execute(plan_data: dict, dataset_root: Path, runs_dir: Path, *,
             seed: int, accelerator: str, max_jobs: int = 1,
             trainer=run) -> list[dict]:
     """Run a *bounded* number of missing jobs, never overwriting completed runs."""
+    require_external_runs(dataset_root, runs_dir)
     if type(max_jobs) is not int or not 1 <= max_jobs <= 4:
         raise ValueError("max_jobs must be between 1 and 4")
     if not isinstance(plan_data, dict) or plan_data.get("schema_version") != 1:
