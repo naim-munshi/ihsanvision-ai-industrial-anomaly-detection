@@ -10,7 +10,8 @@ main{max-width:1120px;margin:0 auto;padding:35px 24px 90px}.top{display:flex;jus
 .brand{font-weight:800;letter-spacing:-.04em;font-size:22px}.brand span{color:#67d9c2}
 a{color:#71e2cb}h1{font-size:clamp(28px,5vw,46px);letter-spacing:-.04em;margin:42px 0 10px}
 p{color:#a5b4cd;line-height:1.6}.panel{border:1px solid #29405b;background:#14243a;border-radius:18px;padding:24px;margin-top:22px}
-label{display:block;font-weight:700;font-size:13px;margin:5px 0 10px}input{background:#102035;color:#fff;border:1px solid #496785;border-radius:10px;padding:12px;max-width:420px;width:100%}
+label{display:block;font-weight:700;font-size:13px;margin:5px 0 10px}input,select{background:#102035;color:#fff;border:1px solid #496785;border-radius:10px;padding:12px;max-width:420px;width:100%}
+select{min-width:175px;width:auto;margin-right:5px;padding:9px;font-size:12px}
 button{background:#5ce0bf;color:#062434;padding:11px 16px;border:0;border-radius:10px;font-weight:800;cursor:pointer}
 button.secondary{background:#263b52;color:#ecf3ff}button.danger{background:#5a3441;color:#fff}
 button:disabled{opacity:.5;cursor:not-allowed}.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:15px}
@@ -39,10 +40,10 @@ small{color:#9eb0c6}.foot{margin-top:25px;font-size:12px;color:#708ba4}
 <h2>Saved successful predictions</h2>
 <div class="table-wrap"><table>
 <caption>Latest 25 metadata-only inspections per page. Raw anomaly scores are not calibrated probabilities.</caption>
-<thead><tr><th scope="col">UTC timestamp</th><th scope="col">Category</th><th scope="col">Model</th><th scope="col">Decision</th><th scope="col">Raw score</th><th scope="col">Latency</th><th scope="col">Remove</th></tr></thead>
+<thead><tr><th scope="col">UTC timestamp</th><th scope="col">Category</th><th scope="col">Model</th><th scope="col">AI decision</th><th scope="col">Raw score</th><th scope="col">Latency</th><th scope="col">Human review</th><th scope="col">Remove</th></tr></thead>
 <tbody id="rows"></tbody>
 </table></div>
-<p><small>Remove permanently deletes a single saved metadata record. A deletion cannot be undone. This local database is not a compliance-certified audit log or multiuser access-control system.</small></p>
+<p><small>Human review is stored separately from the original AI decision and score. Use Confirm normal, Confirm anomaly, or Needs follow-up after an independent inspection. Clear review returns the record to unreviewed. Remove permanently deletes metadata and cannot be undone. This is not a certified audit log or multiuser system.</small></p>
 </section>
 <div class="foot">IhsanVision.AI · Local operator-only prototype</div>
 </main>
@@ -81,6 +82,26 @@ function renderRecord(record){
   cell(tr,status,record.predicted_anomaly===true?"flagged":"normal");
   cell(tr,typeof record.anomaly_score==="number"?record.anomaly_score.toFixed(4):"—");
   cell(tr,record.latency_ms===null?"—":record.latency_ms+" ms");
+  const reviewCell=cell(tr,"");
+  const selector=document.createElement("select");
+  selector.setAttribute("aria-label","Human review for inspection "+record.id);
+  for(const [value,label] of [
+    ["","Unreviewed"],["confirmed_normal","Confirm normal"],
+    ["confirmed_anomaly","Confirm anomaly"],["needs_followup","Needs follow-up"]
+  ]){
+    const option=document.createElement("option");
+    option.value=value;
+    option.textContent=label;
+    selector.appendChild(option);
+  }
+  selector.value=record.operator_verdict||"";
+  const save=document.createElement("button");
+  save.type="button";
+  save.textContent="Save review";
+  save.setAttribute("aria-label","Save human review for inspection "+record.id);
+  save.addEventListener("click",()=>saveReview(record.id,selector.value));
+  reviewCell.appendChild(selector);
+  reviewCell.appendChild(save);
   const action=cell(tr,"");
   const remove=document.createElement("button");
   remove.type="button";
@@ -121,6 +142,26 @@ async function loadPage(nextOffset=0){
     $("status").textContent="";
     $("error").textContent=err.message;
   }finally{setBusy(false);}
+}
+async function saveReview(id,verdict){
+  if(busy||!active||!$("api-key").value)return;
+  setBusy(true);
+  $("error").textContent="";
+  try{
+    const response=await fetch("/inspections/"+encodeURIComponent(id)+"/review",{
+      method:"PATCH",
+      headers:{...headers(),"Content-Type":"application/json"},
+      body:JSON.stringify({verdict:verdict||null})
+    });
+    if(!response.ok)throw new Error(response.status===401?"Invalid operator API key.":"Review save failed (HTTP "+response.status+").");
+    $("status").textContent="Human verdict saved separately from original AI prediction.";
+  }catch(err){
+    $("error").textContent=err.message;
+    setBusy(false);
+    return;
+  }
+  setBusy(false);
+  await loadPage(offset);
 }
 async function deleteRecord(id){
   if(busy||!active||!$("api-key").value)return;

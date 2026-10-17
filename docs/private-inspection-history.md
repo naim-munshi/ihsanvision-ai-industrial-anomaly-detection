@@ -9,7 +9,11 @@ audit ledger or a multi-tenant SaaS database.
 
 Each row contains an opaque random inspection ID, UTC timestamp, configured
 product category/model, raw uncalibrated anomaly score, saved-threshold
-normal/anomaly/unknown decision, prediction duration and model-cache reuse.
+normal/anomaly/unknown AI decision, prediction duration and model-cache reuse.
+A human operator may independently mark `confirmed_normal`,
+`confirmed_anomaly`, or `needs_followup` after reviewing the inspected
+item; a separate `reviewed_at` timestamp is recorded. The original model
+prediction and score remain unchanged. Clearing a review returns it to null.
 No raw image bytes, heatmaps, source filenames, SHA-256 fingerprints,
 checkpoint files/paths, browser credentials or API keys are stored.
 
@@ -52,8 +56,8 @@ is intentionally explicit and does not overwrite existing data.
 
 Open **http://127.0.0.1:8003/history** while the private localhost service
 runs, enter your operator key and click **Load private history**. You can review
-25 recent records at a time, navigate older pages and permanently delete an
-individual metadata record with confirmation. The key remains only in the
+25 recent records at a time, assign or clear a human review verdict, and
+permanently delete an individual metadata record with confirmation. The key remains only in the
 current browser tab's memory; the page does **not** use cookies, localStorage,
 URLs or embedded API responses to persist it. Record values are rendered
 with `textContent`, not HTML injection.
@@ -63,6 +67,11 @@ The same operations are available as HTTP:
 - `GET /inspections?limit=50&offset=0`, with a valid
   `X-IhsanVision-Key` header, returns up to 100 records per page plus
   `total`, `limit`, `offset`.
+- `PATCH /inspections/{inspection_id}/review` with the same key and
+  JSON `{"verdict":"confirmed_normal"}` marks the human assessment.
+  Allowed values: `confirmed_normal`, `confirmed_anomaly`,
+  `needs_followup`, or `null` (clear review). Extraneous request fields
+  are refused. This update never modifies the saved AI result.
 - `DELETE /inspections/{inspection_id}` with the same key deletes **one**
   record and returns `{"deleted": true, "inspection_id": "..."}`.
 - `POST /predict` returns `inspection_id` only when a successful inference
@@ -80,9 +89,11 @@ threshold labels as normal; an unknown decision stays `null`.
   host disk encryption provides, or a regulatory-compliant electronic record.
 - The shared API key is single-operator authentication, **not** account-aware
   authorization, SSO, per-site tenancy or role-based access.
-- Per-image records do not yet have operator decisions, lot/run IDs, full
-  checkpoint provenance/versions, failure-event audit trails, retention
-  policies, scheduled backups or migrations.
+- Human review verdicts are supported, but per-image records do not yet
+  have operator identity, lot/run IDs, full checkpoint provenance/versions,
+  failure-event audit trails, retention policies, scheduled backups or
+  general schema migration governance. This update migrates existing PR #28
+  private SQLite databases non-destructively by adding nullable review columns.
 - SQLite in-process local operation is not a replacement for a managed
   PostgreSQL multiworker service with encrypted storage and tenant RLS.
 - Full Mac validation requires restarting a real checkpoint-backed app with
