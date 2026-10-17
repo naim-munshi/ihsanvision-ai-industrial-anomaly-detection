@@ -25,6 +25,7 @@ from .serving import PersistentModelPredictor
 from .predict import predict_image
 from .schemas import PredictionResponse, InspectionReviewUpdate
 from .security import GlobalSlidingWindow, positive_int_env, require_predict_key
+from .telemetry import InferenceTelemetry
 from .upload_guard import PredictBodyGuard
 
 logger = logging.getLogger(__name__)
@@ -149,6 +150,7 @@ def create_app(predict_fn=None) -> FastAPI:
             )
         history = InspectionHistory(Path(history_path))
     fingerprinter = CheckpointFingerprinter() if (history is not None or approved_models is not None) else None
+    telemetry = InferenceTelemetry()
 
     @app.middleware("http")
     async def request_audit(request: Request, call_next):
@@ -216,6 +218,16 @@ def create_app(predict_fn=None) -> FastAPI:
             "approved_sha256_verified": approved_models is not None,
             "inference_verified": False,
         }
+
+    @app.get("/operator-metrics")
+    def operator_metrics(api_key: str | None = Header(
+        default=None, alias="X-IhsanVision-Key"
+    )):
+        """Operator-private, single-process counters; never model quality."""
+        if not os.getenv("IHSANVISION_API_KEY"):
+            raise HTTPException(503, "Operator metrics require configured private authentication")
+        require_predict_key(api_key)
+        return telemetry.snapshot()
 
     @app.get("/models")
     def models():
@@ -345,9 +357,19 @@ def create_app(predict_fn=None) -> FastAPI:
                 headers={"Retry-After": "1"}
             ) from None
 
+        started = time.perf_counter()
+        succeeded = False
         try:
-            return await _predict_admitted(file, checkpoint, model_name, selected_category, lot_id)
+            result = await _predict_admitted(
+                file, checkpoint, model_name, selected_category, lot_id
+            )
+            succeeded = True
+            return result
         finally:
+            telemetry.record(
+                success=succeeded,
+                duration_ms=(time.perf_counter() - started) * 1000,
+            )
             admission_semaphore.release()
 
     async def _predict_admitted(file: UploadFile, checkpoint: Path, model_name: str,
