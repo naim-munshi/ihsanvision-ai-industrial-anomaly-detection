@@ -3,15 +3,16 @@
 ## Capability and limitations
 
 The original IhsanVision.AI vision covers all **15 MVTec AD product categories**, plus
-selected **MVTec AD 2** categories (`sheet_metal`, `can`, and optionally
-`wall_plugs`). The FastAPI application originally supported a single `bottle`
+**MVTec AD 2** categories (`can`, `fabric`, `fruit_jelly`,
+`rice`, `sheet_metal`, `vial`, `wallplugs`, `walnuts`). The FastAPI application originally supported a single `bottle`
 checkpoint per model. It now supports **selecting from operator-registered,
 per-category, per-model trusted checkpoints**, without retraining or ever
 accepting model paths from an HTTP client.
 
 **This change does not supply pretrained weights for the additional
-categories**, and it does not implement an MVTec AD 2 dataloader or assert
-that AD2 experiments were performed. An additional category appears in the
+categories**. A separate public-test-only [MVTec AD 2 training
+entrypoint](mvtec-ad2-training.md) exists, but no AD2 experiments
+have actually been performed on user datasets. An additional category appears in the
 dashboard only after a real trusted checkpoint is locally configured.
 Existing bottle users do not need to make any changes.
 
@@ -111,9 +112,10 @@ weights, secrets or source datasets are included in the repository.
 
 1. Train and validate two models for each supported MVTec AD category,
    applying the exact leakage-safe split and evaluation protocol.
-2. Implement separate AD2 dataset adapters respecting their different
-   structure and rights; only then test `sheet_metal`, `can`,
-   and `wall_plugs`.
+2. Use the distinct normal-only validation and local public-test
+   dataset adapter for AD2 (with non-commercial dataset terms), then
+   actually train/test categories such as `sheet_metal`, `can`, and
+   `wallplugs` on authorized local files.
 3. Add controlled multi-image inspection jobs, exportable inspection reports,
    calibration/error analysis, versioned model metadata and audit-friendly
    workflow storage.
