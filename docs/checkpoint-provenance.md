@@ -76,6 +76,17 @@ No source images, checkpoint paths or weights are returned through the
 aggregation. Operator API key authentication and local-only deployment
 limitations continue to apply.
 
+## Operator-approved local version pins
+
+The optional [checkpoint approval manifest](approved-checkpoint-pinning.md)
+adds a separate **fail-closed** policy for selected category/model pairs:
+`IHSANVISION_APPROVED_MODELS` requires an absolute local JSON file
+containing operator-reviewed SHA-256 pins and requires a strong shared
+API key. A changed/unapproved file is refused before model execution,
+including when private history is disabled. The approval manifest is
+loaded on startup, while selected checkpoint bytes are verified at the
+prediction boundary. This is not immutable/signed model attestation.
+
 ## Limits and next safeguards
 
 SHA-256 identifies **file contents**, not whether the checkpoint was trained
