@@ -42,6 +42,11 @@ class AD2TrainConfig:
             raise ValueError("Invalid batch size or worker count")
         if self.accelerator not in {"auto", "cpu", "gpu", "mps", "cuda"}:
             raise ValueError("Unsupported accelerator")
+        # Never write checkpoints or reports into the source dataset tree.
+        source = self.dataset_root.resolve()
+        destination = self.run_folder().resolve()
+        if destination == source or source in destination.parents:
+            raise ValueError("AD2 output must be outside the dataset root")
         return preflight_ad2(self.dataset_root, self.category)
 
     def run_folder(self) -> Path:
