@@ -31,6 +31,9 @@ th,td{padding:12px 10px;border-bottom:1px solid #29405b;white-space:nowrap}th{co
 <div><label for="category">Product category</label><select id="category" disabled><option>Checking models...</option></select></div>
 <div><label for="model">Detection model</label><select id="model" disabled><option>Checking models...</option></select></div>
 </div>
+<label for="lot-id">Production lot ID (optional; requires private history enabled)</label>
+<input id="lot-id" type="text" maxlength="40" placeholder="LOT-2026-A01" autocomplete="off" spellcheck="false" aria-describedby="lot-help error">
+<small id="lot-help">Use an opaque 3–40 character code (A–Z, 0–9, _ or -). No names or personal data. Tracked lots are saved only when local private history is enabled.</small>
 <label for="images">Product images (max 20; PNG, JPG, WEBP, BMP; 10 MiB each)</label>
 <input id="images" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" multiple aria-describedby="selection error">
 <small id="selection">No images selected</small>
@@ -49,7 +52,7 @@ th,td{padding:12px 10px;border-bottom:1px solid #29405b;white-space:nowrap}th{co
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const category=$("category"), model=$("model"), images=$("images"), run=$("run"), download=$("download");
+const category=$("category"), model=$("model"), images=$("images"), run=$("run"), download=$("download"), lot=$("lot-id");
 const MAX_FILES=20, MAX_BYTES=10*1024*1024;
 const ALLOWED=new Set(["image/png","image/jpeg","image/webp","image/bmp"]);
 let catalog={}, busy=false, lastRows=[];
@@ -66,6 +69,8 @@ function resetResults(){
   download.disabled=true;
 }
 function validationError(){
+  if(lot.value && !/^[A-Za-z0-9][A-Za-z0-9_-]{2,39}$/.test(lot.value))
+    return "Lot ID must be 3–40 ASCII letters, digits, _ or -; no personal data.";
   const selected=Array.from(images.files||[]);
   if(!selected.length)return "Select at least one inspection image.";
   if(selected.length>MAX_FILES)return "Choose no more than 20 images per batch.";
@@ -80,6 +85,7 @@ function updateControls(){
   category.disabled=busy || Object.keys(catalog).length===0;
   model.disabled=busy || !catalog[category.value]?.length;
   images.disabled=busy;
+  lot.disabled=busy;
   download.disabled=busy || lastRows.length===0;
 }
 function refreshModels(preferred){
@@ -148,6 +154,7 @@ async function inspect(){
   const problem=validationError();
   if(busy || problem){$("error").textContent=problem;return;}
   const files=Array.from(images.files), selectedModel=model.value, selectedCategory=category.value;
+  const selectedLot=lot.value;
   busy=true;
   resetResults();
   $("error").textContent="";
@@ -164,7 +171,8 @@ async function inspect(){
       const headers={};
       if($("api-key").value)headers["X-IhsanVision-Key"]=$("api-key").value;
       const url="/predict?model="+encodeURIComponent(selectedModel)
-        +(selectedCategory==="bottle"?"":"&category="+encodeURIComponent(selectedCategory));
+        +(selectedCategory==="bottle"?"":"&category="+encodeURIComponent(selectedCategory))
+        +(selectedLot?"&lot_id="+encodeURIComponent(selectedLot):"");
       const response=await fetch(url,{method:"POST",body:form,headers});
       let result;
       try{result=await response.json();}
@@ -195,6 +203,7 @@ async function inspect(){
 }
 category.addEventListener("change",()=>{if(busy)return;refreshModels(null);$("error").textContent="";});
 model.addEventListener("change",()=>{resetResults();$("error").textContent="";updateControls();});
+lot.addEventListener("input",()=>{resetResults();$("error").textContent=validationError();updateControls();});
 images.addEventListener("change",()=>{
   if(busy)return;
   resetResults();
