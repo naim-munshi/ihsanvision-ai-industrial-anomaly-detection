@@ -28,19 +28,33 @@ small{color:#9eb0c6}.foot{margin-top:25px;font-size:12px;color:#708ba4}
 <section class="panel">
 <label for="api-key">Operator API key</label>
 <input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Enter configured key (not stored)">
+<label for="lot-filter">Filter by lot ID (optional)</label>
+<input id="lot-filter" type="text" maxlength="40" placeholder="LOT-2026-A01" autocomplete="off" spellcheck="false">
+<small>Use opaque production lot codes only; avoid names or personal information.</small>
 <div class="toolbar">
 <button id="load">Load private history</button>
+<button id="lot-summary" class="secondary">Show lot overview</button>
 <button id="prev" class="secondary" disabled>Previous</button>
 <button id="next" class="secondary" disabled>Next</button>
 <small id="page-info">No records loaded</small>
 </div>
 <p id="error" role="alert"></p><p id="status" aria-live="polite"></p>
 </section>
+<section class="panel" aria-label="Private lot overview">
+<h2>Lot review overview</h2>
+<p>Counts reflect selected model decisions and independent human reviews; disagreements are review flags, not measured model accuracy.</p>
+<p id="lot-error" role="alert"></p>
+<div class="table-wrap"><table><thead><tr>
+<th scope="col">Lot</th><th scope="col">Inspected</th><th scope="col">AI flagged</th>
+<th scope="col">Confirmed normal</th><th scope="col">Confirmed anomaly</th>
+<th scope="col">Follow-up</th><th scope="col">Unreviewed</th><th scope="col">Human / AI disagreement</th>
+</tr></thead><tbody id="lot-rows"></tbody></table></div>
+</section>
 <section class="panel">
 <h2>Saved successful predictions</h2>
 <div class="table-wrap"><table>
 <caption>Latest 25 metadata-only inspections per page. Raw anomaly scores are not calibrated probabilities.</caption>
-<thead><tr><th scope="col">UTC timestamp</th><th scope="col">Category</th><th scope="col">Model</th><th scope="col">AI decision</th><th scope="col">Raw score</th><th scope="col">Latency</th><th scope="col">Human review</th><th scope="col">Remove</th></tr></thead>
+<thead><tr><th scope="col">UTC timestamp</th><th scope="col">Lot</th><th scope="col">Category</th><th scope="col">Model</th><th scope="col">AI decision</th><th scope="col">Raw score</th><th scope="col">Latency</th><th scope="col">Human review</th><th scope="col">Remove</th></tr></thead>
 <tbody id="rows"></tbody>
 </table></div>
 <p><small>Human review is stored separately from the original AI decision and score. Use Confirm normal, Confirm anomaly, or Needs follow-up after an independent inspection. Clear review returns the record to unreviewed. Remove permanently deletes metadata and cannot be undone. This is not a certified audit log or multiuser system.</small></p>
@@ -56,6 +70,8 @@ function setBusy(value){
   busy=value;
   $("api-key").disabled=value;
   $("load").disabled=value;
+  $("lot-summary").disabled=value;
+  $("lot-filter").disabled=value;
   $("prev").disabled=value||!active||offset===0;
   $("next").disabled=value||!active||offset+LIMIT>=total;
 }
@@ -76,6 +92,7 @@ function cell(row,text,className){
 function renderRecord(record){
   const tr=document.createElement("tr");
   cell(tr,record.created_at);
+  cell(tr,record.lot_id);
   cell(tr,record.category);
   cell(tr,record.model);
   const status=record.predicted_anomaly===null?"Review":record.predicted_anomaly?"Flagged":"Normal";
@@ -114,11 +131,17 @@ function renderRecord(record){
 }
 async function loadPage(nextOffset=0){
   if(busy||!$("api-key").value){$("error").textContent="Enter your operator API key.";return;}
+  const key=$("lot-filter").value;
+  if(key && !/^[A-Za-z0-9][A-Za-z0-9_-]{2,39}$/.test(key)){
+    $("error").textContent="Invalid lot ID format (3–40 ASCII letters, digits, _ or -).";
+    return;
+  }
   setBusy(true);
   $("error").textContent="";
   $("status").textContent="Loading private inspection metadata...";
   try{
-    const response=await fetch("/inspections?limit="+LIMIT+"&offset="+nextOffset,{headers:headers()});
+    const response=await fetch("/inspections?limit="+LIMIT+"&offset="+nextOffset+
+      (key?"&lot_id="+encodeURIComponent(key):""),{headers:headers()});
     if(!response.ok){
       if(response.status===401)throw new Error("Operator API key is missing or invalid.");
       if(response.status===503)throw new Error("Private history is not enabled on this server.");
@@ -181,6 +204,37 @@ async function deleteRecord(id){
   setBusy(false);
   await loadPage(Math.max(0,offset>=total-1?offset-LIMIT:offset));
 }
+async function loadLotOverview(){
+  if(busy||!$("api-key").value){
+    $("lot-error").textContent="Enter the private operator API key first.";
+    return;
+  }
+  setBusy(true);
+  $("lot-error").textContent="";
+  try{
+    const response=await fetch("/inspection-lots?limit=100&offset=0",{headers:headers()});
+    if(!response.ok)throw new Error(response.status===401?
+      "Invalid operator API key.":"Cannot load private lot summary (HTTP "+response.status+").");
+    const data=await response.json();
+    if(!data||!Array.isArray(data.lots))throw new Error("Invalid lot summary response.");
+    $("lot-rows").replaceChildren();
+    for(const lot of data.lots){
+      const tr=document.createElement("tr");
+      for(const value of [
+        lot.lot_id,lot.inspected,lot.ai_flagged,lot.human_normal,
+        lot.human_anomaly,lot.needs_followup,lot.unreviewed,lot.human_ai_disagreements
+      ])cell(tr,value);
+      $("lot-rows").appendChild(tr);
+    }
+    if(data.total>100)$("lot-error").textContent=
+      "Showing first 100 lots only; use the authenticated API for additional pages.";
+  }catch(error){
+    $("lot-rows").replaceChildren();
+    $("lot-error").textContent=error.message;
+  }finally{setBusy(false);}
+}
+$("lot-summary").addEventListener("click",loadLotOverview);
+$("lot-filter").addEventListener("input",()=>{clearRows();$("error").textContent="";});
 $("load").addEventListener("click",()=>loadPage(0));
 $("prev").addEventListener("click",()=>loadPage(Math.max(0,offset-LIMIT)));
 $("next").addEventListener("click",()=>loadPage(offset+LIMIT));
