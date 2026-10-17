@@ -10,6 +10,7 @@ This is a **state-based roadmap**, not an assertion that all systems are already
 | M2 | PaDiM training and checkpoint-backed held-out evaluation | **Verified on Kaggle** | Completed notebook run and metric report |
 | M3 | Single-image model inference + heatmap | **Verified on Kaggle** | `single-image-inference-passed`, overlay screenshot |
 | M4 | CI and dependency-isolated tests | **Verified** | Python 3.11/3.12 GitHub Actions pass |
+| M5b | Safe resumable multi-category training | **Dry-run/explicit bounded runner implemented; additional real category training pending** | Validate source datasets before any fits, reuse paired checkpoints, reject partial outputs and unequal split manifests; no new model results claimed |
 | M5 | PatchCore comparison on same dataset/protocol | **Kaggle run and smoke passed; Mac archived benchmark audit succeeded** | Eight hashes OK; generated summary from saved comparisons/reports/manifests; separate smoke ZIP integrity passed |
 | M6 | Real FastAPI + browser demo against trusted model | **Dual-model normal/defective browser & four-request API acceptance passed on Mac; remaining QA pending** | Both checkpoints routed and all four expected user-labeled classifications/overlays confirmed; file hashes archived; saved split provenance and error-state testing pending |
 | M7 | Persistent serving, tests and performance profiling | **Paired sequential audit and small PaDiM concurrency-2 probe observed on Mac; PatchCore/memory pending** | Both models sequential: 20 cached calls and matching image hash; PaDiM 10/10 HTTP 200 at concurrency 2, with 0 failures and 10/10 reuse; repeated/load and memory testing pending |
@@ -17,6 +18,16 @@ This is a **state-based roadmap**, not an assertion that all systems are already
 | M8b | Private inspection history, operator review and lot traceability | **Opt-in ledger, human review and private lot grouping implemented; Mac test pending** | Validated opaque lot IDs, per-lot counts and human/model disagreements; preserved legacy records through migration; production controls still pending |
 | M9 | Container packaging and hosted demo | **Local-only Docker packaging added; build and hosting pending** | Dockerfile + Compose, readonly model mounts and static guardrail tests; real Docker inference, remote TLS/gateway and rollback are unverified |
 | M10 | Portfolio release | **Evidence verifier and release checklist implemented; publishing pending** | Read-only local model artifact/benchmark/smoke audit and explicit scientific/legal/security acceptance gates; Mac run, media and license approval pending |
+
+## Safe continuation of 15-category experiments
+
+The [resumable MVTec AD training runner](resumable-multicategory-training.md)
+now preflights selected classes, rejects incomplete model artifacts, detects
+split mismatches and plans missing PaDiM/PatchCore jobs before running anything.
+New training requires an explicit `--execute` flag and bounds 1–4 jobs per
+invocation. This is **source/CI functionality**, not real experimental results.
+All 15 category-specific training/evaluation runs and MVTec AD 2 adapters
+remain operational/research work requiring datasets and compute.
 
 ## Full original platform vision (beyond bottle-only demo)
 
