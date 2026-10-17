@@ -27,13 +27,17 @@ CREATE TABLE IF NOT EXISTS inspections (
     predicted_anomaly INTEGER,
     anomaly_score REAL NOT NULL,
     latency_ms REAL,
-    model_reused INTEGER
+    model_reused INTEGER,
+    operator_verdict TEXT,
+    reviewed_at TEXT
 );
 CREATE INDEX IF NOT EXISTS inspections_created_at
 ON inspections(created_at DESC, id DESC);
 """
 _COLUMNS = ("id", "created_at", "category", "model",
-            "predicted_anomaly", "anomaly_score", "latency_ms", "model_reused")
+            "predicted_anomaly", "anomaly_score", "latency_ms", "model_reused",
+            "operator_verdict", "reviewed_at")
+_OPERATOR_VERDICTS = {"confirmed_normal", "confirmed_anomaly", "needs_followup"}
 _ID = re.compile(r"[0-9a-f]{32}\Z")
 
 
@@ -80,6 +84,14 @@ class InspectionHistory:
         self.path = path
         with self._connect() as connection:
             connection.executescript(_SCHEMA)
+            # Preserve PR #28 databases without discarding existing evidence.
+            # SQLite ADD COLUMN is safe and idempotent for these nullable fields.
+            existing = {
+                info[1] for info in connection.execute("PRAGMA table_info(inspections)")
+            }
+            for column in ("operator_verdict", "reviewed_at"):
+                if column not in existing:
+                    connection.execute(f"ALTER TABLE inspections ADD COLUMN {column} TEXT")
 
     def _connect(self) -> sqlite3.Connection:
         return sqlite3.connect(self.path, timeout=5)
@@ -133,6 +145,29 @@ class InspectionHistory:
             "limit": limit,
             "offset": offset,
         }
+
+    def update_review(self, record_id: str, verdict: str | None) -> bool:
+        """Human adjudication is separate from immutable model prediction fields.
+
+        A null verdict clears the previous local review. No reviewer identity,
+        freeform notes or other personal details are persisted.
+        """
+        if not isinstance(record_id, str) or not _ID.fullmatch(record_id):
+            return False
+        if verdict is not None and verdict not in _OPERATOR_VERDICTS:
+            raise ValueError("Unsupported operator review verdict")
+        reviewed_at = (
+            datetime.now(timezone.utc).isoformat(timespec="milliseconds")
+            if verdict is not None else None
+        )
+        with self._connect() as connection:
+            result = connection.execute(
+                """UPDATE inspections
+                   SET operator_verdict = ?, reviewed_at = ?
+                   WHERE id = ?""",
+                (verdict, reviewed_at, record_id),
+            )
+            return result.rowcount == 1
 
     def delete_record(self, record_id: str) -> bool:
         if not isinstance(record_id, str) or not _ID.fullmatch(record_id):
