@@ -37,3 +37,13 @@ class PredictionResponse(BaseModel):
         default=None,
         description="Private operator history record ID only when opt-in persistence is enabled.",
     )
+
+
+class InspectionReviewUpdate(BaseModel):
+    """A single operator review decision, independent of the model output."""
+
+    verdict: Literal["confirmed_normal", "confirmed_anomaly", "needs_followup"] | None = Field(
+        description="Final human assessment, follow-up request, or null to clear review."
+    )
+
+    model_config = {"extra": "forbid"}
