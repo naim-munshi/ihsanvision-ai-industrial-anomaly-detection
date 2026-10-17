@@ -113,7 +113,7 @@ def test_record_list_pagination_auth_and_deletion(monkeypatch, tmp_path):
     assert set(page.json()["records"][0]) == {
         "id", "created_at", "category", "model",
         "predicted_anomaly", "anomaly_score", "latency_ms", "model_reused",
-        "operator_verdict", "reviewed_at"
+        "operator_verdict", "reviewed_at", "lot_id"
     }
     assert page.json()["records"][0]["predicted_anomaly"] is True
     assert page.json()["records"][0]["model_reused"] is False
@@ -297,3 +297,143 @@ def test_history_page_has_human_review_controls(monkeypatch, tmp_path):
     assert 'method:"PATCH"' in response.text
     assert "saveReview" in response.text
     assert 'localStorage' not in response.text.split("<script>")[-1]
+
+
+def test_opt_in_lots_link_inspections_and_analyze_human_disagreements(monkeypatch, tmp_path):
+    configure(monkeypatch, tmp_path)
+    decisions = iter((True, False, None, True, False))
+
+    def variable_prediction(_image, _checkpoint, model):
+        return {
+            "model": model, "anomaly_score": 0.54,
+            "predicted_anomaly": next(decisions),
+            "latency_ms": 3.3, "model_reused": True,
+        }
+
+    client = TestClient(create_app(predict_fn=variable_prediction))
+    headers = {"X-IhsanVision-Key": "private-test-operator-secret"}
+    ids = []
+    for lot in ("LOT-A01", "LOT-A01", "LOT-A01", "LOT-B02", None):
+        url = "/predict?model=padim" + (f"&lot_id={lot}" if lot else "")
+        res = client.post(
+            url, headers=headers,
+            files={"file": ("image.png", image_bytes(), "image/png")},
+        )
+        assert res.status_code == 200
+        ids.append(res.json()["inspection_id"])
+
+    # Human labels explicitly differ from the two known AI labels in lot A.
+    assert client.patch(
+        "/inspections/" + ids[0] + "/review",
+        json={"verdict": "confirmed_normal"}, headers=headers,
+    ).status_code == 200
+    assert client.patch(
+        "/inspections/" + ids[1] + "/review",
+        json={"verdict": "confirmed_anomaly"}, headers=headers,
+    ).status_code == 200
+    assert client.patch(
+        "/inspections/" + ids[2] + "/review",
+        json={"verdict": "needs_followup"}, headers=headers,
+    ).status_code == 200
+
+    private = client.get("/inspections?lot_id=LOT-A01&limit=10", headers=headers)
+    assert private.status_code == 200
+    assert private.json()["total"] == 3
+    assert private.json()["lot_id"] == "LOT-A01"
+    assert all(row["lot_id"] == "LOT-A01" for row in private.json()["records"])
+
+    another = client.get("/inspections?lot_id=LOT-B02", headers=headers)
+    assert another.json()["total"] == 1
+    assert client.get("/inspections", headers=headers).json()["total"] == 5
+
+    summary = client.get("/inspection-lots", headers=headers)
+    assert summary.status_code == 200
+    assert summary.json()["total"] == 2  # the unassigned fifth row is excluded
+    lots = {row["lot_id"]: row for row in summary.json()["lots"]}
+    assert set(lots) == {"LOT-A01", "LOT-B02"}
+    assert {
+        k: lots["LOT-A01"][k] for k in (
+            "inspected", "ai_flagged", "ai_normal", "ai_unclassified",
+            "human_normal", "human_anomaly", "needs_followup",
+            "unreviewed", "human_ai_disagreements",
+        )
+    } == {
+        "inspected": 3, "ai_flagged": 1, "ai_normal": 1, "ai_unclassified": 1,
+        "human_normal": 1, "human_anomaly": 1, "needs_followup": 1,
+        "unreviewed": 0, "human_ai_disagreements": 2,
+    }
+    assert lots["LOT-B02"]["unreviewed"] == 1
+    assert lots["LOT-B02"]["human_ai_disagreements"] == 0
+    assert client.get("/inspection-lots?limit=1&offset=1", headers=headers).json()["total"] == 2
+    assert client.get("/inspection-lots", headers={"X-IhsanVision-Key": "bad"}).status_code == 401
+    assert client.get("/inspection-lots?limit=101", headers=headers).status_code == 422
+
+    # Data and manual verdicts survive app recreation without losing old records.
+    restarted = TestClient(create_app(predict_fn=variable_prediction))
+    assert restarted.get("/inspection-lots", headers=headers).json()["total"] == 2
+
+
+def test_lot_format_and_disabled_history_fail_closed(monkeypatch, tmp_path):
+    configure(monkeypatch, tmp_path)
+    client = TestClient(create_app(predict_fn=predictor))
+    headers = {"X-IhsanVision-Key": "private-test-operator-secret"}
+    assert client.post(
+        "/predict?model=padim&lot_id=bad%20lot", headers=headers,
+        files={"file": ("x.png", image_bytes(), "image/png")},
+    ).status_code == 422
+    assert client.post(
+        "/predict?model=padim&lot_id=xx", headers=headers,
+        files={"file": ("x.png", image_bytes(), "image/png")},
+    ).status_code == 422
+    assert client.post(
+        "/predict?model=padim&lot_id=%3Dcmd", headers=headers,
+        files={"file": ("x.png", image_bytes(), "image/png")},
+    ).status_code == 422
+    assert client.get("/inspections?lot_id=not%20valid", headers=headers).status_code == 422
+    assert client.get("/inspections", headers=headers).json()["total"] == 0
+    configure(monkeypatch, tmp_path, history=False)
+    disabled = TestClient(create_app(predict_fn=predictor))
+    assert disabled.post(
+        "/predict?model=padim&lot_id=LOT-010",
+        files={"file": ("x.png", image_bytes(), "image/png")},
+    ).status_code == 503
+    assert disabled.get("/inspection-lots").status_code == 503
+
+
+def test_lot_migration_preserves_existing_reviewed_records(monkeypatch, tmp_path):
+    db = configure(monkeypatch, tmp_path)
+    with sqlite3.connect(db) as connection:
+        connection.executescript("""
+            CREATE TABLE inspections (
+                id TEXT PRIMARY KEY, created_at TEXT NOT NULL,
+                category TEXT NOT NULL, model TEXT NOT NULL,
+                predicted_anomaly INTEGER, anomaly_score REAL NOT NULL,
+                latency_ms REAL, model_reused INTEGER,
+                operator_verdict TEXT, reviewed_at TEXT
+            );
+        """)
+        connection.execute(
+            "INSERT INTO inspections VALUES (?,?,?,?,?,?,?,?,?,?)",
+            ("b"*32, "2026-10-17T01:00:00+00:00", "bottle", "patchcore",
+             1, 0.91, 45.0, 1, "confirmed_anomaly", "2026-10-17T02:00:00+00:00"),
+        )
+    db.chmod(0o600)
+    client = TestClient(create_app(predict_fn=predictor))
+    headers = {"X-IhsanVision-Key": "private-test-operator-secret"}
+    original = client.get("/inspections", headers=headers).json()["records"][0]
+    assert original["lot_id"] is None
+    assert original["operator_verdict"] == "confirmed_anomaly"
+    assert original["anomaly_score"] == 0.91
+    assert client.get("/inspection-lots", headers=headers).json()["total"] == 0
+    restarted = TestClient(create_app(predict_fn=predictor))
+    assert restarted.get("/inspections", headers=headers).json()["total"] == 1
+
+
+def test_history_dashboard_has_lot_reporting_controls(monkeypatch, tmp_path):
+    configure(monkeypatch, tmp_path, history=False)
+    html = TestClient(create_app(predict_fn=predictor)).get("/history").text
+    assert 'id="lot-filter"' in html
+    assert 'id="lot-summary"' in html
+    assert 'id="lot-rows"' in html
+    assert '"/inspection-lots?limit=100&offset=0"' in html
+    assert "encodeURIComponent(key)" in html
