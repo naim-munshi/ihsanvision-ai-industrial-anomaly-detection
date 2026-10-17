@@ -31,6 +31,12 @@ class TrainConfig:
             raise ValueError("Invalid data loader settings")
         if self.reference_splits is not None and not self.reference_splits.is_file():
             raise FileNotFoundError(f"Reference splits missing: {self.reference_splits}")
+        # Protect source data even when training is launched directly, bypassing
+        # the resumable planner. Resolve symlinks before checking containment.
+        source = self.dataset_root.expanduser().resolve()
+        destination = self.output_dir.expanduser().resolve()
+        if destination == source or source in destination.parents:
+            raise ValueError("Training output must be outside the dataset root")
         if not (self.dataset_root / self.category / "train" / "good").is_dir():
             raise FileNotFoundError("Dataset missing <root>/<category>/train/good")
         if not (self.dataset_root / self.category / "test").is_dir():
