@@ -30,17 +30,19 @@ CREATE TABLE IF NOT EXISTS inspections (
     model_reused INTEGER,
     operator_verdict TEXT,
     reviewed_at TEXT,
-    lot_id TEXT
+    lot_id TEXT,
+    checkpoint_sha256 TEXT
 );
 CREATE INDEX IF NOT EXISTS inspections_created_at
 ON inspections(created_at DESC, id DESC);
 """
 _COLUMNS = ("id", "created_at", "category", "model",
             "predicted_anomaly", "anomaly_score", "latency_ms", "model_reused",
-            "operator_verdict", "reviewed_at", "lot_id")
+            "operator_verdict", "reviewed_at", "lot_id", "checkpoint_sha256")
 _OPERATOR_VERDICTS = {"confirmed_normal", "confirmed_anomaly", "needs_followup"}
 _ID = re.compile(r"[0-9a-f]{32}\Z")
 _LOT = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{2,39}\Z")
+_DIGEST = re.compile(r"[0-9a-f]{64}\Z")
 
 
 def _optional_bool(value: object, field: str) -> int | None:
@@ -91,7 +93,7 @@ class InspectionHistory:
             existing = {
                 info[1] for info in connection.execute("PRAGMA table_info(inspections)")
             }
-            for column in ("operator_verdict", "reviewed_at", "lot_id"):
+            for column in ("operator_verdict", "reviewed_at", "lot_id", "checkpoint_sha256"):
                 if column not in existing:
                     connection.execute(f"ALTER TABLE inspections ADD COLUMN {column} TEXT")
             connection.execute(
@@ -126,15 +128,18 @@ class InspectionHistory:
         )
         prediction = _optional_bool(result.get("predicted_anomaly"), "predicted_anomaly")
         reused = _optional_bool(result.get("model_reused"), "model_reused")
+        digest = result.get("checkpoint_sha256")
+        if not isinstance(digest, str) or not _DIGEST.fullmatch(digest):
+            raise ValueError("History requires a verified SHA-256 checkpoint fingerprint")
         record_id = uuid4().hex
         timestamp = datetime.now(timezone.utc).isoformat(timespec="milliseconds")
         with self._connect() as connection:
             connection.execute(
                 """INSERT INTO inspections
                    (id, created_at, category, model, predicted_anomaly,
-                    anomaly_score, latency_ms, model_reused, lot_id)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (record_id, timestamp, category, model, prediction, score, latency, reused, lot_id),
+                    anomaly_score, latency_ms, model_reused, lot_id, checkpoint_sha256)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (record_id, timestamp, category, model, prediction, score, latency, reused, lot_id, digest),
             )
         return record_id
 
