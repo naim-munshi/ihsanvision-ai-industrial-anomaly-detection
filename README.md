@@ -25,6 +25,7 @@
 | Checkpoint version identity | SHA-256 of actual trusted checkpoint, attached to each successful private history-backed inference; file-snapshot checks and non-destructive ledger migration | Implemented with offline tests; real Mac checkpoint verification pending |
 | Model-version inspection analytics | Private per-category/model/checkpoint hash groups with lot filter, human review disagreement and operator dashboard | Implemented with offline tests; real Mac review pending |
 | Approved checkpoint pinning (opt-in) | Operator-approved exact SHA-256 per category/model, authenticated inference, mismatch rejected before model execution | Implemented with offline tests; real checkpoint Mac acceptance pending |
+| MVTec AD 2 adapter (non-commercial research) | Separate normal train/validation and public-only test/mask checks, dry-run-first explicit PaDiM/PatchCore trainer, eight canonical categories | Implemented with offline tests; actual AD2 dataset/compute runs pending |
 | Automated code checks | Python 3.11 and 3.12 | GitHub Actions |
 
 These performance and AUROC numbers come from **different protocols and purposes**. The dataset evaluation held out 16 images from MVTec's official test directory for validation, leaving **67 test images**. It is **not directly comparable with the full-test MVTec leaderboard**. The browser examples and synthetic API smoke input must not be presented as additional accuracy measurements.
@@ -114,6 +115,18 @@ pixels, checkpoints or heatmap bytes are included in the downloaded CSV. The
 separate [batch inspection CLI](docs/batch-inspection.md) supports larger bounded
 folders and private JSON/CSV evidence. All browser code has offline behavior
 tests; live Mac browser acceptance is still pending.
+
+### MVTec AD 2 research training (public test only)
+
+MVTec AD 2 is different from classic MVTec AD. A new
+`python -m ihsanvision.train_ad2` entrypoint checks normal-only training
+and dedicated normal validation data, public normal/anomalous images and
+their masks. **Dry-run is the default**; fitting requires both
+`--execute` and an explicit acknowledgement of non-commercial terms.
+It never evaluates the unlabeled private leaderboard sets locally.
+Eight Anomalib AD2 category names are recognized, including
+`wallplugs` (not `wall_plugs`). No real AD2 training has run.
+See [rights and public-only experiment guide](docs/mvtec-ad2-training.md).
 
 ### Safe resume of multi-category MVTec AD experiments
 
