@@ -83,16 +83,50 @@ if it is needed. Errors, model exceptions and invalid inference outputs do
 **not** create successful records. The client should not interpret missing
 threshold labels as normal; an unknown decision stays `null`.
 
+## Private production lot association and review summary
+
+Operators using the browser **/batch** can optionally enter a non-personal,
+opaque lot identifier (3–40 ASCII letters/digits, `_` or `-`), for example
+`LOT-2026-A01`. All successful image inferences from that browser batch
+then carry the same lot ID to the private SQLite ledger. If history is disabled,
+the API refuses a supplied `lot_id` with HTTP 503 rather than silently
+discarding it; normal untracked predictions remain supported. Invalid or
+injection-shaped identifiers are rejected. **Do not encode personal
+identifiers, customer names or sensitive commercial information in lot IDs.**
+
+Authenticated operator routes now include:
+
+- `GET /inspections?lot_id=LOT-2026-A01&limit=50&offset=0` to filter
+  history by exactly one lot (same operator key header as existing history).
+- `GET /inspection-lots?limit=50&offset=0` for bounded private lot aggregates:
+  saved inspection counts, AI normal/anomaly/unknown counts, independent
+  human normal/anomaly/follow-up/unreviewed counts, and known AI-vs-human
+  **disagreement count** (a human label opposite an available AI binary label).
+  Unassigned historical inspections are not counted as lots.
+- The **/history** page adds a lot filter and a first-page lot overview (up
+  to 100 lots). Further pages are available through the authenticated API.
+
+A disagreement is an **inspection review indicator**, not a measured false
+positive/false negative or accuracy claim. A single lot may contain multiple
+categories or model families; raw score distributions must **not** be compared
+across models. Lot summary statistics are valid only as operational counts.
+Deleting saved records changes aggregate totals; there is no immutable
+regulatory audit trail. Existing PR #28/#29 SQLite databases get an idempotent
+nullable `lot_id` column and index at startup; older records remain
+unassigned, with no migration of original scores or reviews. Lot identifiers
+are not echoed in request audit logs by default because full URL queries are
+not logged.
+
 ## Limitations and next platform milestones
 
 - This local database is not tamper-proof, encrypted-at-rest beyond whatever
   host disk encryption provides, or a regulatory-compliant electronic record.
 - The shared API key is single-operator authentication, **not** account-aware
   authorization, SSO, per-site tenancy or role-based access.
-- Human review verdicts are supported, but per-image records do not yet
-  have operator identity, lot/run IDs, full checkpoint provenance/versions,
-  failure-event audit trails, retention policies, scheduled backups or
-  general schema migration governance. This update migrates existing PR #28
+- Human review and opaque lot associations are supported, but records do not
+  yet have operator identity, controlled lot master data, full checkpoint
+  provenance/versions, failure-event audit trails, retention policies,
+  scheduled backups or general schema migration governance. This update migrates existing PR #28
   private SQLite databases non-destructively by adding nullable review columns.
 - SQLite in-process local operation is not a replacement for a managed
   PostgreSQL multiworker service with encrypted storage and tenant RLS.

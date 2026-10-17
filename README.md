@@ -21,6 +21,7 @@
 | Bounded local PaDiM concurrency | 2 parallel HTTP submissions, 10 measured requests: **10/10 HTTP 200**, **0 failures**, 10/10 cached; HTTP p50/p95 **633.59/1,019.31 ms** | Observed on Mac; no maximum-QPS/SLA claim |
 | Batch inspection and private reports | Browser batch inspection at `/batch` (up to 20 selected images, per-item results, local CSV export) plus bounded folder CLI JSON/CSV export | Implemented and offline-tested; real Mac execution pending |
 | Human-reviewed inspection history (opt-in) | Private SQLite metadata ledger, authenticated browse/delete/review API, `/history` human verdict workflow; AI result preserved independently | Implemented with regression tests; real Mac acceptance pending |
+| Production lot traceability | Optional opaque lot IDs in browser batch flow, persisted metadata links, authenticated per-lot inspection queries and human-vs-AI disagreement summary | Implemented and offline-tested; real Mac integration pending |
 | Automated code checks | Python 3.11 and 3.12 | GitHub Actions |
 
 These performance and AUROC numbers come from **different protocols and purposes**. The dataset evaluation held out 16 images from MVTec's official test directory for validation, leaving **67 test images**. It is **not directly comparable with the full-test MVTec leaderboard**. The browser examples and synthetic API smoke input must not be presented as additional accuracy measurements.
@@ -49,6 +50,20 @@ or flag for follow-up, and delete individual records. **Disabled
 by default.** Raw images, filenames, heatmaps, weights and credentials are
 never stored by this feature. Read the [private inspection history security
 and setup guide](docs/private-inspection-history.md) before enabling it.
+
+### Trace production inspection lots
+
+With opt-in private history enabled, the **/batch** dashboard allows an
+optional opaque production lot key (for example `LOT-2026-A01`). That identifier
+is linked to successful inspections in the local SQLite database and appears
+in the private **/history** browser, which can filter records by lot and show
+a read-only summary of AI flags, human confirmations, follow-up requests and
+disagreements. Identifiers may contain only ASCII letters/digits/hyphens/
+underscores, must be 3–40 characters, and **must not contain personal details**.
+The original model scores and human judgments remain separate; disagreements
+are not proven false positives or false negatives. See the
+[operator guide](docs/private-inspection-history.md). Lot support is opt-in and
+does not turn the application into a production tracking/compliance system.
 
 ### Browser inspection workflow for product lots
 
