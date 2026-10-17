@@ -14,6 +14,7 @@ This is a **state-based roadmap**, not an assertion that all systems are already
 | M6 | Real FastAPI + browser demo against trusted model | **Dual-model normal/defective browser & four-request API acceptance passed on Mac; remaining QA pending** | Both checkpoints routed and all four expected user-labeled classifications/overlays confirmed; file hashes archived; saved split provenance and error-state testing pending |
 | M7 | Persistent serving, tests and performance profiling | **Paired sequential audit and small PaDiM concurrency-2 probe observed on Mac; PatchCore/memory pending** | Both models sequential: 20 cached calls and matching image hash; PaDiM 10/10 HTTP 200 at concurrency 2, with 0 failures and 10/10 reuse; repeated/load and memory testing pending |
 | M8 | Authentication, rate limit, audit logging | **Local-process baseline implemented; deployment validation pending** | Optional shared API key, global per-process rate cap, finite admission and request ID logs tested offline; identity, proxy/TLS, secrets and load tests pending |
+| M8b | Private inspection history and operator review | **Opt-in SQLite ledger and authenticated history viewer implemented; Mac test pending** | Successful per-image metadata only; protected list/delete, paginated view, no image/path/secret persistence; operator workflow and long-term retention not yet validated |
 | M9 | Container packaging and hosted demo | **Local-only Docker packaging added; build and hosting pending** | Dockerfile + Compose, readonly model mounts and static guardrail tests; real Docker inference, remote TLS/gateway and rollback are unverified |
 | M10 | Portfolio release | **Evidence verifier and release checklist implemented; publishing pending** | Read-only local model artifact/benchmark/smoke audit and explicit scientific/legal/security acceptance gates; Mac run, media and license approval pending |
 
@@ -76,6 +77,17 @@ The Mac preflight, checkpoint-backed HTTP API smoke test and a pair of cached re
 A persistent model instance is implemented and observed working with real PaDiM. The `/predict` response now has a Pydantic/OpenAPI schema that rejects invalid scores and latency. Initial request IDs and scrubbed audit logs, optional shared-key authentication, rate cap and admission timeout are implemented in the [local security baseline](security-baseline.md). Continue with gateway upload controls, typed settings, full trace/profiling, account-aware quotas, privacy and cloud-ready operations. Expand integration tests to real-model checks in a dedicated environment.
 
 **Definition of done:** Repeatable p50/p95 load benchmark with documented CPU/GPU and concurrency; no unsafe checkpoint upload path.
+
+### Priority 4b — Operator inspection traceability
+
+A metadata-only, **explicitly opt-in** private SQLite history and `/history`
+operator UI have been added ([setup and limitations](private-inspection-history.md)).
+Successful predictions can be browsed/deleted with an operator API key, without
+saving images, filenames, heatmaps, checkpoint paths or secrets. This does not
+claim immutable audit compliance, multi-tenant RBAC or a production database.
+Actual checkpoint-backed Mac startup, restart persistence, and lifecycle QA
+remain acceptance gates. Follow-up: site/lot identifiers, operator review
+decisions, migration and retention controls.
 
 ### Priority 5 — Portfolio finalization
 

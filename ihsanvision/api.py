@@ -16,6 +16,7 @@ from fastapi.responses import FileResponse
 from PIL import Image, UnidentifiedImageError
 
 from .config import MODELS
+from .history import InspectionHistory
 from .registry import SUPPORTED_CATEGORIES, model_catalog, public_catalog
 from .serving import PersistentModelPredictor
 from .predict import predict_image
@@ -28,6 +29,7 @@ MAX_UPLOAD = 10 * 1024 * 1024
 MAX_PIXELS = 25_000_000
 UI = Path(__file__).resolve().parents[1] / "demo" / "index.html"
 BATCH_UI = Path(__file__).resolve().parents[1] / "demo" / "batch.html"
+HISTORY_UI = Path(__file__).resolve().parents[1] / "demo" / "history.html"
 
 
 IMAGE_SUFFIXES = {"PNG": ".png", "JPEG": ".jpg", "WEBP": ".webp", "BMP": ".bmp"}
@@ -119,6 +121,19 @@ def create_app(predict_fn=None) -> FastAPI:
     limiter = GlobalSlidingWindow(
         positive_int_env("IHSANVISION_RATE_LIMIT_PER_MINUTE", 120, 10000)
     )
+    history_path = os.getenv("IHSANVISION_HISTORY_DB", "").strip()
+    history = None
+    if history_path:
+        # Persistence is explicit and requires a configured operator API key.
+        # An unprotected local development server must never accidentally
+        # expose durable inspection records via the history endpoints.
+        operator_key = os.getenv("IHSANVISION_API_KEY", "")
+        if len(operator_key) < 16:
+            raise ValueError(
+                "IHSANVISION_HISTORY_DB requires a private IHSANVISION_API_KEY "
+                "with at least 16 characters"
+            )
+        history = InspectionHistory(Path(history_path))
 
     @app.middleware("http")
     async def request_audit(request: Request, call_next):
@@ -143,6 +158,11 @@ def create_app(predict_fn=None) -> FastAPI:
         """Local operator UI; actual predictions use protected /predict."""
         return FileResponse(BATCH_UI, media_type="text/html")
 
+    @app.get("/history")
+    def history_dashboard():
+        """Public HTML shell only; saved records require operator authentication."""
+        return FileResponse(HISTORY_UI, media_type="text/html")
+
     @app.get("/health")
     def health():
         catalog = model_catalog(_configured_checkpoints())
@@ -158,6 +178,29 @@ def create_app(predict_fn=None) -> FastAPI:
             model_catalog(_configured_checkpoints()),
             preferred_model=os.getenv("IHSANVISION_MODEL", "padim").strip().lower(),
         )
+
+    @app.get("/inspections")
+    async def inspections(
+        limit: int = Query(default=50, ge=1, le=100),
+        offset: int = Query(default=0, ge=0, le=1_000_000),
+        api_key: str | None = Header(default=None, alias="X-IhsanVision-Key"),
+    ):
+        if history is None:
+            raise HTTPException(503, "Private inspection history is disabled")
+        require_predict_key(api_key)
+        return await run_in_threadpool(history.list_records, limit, offset)
+
+    @app.delete("/inspections/{inspection_id}")
+    async def delete_inspection(
+        inspection_id: str,
+        api_key: str | None = Header(default=None, alias="X-IhsanVision-Key"),
+    ):
+        if history is None:
+            raise HTTPException(503, "Private inspection history is disabled")
+        require_predict_key(api_key)
+        if not await run_in_threadpool(history.delete_record, inspection_id):
+            raise HTTPException(404, "Inspection record not found")
+        return {"deleted": True, "inspection_id": inspection_id}
 
     @app.post("/predict", response_model=PredictionResponse)
     async def predict(
@@ -212,7 +255,17 @@ def create_app(predict_fn=None) -> FastAPI:
                 )
                 # The category is selected exclusively through the server's
                 # trusted registry, never inferred from an arbitrary upload name.
-                return {**result, "category": category}
+                validated = PredictionResponse.model_validate({
+                    **result, "category": category
+                })
+                if validated.model != model_name:
+                    raise ValueError("Inference result model does not match selected checkpoint")
+                if history is None:
+                    return validated
+                inspection_id = await run_in_threadpool(
+                    history.record, category, model_name, validated.model_dump()
+                )
+                return validated.model_copy(update={"inspection_id": inspection_id})
             except Exception:
                 logger.exception("Prediction failed")
                 # Do not expose internal exception messages/checkpoint paths to clients.

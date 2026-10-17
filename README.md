@@ -20,6 +20,7 @@
 | Real Mac dual-model dashboard | Both models predicted normal for `normal_bottle.png` and flagged `defective_bottle.png`; overlays rendered for both | Four Safari observations **and four-request API acceptance passed**; source split provenance pending |
 | Bounded local PaDiM concurrency | 2 parallel HTTP submissions, 10 measured requests: **10/10 HTTP 200**, **0 failures**, 10/10 cached; HTTP p50/p95 **633.59/1,019.31 ms** | Observed on Mac; no maximum-QPS/SLA claim |
 | Batch inspection and private reports | Browser batch inspection at `/batch` (up to 20 selected images, per-item results, local CSV export) plus bounded folder CLI JSON/CSV export | Implemented and offline-tested; real Mac execution pending |
+| Persistent inspection history (opt-in) | Private SQLite metadata-only ledger, authenticated list/delete API, operator `/history` viewer | Implemented with offline integration tests; real Mac acceptance pending |
 | Automated code checks | Python 3.11 and 3.12 | GitHub Actions |
 
 These performance and AUROC numbers come from **different protocols and purposes**. The dataset evaluation held out 16 images from MVTec's official test directory for validation, leaving **67 test images**. It is **not directly comparable with the full-test MVTec leaderboard**. The browser examples and synthetic API smoke input must not be presented as additional accuracy measurements.
@@ -36,6 +37,17 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 python -m pip install -e . --no-deps
 ~~~
+
+### Persistent private inspection history (operator opt-in)
+
+For real quality-inspection workflows, an operator may configure a **private SQLite
+history database** by setting `IHSANVISION_HISTORY_DB` to an absolute path outside
+Git and setting a strong `IHSANVISION_API_KEY` (at least 16 characters) before
+starting the local application. View saved successful inspection metadata at
+**http://127.0.0.1:8003/history** and delete individual records. **Disabled
+by default.** Raw images, filenames, heatmaps, weights and credentials are
+never stored by this feature. Read the [private inspection history security
+and setup guide](docs/private-inspection-history.md) before enabling it.
 
 ### Browser inspection workflow for product lots
 
@@ -198,6 +210,7 @@ CI validates packaging imports, canonical/legacy entry points, API contracts, le
 - [macOS dual-model dashboard normal-image observation](reports/2026-10-15-macos-dual-model-dashboard-normal-ui.md)
 - [Real Mac four-request dual-model acceptance](reports/2026-10-16-macos-dual-model-api-acceptance.md)
 - [Real Mac paired warm-serving latency profile](reports/2026-10-16-macos-paired-serving-profile.md)
+- [Private opt-in local inspection history](docs/private-inspection-history.md)
 - [Real Mac PaDiM finite concurrency-2 result](reports/2026-10-16-macos-padim-concurrent-probe.md)
 
 ## Safety, licensing and next steps
