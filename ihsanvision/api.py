@@ -24,6 +24,7 @@ from .serving import PersistentModelPredictor
 from .predict import predict_image
 from .schemas import PredictionResponse, InspectionReviewUpdate
 from .security import GlobalSlidingWindow, positive_int_env, require_predict_key
+from .upload_guard import PredictBodyGuard
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +105,8 @@ def create_app(predict_fn=None) -> FastAPI:
         version="0.3.1",
         description="Defect detection and localization. Not for safety-critical decisions.",
     )
+    # Runs before FastAPI reads multipart bodies; default localhost mode is still unkeyed.
+    app.add_middleware(PredictBodyGuard)
     if predict_fn is None:
         # Safe fallback to previously verified cold inference while the new
         # persistent predictor is undergoing real-checkpoint validation.
