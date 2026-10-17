@@ -18,6 +18,7 @@ This is a **state-based roadmap**, not an assertion that all systems are already
 | M8b | Private inspection history, operator review and lot traceability | **Opt-in ledger, human review and private lot grouping implemented; Mac test pending** | Validated opaque lot IDs, per-lot counts and human/model disagreements; preserved legacy records through migration; production controls still pending |
 | M8c | Per-inspection checkpoint provenance and version analytics | **Trusted file SHA-256 history linkage and authenticated version-group reporting implemented; Mac test pending** | Inspections grouped by category/model/precise SHA or unknown legacy; bounded lot filter, human review counts/disagreement reporting; no signed attestation or real Mac verification |
 | M8d | Operator-approved checkpoint version pinning | **Opt-in strict local allowlist and fail-closed request checks implemented; Mac test pending** | Private versioned category/model SHA manifest, required operator API key, unpinned families hidden, unexpected bytes reject before inference; no signed approval governance |
+| M5c | MVTec AD 2 data adapter and research runner | **Separate official layout checks, public-only model fitting entrypoint implemented; real AD2 fitting pending** | Explicit non-commercial acknowledgement, normal-only dedicated validation, public test and mask validation; private leaderboard datasets excluded |
 | M9 | Container packaging and hosted demo | **Local-only Docker packaging added; build and hosting pending** | Dockerfile + Compose, readonly model mounts and static guardrail tests; real Docker inference, remote TLS/gateway and rollback are unverified |
 | M10 | Portfolio release | **Evidence verifier and release checklist implemented; publishing pending** | Read-only local model artifact/benchmark/smoke audit and explicit scientific/legal/security acceptance gates; Mac run, media and license approval pending |
 
@@ -28,8 +29,11 @@ now preflights selected classes, rejects incomplete model artifacts, detects
 split mismatches and plans missing PaDiM/PatchCore jobs before running anything.
 New training requires an explicit `--execute` flag and bounds 1–4 jobs per
 invocation. This is **source/CI functionality**, not real experimental results.
-All 15 category-specific training/evaluation runs and MVTec AD 2 adapters
-remain operational/research work requiring datasets and compute.
+All 15 classic category-specific training/evaluation runs require datasets
+and compute. The [AD2-specific public-only training adapter](mvtec-ad2-training.md)
+now exists with offline tests; real MVTec AD 2 experiments, scientific validation,
+rights review and model registration still require operator-supplied datasets
+and compute.
 
 ## Full original platform vision (beyond bottle-only demo)
 
