@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IhsanVision.AI | Private Inspection History</title>
+<style>
+:root{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#ecf3ff;background:#0b1323}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top left,#1c3454,#0b1323 65%);min-height:100vh}
+main{max-width:1120px;margin:0 auto;padding:35px 24px 90px}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.brand{font-weight:800;letter-spacing:-.04em;font-size:22px}.brand span{color:#67d9c2}
+a{color:#71e2cb}h1{font-size:clamp(28px,5vw,46px);letter-spacing:-.04em;margin:42px 0 10px}
+p{color:#a5b4cd;line-height:1.6}.panel{border:1px solid #29405b;background:#14243a;border-radius:18px;padding:24px;margin-top:22px}
+label{display:block;font-weight:700;font-size:13px;margin:5px 0 10px}input{background:#102035;color:#fff;border:1px solid #496785;border-radius:10px;padding:12px;max-width:420px;width:100%}
+button{background:#5ce0bf;color:#062434;padding:11px 16px;border:0;border-radius:10px;font-weight:800;cursor:pointer}
+button.secondary{background:#263b52;color:#ecf3ff}button.danger{background:#5a3441;color:#fff}
+button:disabled{opacity:.5;cursor:not-allowed}.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:15px}
+.table-wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13px;text-align:left}th,td{padding:12px 10px;border-bottom:1px solid #29405b;white-space:nowrap}th{color:#9cb7ce}
+.flagged{color:#ffb6ac}.normal{color:#67d9c2}#error{color:#ffb6ac;min-height:25px}#status{color:#a5b4cd}
+small{color:#9eb0c6}.foot{margin-top:25px;font-size:12px;color:#708ba4}
+@media(max-width:650px){main{padding:20px 14px 60px}.panel{padding:15px}}
+</style>
+</head>
+<body><main>
+<header class="top"><div class="brand">Ihsan<span>Vision</span>.AI</div><nav><a href="/">Single inspection</a> · <a href="/batch">Batch inspection</a></nav></header>
+<h1>Private inspection history</h1>
+<p>Only an operator who explicitly enabled a private local history database and an API key can view these saved inspection summaries. Images, filenames, heatmaps and model checkpoints are never stored here. Research and human-review use only.</p>
+<section class="panel">
+<label for="api-key">Operator API key</label>
+<input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Enter configured key (not stored)">
+<div class="toolbar">
+<button id="load">Load private history</button>
+<button id="prev" class="secondary" disabled>Previous</button>
+<button id="next" class="secondary" disabled>Next</button>
+<small id="page-info">No records loaded</small>
+</div>
+<p id="error" role="alert"></p><p id="status" aria-live="polite"></p>
+</section>
+<section class="panel">
+<h2>Saved successful predictions</h2>
+<div class="table-wrap"><table>
+<caption>Latest 25 metadata-only inspections per page. Raw anomaly scores are not calibrated probabilities.</caption>
+<thead><tr><th scope="col">UTC timestamp</th><th scope="col">Category</th><th scope="col">Model</th><th scope="col">Decision</th><th scope="col">Raw score</th><th scope="col">Latency</th><th scope="col">Remove</th></tr></thead>
+<tbody id="rows"></tbody>
+</table></div>
+<p><small>Remove permanently deletes a single saved metadata record. A deletion cannot be undone. This local database is not a compliance-certified audit log or multiuser access-control system.</small></p>
+</section>
+<div class="foot">IhsanVision.AI · Local operator-only prototype</div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const LIMIT=25;
+let offset=0, busy=false, total=0, active=false;
+const headers=()=>({"X-IhsanVision-Key":$("api-key").value});
+function setBusy(value){
+  busy=value;
+  $("load").disabled=value;
+  $("prev").disabled=value||!active||offset===0;
+  $("next").disabled=value||!active||offset+LIMIT>=total;
+}
+function clearRows(){
+  $("rows").replaceChildren();
+  $("page-info").textContent="No records loaded";
+  total=0;
+  active=false;
+  setBusy(false);
+}
+function cell(row,text,className){
+  const td=document.createElement("td");
+  td.textContent=String(text??"—");
+  if(className)td.className=className;
+  row.appendChild(td);
+  return td;
+}
+function renderRecord(record){
+  const tr=document.createElement("tr");
+  cell(tr,record.created_at);
+  cell(tr,record.category);
+  cell(tr,record.model);
+  const status=record.predicted_anomaly===null?"Review":record.predicted_anomaly?"Flagged":"Normal";
+  cell(tr,status,record.predicted_anomaly===true?"flagged":"normal");
+  cell(tr,typeof record.anomaly_score==="number"?record.anomaly_score.toFixed(4):"—");
+  cell(tr,record.latency_ms===null?"—":record.latency_ms+" ms");
+  const action=cell(tr,"");
+  const remove=document.createElement("button");
+  remove.type="button";
+  remove.className="danger";
+  remove.textContent="Delete";
+  remove.setAttribute("aria-label","Delete inspection "+record.id);
+  remove.addEventListener("click",()=>deleteRecord(record.id));
+  action.appendChild(remove);
+  $("rows").appendChild(tr);
+}
+async function loadPage(nextOffset=0){
+  if(busy||!$("api-key").value){$("error").textContent="Enter your operator API key.";return;}
+  setBusy(true);
+  $("error").textContent="";
+  $("status").textContent="Loading private inspection metadata...";
+  try{
+    const response=await fetch("/inspections?limit="+LIMIT+"&offset="+nextOffset,{headers:headers()});
+    if(!response.ok){
+      if(response.status===401)throw new Error("Operator API key is missing or invalid.");
+      if(response.status===503)throw new Error("Private history is not enabled on this server.");
+      throw new Error("Cannot load inspection history (HTTP "+response.status+").");
+    }
+    const result=await response.json();
+    if(!result||!Array.isArray(result.records)||!Number.isInteger(result.total)||result.total<0)
+      throw new Error("Invalid history response.");
+    $("rows").replaceChildren();
+    for(const item of result.records)renderRecord(item);
+    offset=nextOffset;
+    total=result.total;
+    active=true;
+    $("page-info").textContent=total?(offset+1)+"–"+Math.min(offset+result.records.length,total)+" of "+total:"No records";
+    $("status").textContent="Loaded metadata only. Review decisions before use.";
+  }catch(err){
+    $("rows").replaceChildren();
+    active=false;
+    total=0;
+    $("page-info").textContent="No records loaded";
+    $("status").textContent="";
+    $("error").textContent=err.message;
+  }finally{setBusy(false);}
+}
+async function deleteRecord(id){
+  if(busy||!active||!$("api-key").value)return;
+  if(!window.confirm("Permanently delete this inspection record?"))return;
+  setBusy(true);
+  $("error").textContent="";
+  try{
+    const response=await fetch("/inspections/"+encodeURIComponent(id),{
+      method:"DELETE",headers:headers()
+    });
+    if(!response.ok)throw new Error(response.status===401?"Invalid operator API key.":"Delete failed (HTTP "+response.status+").");
+  }catch(err){
+    $("error").textContent=err.message;
+    setBusy(false);
+    return;
+  }
+  setBusy(false);
+  await loadPage(Math.max(0,offset>=total-1?offset-LIMIT:offset));
+}
+$("load").addEventListener("click",()=>loadPage(0));
+$("prev").addEventListener("click",()=>loadPage(Math.max(0,offset-LIMIT)));
+$("next").addEventListener("click",()=>loadPage(offset+LIMIT));
+$("api-key").addEventListener("input",()=>{clearRows();$("error").textContent="";$("status").textContent="";});
+</script>
+</body></html>
