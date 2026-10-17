@@ -126,6 +126,11 @@ def create_app(predict_fn=None) -> FastAPI:
     # Empty/unset: backwards-compatible local prototype. When explicitly set,
     # only operator-pinned exact checkpoint versions may run.
     approved_models = configured_approvals()
+    if approved_models is not None and len(os.getenv("IHSANVISION_API_KEY", "")) < 16:
+        raise ValueError(
+            "Approved checkpoint mode requires IHSANVISION_API_KEY "
+            "with at least 16 characters"
+        )
     history_path = os.getenv("IHSANVISION_HISTORY_DB", "").strip()
     history = None
     if history_path:
