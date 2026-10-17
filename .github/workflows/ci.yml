@@ -38,3 +38,39 @@ jobs:
           node-version: "20"
       - name: Exercise dashboard DOM state and API error handling
         run: node --test tests/dashboard.test.cjs tests/batch_dashboard.test.cjs tests/history_dashboard.test.cjs
+
+  container-config:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Compose localhost and container security contract (no model build)
+        env:
+          IHSANVISION_MODELS_DIR: /tmp/ci-private-models-placeholder
+          IHSANVISION_API_KEY: ci-only-placeholder-not-a-real-secret
+        run: |
+          docker compose -f compose.yaml config --quiet
+          python3 - <<'PY'
+          import json
+          import subprocess
+
+          rendered = subprocess.check_output(
+              ["docker", "compose", "-f", "compose.yaml", "config", "--format", "json"]
+          )
+          config = json.loads(rendered)
+          service = config["services"]["ihsanvision"]
+          assert service.get("read_only") is True
+          assert service.get("user") == "10001:10001"
+          assert "ALL" in service.get("cap_drop", [])
+          ports = service.get("ports", [])
+          assert len(ports) == 1 and ports[0].get("host_ip") == "127.0.0.1"
+          assert ports[0].get("published") == "8080"
+          mounts = service.get("volumes", [])
+          assert any(
+              mount.get("type") == "bind"
+              and mount.get("target") == "/models"
+              and mount.get("read_only") is True
+              for mount in mounts
+          )
+          print("Compose security/config shape verified; real image build and inference NOT tested.")
+          PY
