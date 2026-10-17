@@ -183,12 +183,24 @@ def create_app(predict_fn=None) -> FastAPI:
     async def inspections(
         limit: int = Query(default=50, ge=1, le=100),
         offset: int = Query(default=0, ge=0, le=1_000_000),
+        lot_id: str | None = Query(default=None, pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]{2,39}$"),
         api_key: str | None = Header(default=None, alias="X-IhsanVision-Key"),
     ):
         if history is None:
             raise HTTPException(503, "Private inspection history is disabled")
         require_predict_key(api_key)
-        return await run_in_threadpool(history.list_records, limit, offset)
+        return await run_in_threadpool(history.list_records, limit, offset, lot_id)
+
+    @app.get("/inspection-lots")
+    async def inspection_lots(
+        limit: int = Query(default=50, ge=1, le=100),
+        offset: int = Query(default=0, ge=0, le=1_000_000),
+        api_key: str | None = Header(default=None, alias="X-IhsanVision-Key"),
+    ):
+        if history is None:
+            raise HTTPException(503, "Private inspection history is disabled")
+        require_predict_key(api_key)
+        return await run_in_threadpool(history.list_lots, limit, offset)
 
     @app.delete("/inspections/{inspection_id}")
     async def delete_inspection(
@@ -222,9 +234,12 @@ def create_app(predict_fn=None) -> FastAPI:
         file: UploadFile = File(...),
         model: str | None = Query(default=None),
         category: str | None = Query(default=None),
+        lot_id: str | None = Query(default=None, pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]{2,39}$"),
         api_key: str | None = Header(default=None, alias="X-IhsanVision-Key"),
     ):
         require_predict_key(api_key)
+        if lot_id is not None and history is None:
+            raise HTTPException(503, "Inspection lot tracking requires private history")
         if model is not None and model not in MODELS:
             raise HTTPException(400, "Unsupported model. Choose padim or patchcore.")
         if category is not None and category not in SUPPORTED_CATEGORIES:
@@ -247,11 +262,12 @@ def create_app(predict_fn=None) -> FastAPI:
             ) from None
 
         try:
-            return await _predict_admitted(file, checkpoint, model_name, selected_category)
+            return await _predict_admitted(file, checkpoint, model_name, selected_category, lot_id)
         finally:
             admission_semaphore.release()
 
-    async def _predict_admitted(file: UploadFile, checkpoint: Path, model_name: str, category: str):
+    async def _predict_admitted(file: UploadFile, checkpoint: Path, model_name: str,
+                                category: str, lot_id: str | None):
         payload = await file.read(MAX_UPLOAD + 1)
         if not payload:
             raise HTTPException(400, "Empty upload")
@@ -278,7 +294,7 @@ def create_app(predict_fn=None) -> FastAPI:
                 if history is None:
                     return validated
                 inspection_id = await run_in_threadpool(
-                    history.record, category, model_name, validated.model_dump()
+                    history.record, category, model_name, validated.model_dump(), lot_id
                 )
                 return validated.model_copy(update={"inspection_id": inspection_id})
             except Exception:
