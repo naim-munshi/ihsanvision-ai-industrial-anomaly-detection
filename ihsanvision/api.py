@@ -29,6 +29,7 @@ MAX_UPLOAD = 10 * 1024 * 1024
 MAX_PIXELS = 25_000_000
 UI = Path(__file__).resolve().parents[1] / "demo" / "index.html"
 BATCH_UI = Path(__file__).resolve().parents[1] / "demo" / "batch.html"
+HISTORY_UI = Path(__file__).resolve().parents[1] / "demo" / "history.html"
 
 
 IMAGE_SUFFIXES = {"PNG": ".png", "JPEG": ".jpg", "WEBP": ".webp", "BMP": ".bmp"}
@@ -156,6 +157,11 @@ def create_app(predict_fn=None) -> FastAPI:
     def batch_dashboard():
         """Local operator UI; actual predictions use protected /predict."""
         return FileResponse(BATCH_UI, media_type="text/html")
+
+    @app.get("/history")
+    def history_dashboard():
+        """Public HTML shell only; saved records require operator authentication."""
+        return FileResponse(HISTORY_UI, media_type="text/html")
 
     @app.get("/health")
     def health():
