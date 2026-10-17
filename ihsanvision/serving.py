@@ -49,7 +49,9 @@ class PersistentModelPredictor:
             rgb = image.convert("RGB")
 
         stat = checkpoint.stat()
-        key = (str(checkpoint.resolve()), stat.st_size, stat.st_mtime_ns, model_name, self.accelerator)
+        key = (str(checkpoint.resolve()), stat.st_dev, stat.st_ino,
+               stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns,
+               model_name, self.accelerator)
         if key != self._key:
             # Lazy model creation; do not load pretrained weights during /health.
             from anomalib.engine import Engine
