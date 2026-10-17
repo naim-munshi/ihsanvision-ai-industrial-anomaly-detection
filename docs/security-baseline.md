@@ -4,7 +4,7 @@
 
 The service offers **optional** server-configured API-key protection for POST /predict, a process-global sliding-window rate cap, finite inference admission, and short opaque request IDs in HTTP response headers and sanitized server logs. These are first-stage defense-in-depth controls, **not sufficient for public internet hosting**. The default no-key mode exists solely for backwards-compatible localhost development.
 
-The key is a shared application secret, not account authorization or tenant separation. With multiple Uvicorn workers, each worker has separate rate/admission budgets. A per-process counter is not a distributed limiter. An additional pure-ASGI pre-parser guard now checks the shared API key and bounds the total /predict HTTP request body **before** FastAPI parses multipart data, including uploads without Content-Length. This guard buffers up to 10 MiB + 64 KiB per in-flight request and complements (rather than replaces) proxy-level request limits and gateway authentication. Account authorization, distributed rate limits, proxy TLS, and high-load validation remain pending. A real internet service also needs HTTPS, managed secrets, origin/CSRF review, monitoring, dependency scanning, container isolation, incident response and a user/data retention policy.
+The key is a shared application secret, not account authorization or tenant separation. With multiple Uvicorn workers, each worker has separate rate/admission budgets. A per-process counter is not a distributed limiter. An additional pure-ASGI pre-parser guard now checks the shared API key and bounds the total /predict HTTP request body **before** FastAPI parses multipart data, including uploads without Content-Length. This guard now also uses a process-local finite pre-body admission semaphore (default 2 in-flight requests, configurable 1–100) with a 1-second timeout and HTTP 503/Retry-After on saturation. This bounds aggregate multipart buffering per process. It complements (rather than replaces) proxy-level request limits and gateway authentication. Account authorization, distributed rate limits, proxy TLS, and high-load validation remain pending. A real internet service also needs HTTPS, managed secrets, origin/CSRF review, monitoring, dependency scanning, container isolation, incident response and a user/data retention policy.
 
 ## Configure localhost optional authentication
 
@@ -34,6 +34,7 @@ Never include a key in a command-line URL, test fixture, report, screenshot, pub
 | Correct configured header / no key required in local mode | Continue normal input validation |
 | Missing/incorrect key when server key set | HTTP 401; never invokes the model |
 | More than configured requests in 60 seconds | HTTP 429 with Retry-After |
+| More than permitted concurrent POST uploads before multipart parsing | HTTP 503 with Retry-After |
 | Inference admission unavailable beyond configured wait | HTTP 503 with Retry-After |
 | HTTP multipart body over 10 MiB + 64 KiB (before parsing), image over 10 MiB (route), or >25 million decoded pixels | HTTP 413 |
 | Every normal HTTP response | Opaque X-Request-ID header; no client-chosen ID trusted |
