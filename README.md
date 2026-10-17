@@ -23,6 +23,7 @@
 | Human-reviewed inspection history (opt-in) | Private SQLite metadata ledger, authenticated browse/delete/review API, `/history` human verdict workflow; AI result preserved independently | Implemented with regression tests; real Mac acceptance pending |
 | Production lot traceability | Optional opaque lot IDs in browser batch flow, persisted metadata links, authenticated per-lot inspection queries and human-vs-AI disagreement summary | Implemented and offline-tested; real Mac integration pending |
 | Checkpoint version identity | SHA-256 of actual trusted checkpoint, attached to each successful private history-backed inference; file-snapshot checks and non-destructive ledger migration | Implemented with offline tests; real Mac checkpoint verification pending |
+| Model-version inspection analytics | Private per-category/model/checkpoint hash groups with lot filter, human review disagreement and operator dashboard | Implemented with offline tests; real Mac review pending |
 | Automated code checks | Python 3.11 and 3.12 | GitHub Actions |
 
 These performance and AUROC numbers come from **different protocols and purposes**. The dataset evaluation held out 16 images from MVTec's official test directory for validation, leaving **67 test images**. It is **not directly comparable with the full-test MVTec leaderboard**. The browser examples and synthetic API smoke input must not be presented as additional accuracy measurements.
@@ -64,6 +65,17 @@ identity; no image bytes, paths or weight contents are saved. See the
 [model fingerprint implementation and limits](docs/checkpoint-provenance.md).
 An SHA-256 digest **does not validate** training quality, provenance of the
 original data, checkpoint deserialization safety or model approval.
+
+### Model version inspection analytics
+
+The authenticated `/history` operator dashboard can now group saved
+inspections by **product category, model family and exact checkpoint SHA-256**.
+This prevents accidentally mixing different versions of the same PaDiM or
+PatchCore model when examining AI flags and human-review disagreements.
+Legacy records without a fingerprint form an explicit unknown group.
+The `GET /inspection-model-versions` API supports bounded pagination and
+an optional lot filter. Counts are **not** accuracy metrics or proof of
+approved model training. See [checkpoint-version analytics and boundaries](docs/checkpoint-provenance.md).
 
 ### Trace production inspection lots
 
