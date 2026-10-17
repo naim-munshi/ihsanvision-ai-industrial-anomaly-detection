@@ -26,9 +26,33 @@
 | Model-version inspection analytics | Private per-category/model/checkpoint hash groups with lot filter, human review disagreement and operator dashboard | Implemented with offline tests; real Mac review pending |
 | Approved checkpoint pinning (opt-in) | Operator-approved exact SHA-256 per category/model, authenticated inference, mismatch rejected before model execution | Implemented with offline tests; real checkpoint Mac acceptance pending |
 | MVTec AD 2 adapter (non-commercial research) | Separate normal train/validation and public-only test/mask checks, dry-run-first explicit PaDiM/PatchCore trainer, eight canonical categories | Implemented with offline tests; actual AD2 dataset/compute runs pending |
+| Pre-parser HTTP upload defense | Auth before multipart parsing, strict bounded body and finite in-flight upload admission | Python offline regression tests; remote gateway security pending |
+| Operator model release lifecycle | Explicit human-reviewed staged private registry/approval bundles, checksum verification and manual release rollback | Offline tested; real checkpoint acceptance pending |
+| Model configuration readiness | `GET /ready` checks nonempty checkpoints and configured approved SHA pins; Docker healthcheck uses readiness | Offline tested; real Docker runtime pending |
+| Private CSV export | Authenticated, lot-filtered, formula-safe, bounded inspection history CSV; human review and persisted metadata | Full mocked-predictor integration and browser JS tests; Mac test pending |
+| Private runtime telemetry | Authenticated `GET /operator-metrics`, bounded p50/p95 and success/failure counters | Offline tested; not durable distributed monitoring |
+| One-command local-stack acceptance | `scripts.local_stack_acceptance` checks actual four Bottle predictions, routing, dashboards, readiness and optional auth | Tool implemented; real Mac/Docker execution pending |
 | Automated code checks | Python 3.11 and 3.12 | GitHub Actions |
 
 These performance and AUROC numbers come from **different protocols and purposes**. The dataset evaluation held out 16 images from MVTec's official test directory for validation, leaving **67 test images**. It is **not directly comparable with the full-test MVTec leaderboard**. The browser examples and synthetic API smoke input must not be presented as additional accuracy measurements.
+
+## Current release boundary
+
+**Implemented source/green CI is not the same as real system acceptance.**
+The Bottle prototype has earlier real Kaggle/Mac evidence; the newer operator
+history/export, staged model release, readiness, telemetry and upload security
+changes have automated mocked/offline tests but have not been revalidated with
+the operator's private model weights and full Mac/Docker runtime. Use
+[real local stack acceptance](docs/operational-acceptance.md) and
+[local-only container setup](docs/container-deployment.md) for those gates.
+Do not state that the Docker image has successfully built or that the platform
+is production-ready. The classic AD coverage remains one trained category
+(Bottle), not all 15, and no real AD2 model experiments have been completed.
+
+Production deployment still requires real container inference, TLS/gateway
+controls, host secrets, resource/latency and failure testing, security review,
+backup/retention plan, operator QA, and dataset/model licensing decisions.
+The source-code license has intentionally not been selected by the assistant.
 
 ## Quick start — local inspection (macOS/Linux)
 

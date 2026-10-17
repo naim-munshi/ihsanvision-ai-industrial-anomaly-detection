@@ -55,6 +55,15 @@ docker compose -f compose.yaml down
 
 The host's external checkpoint directory is read-only to the container and is not removed by docker compose down. Do not run docker compose down --volumes unless you understand all mounts and named volumes.
 
+## Automated static Compose gate
+
+The Python quality workflow now adds a `container-config` job that parses
+`compose.yaml` with Docker Compose and checks localhost host binding, nonroot
+UID, read-only root filesystem, dropped capabilities and read-only /models
+mount. It uses dummy CI-only environment variables and **does not build the
+PyTorch/Anomalib image or invoke model inference**. This static guard does not
+satisfy the real target-machine Docker acceptance gates below.
+
 ## Verification gates before calling M9 complete
 
 1. Docker daemon responds; compose config resolves the absolute model directory and key without printing any secret publicly.
