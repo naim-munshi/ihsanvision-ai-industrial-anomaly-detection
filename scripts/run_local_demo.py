@@ -64,7 +64,21 @@ def ensure_local_port_available(port: int) -> None:
 
 
 def configure_local_models(paths: dict[str, Path]) -> None:
-    """Configure both model choices before importing the FastAPI application."""
+    """Select the two explicitly trusted Bottle checkpoints for this demo.
+
+    The multi-category registry takes precedence over per-model environment
+    variables for the same category. Fail closed instead of silently serving
+    a different checkpoint when a previous shell session left a registry set.
+    Full multi-category operators should launch the API with their explicitly
+    reviewed registry, not the fixed two-model Bottle convenience launcher.
+    """
+    registry = os.environ.get("IHSANVISION_MODEL_REGISTRY", "").strip()
+    if registry:
+        raise ValueError(
+            "IHSANVISION_MODEL_REGISTRY is set and can override Bottle weights. "
+            "Unset it for the fixed two-checkpoint local demo, or launch the "
+            "API directly with your reviewed registry configuration."
+        )
     os.environ.pop("IHSANVISION_CHECKPOINT", None)
     for name in MODEL_NAMES:
         os.environ[f"IHSANVISION_{name.upper()}_CHECKPOINT"] = str(paths[name])

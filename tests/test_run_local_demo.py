@@ -68,6 +68,7 @@ def test_main_sets_both_paths_before_starting_loopback_uvicorn(
     for variable in ("IHSANVISION_PADIM_CHECKPOINT", "IHSANVISION_PATCHCORE_CHECKPOINT",
                      "IHSANVISION_MODEL"):
         monkeypatch.delenv(variable, raising=False)
+    monkeypatch.delenv("IHSANVISION_MODEL_REGISTRY", raising=False)
     monkeypatch.setenv("IHSANVISION_CHECKPOINT", "/old/legacy.ckpt")
     launcher.main([
         "--artifacts-dir", str(model_folder),
@@ -82,6 +83,34 @@ def test_main_sets_both_paths_before_starting_loopback_uvicorn(
         "workers": 1,
         "reload": False,
     }
+
+
+def test_stale_registry_cannot_silently_override_selected_bottle_weights(
+    model_folder, monkeypatch
+):
+    monkeypatch.setenv("IHSANVISION_MODEL_REGISTRY", "/private/old-registry.json")
+    monkeypatch.setenv("IHSANVISION_CHECKPOINT", "/old/legacy.ckpt")
+    monkeypatch.delenv("IHSANVISION_PADIM_CHECKPOINT", raising=False)
+    monkeypatch.delenv("IHSANVISION_PATCHCORE_CHECKPOINT", raising=False)
+    paths = launcher.trusted_checkpoints(model_folder)
+
+    with pytest.raises(ValueError, match="MODEL_REGISTRY is set"):
+        launcher.configure_local_models(paths)
+
+    # Reject before mutating any of the operator's inherited configuration.
+    assert os.environ["IHSANVISION_CHECKPOINT"] == "/old/legacy.ckpt"
+    assert os.environ["IHSANVISION_MODEL_REGISTRY"] == "/private/old-registry.json"
+    assert "IHSANVISION_PADIM_CHECKPOINT" not in os.environ
+
+
+def test_local_demo_rejects_registry_before_uvicorn_start(model_folder, monkeypatch):
+    monkeypatch.setenv("IHSANVISION_MODEL_REGISTRY", "/private/stale.json")
+    with pytest.raises(SystemExit) as error:
+        launcher.main([
+            "--artifacts-dir", str(model_folder),
+            "--port", "8777", "--no-browser",
+        ])
+    assert error.value.code == 2
 
 
 def test_invalid_port_exits_before_server_launch(model_folder):
