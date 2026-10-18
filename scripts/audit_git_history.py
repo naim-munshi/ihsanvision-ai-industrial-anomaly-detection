@@ -122,7 +122,8 @@ def audit(root: Path) -> dict:
     return {
         "schema_version": 1,
         "status": ("incomplete_shallow_history" if shallow else
-                   "findings_require_review" if findings else "no_known_patterns_found"),
+                   "findings_require_review" if findings else
+                   "partial_large_blobs" if skipped_large else "no_known_patterns_found"),
         "audited_ref_scope": "all locally fetched branches/tags",
         "shallow_repository": shallow,
         "unique_historical_paths": len(seen_paths),
