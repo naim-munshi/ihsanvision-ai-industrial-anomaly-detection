@@ -7,6 +7,16 @@ operational problem of interrupted runs, partial private artifacts and limited
 Kaggle/GPU sessions. **It does not supply dataset bytes, GPU compute or new
 experiment results.**
 
+
+**Interrupted-run guard:** Even an existing *empty* per-model run directory,
+a directory containing only `engine/` or stray notes, or a symlinked run
+directory now causes the **dry-run planner** to fail before it schedules
+training. Direct training reserves a completely new run directory, so such
+leftovers must be inspected or privately archived first; never delete a
+checkpoint just to make the plan pass. A new run directory appearing between
+dry-run and execution is also refused.
+
+
 ## Preflight before all GPU work
 
 Mount or extract a properly licensed, operator-owned MVTec AD dataset locally
