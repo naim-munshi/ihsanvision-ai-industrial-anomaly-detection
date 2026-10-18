@@ -14,7 +14,8 @@ from pathlib import Path
 import sys
 from urllib import error, request
 
-from .dual_model_acceptance import accept, local_origin
+from .dual_model_acceptance import accept, image_sample, local_origin
+from .operator_workflow_acceptance import verify_operator_workflow
 from .local_api_smoke import make_png, multipart_png
 
 MAX_UI_BYTES = 2 * 1024 * 1024
@@ -50,8 +51,11 @@ def assert_unauthenticated_prediction_denied(origin: str) -> None:
 
 
 def verify_stack(origin: str, normal: Path, defective: Path, *,
-                 timeout: float = 180, require_auth: bool = False) -> dict:
+                 timeout: float = 180, require_auth: bool = False,
+                 check_operator: bool = False) -> dict:
     origin = local_origin(origin)
+    if check_operator and not require_auth:
+        raise ValueError("Operator workflow requires --require-auth and a private DB")
     health = json.loads(_get(origin, "/health"))
     ready = json.loads(_get(origin, "/ready"))
     catalog = json.loads(_get(origin, "/models"))
@@ -74,6 +78,12 @@ def verify_stack(origin: str, normal: Path, defective: Path, *,
         if not os.getenv("IHSANVISION_CLIENT_API_KEY"):
             raise RuntimeError("Set private IHSANVISION_CLIENT_API_KEY for authenticated acceptance")
     predictions = accept(origin, normal, defective, timeout=timeout)
+    operator_result = None
+    if check_operator and predictions["status"] == "passed":
+        sample = image_sample(normal)
+        operator_result = verify_operator_workflow(origin, sample["png_bytes"])
+        if operator_result.get("status") != "operator_workflow_passed":
+            raise RuntimeError("Real private operator workflow acceptance failed")
     return {
         "schema_version": 1,
         "status": ("local_stack_acceptance_passed"
@@ -88,10 +98,13 @@ def verify_stack(origin: str, normal: Path, defective: Path, *,
             "missing_api_key_refused": "passed" if require_auth else "not_checked",
         },
         "inference": predictions,
+        "operator_workflow": operator_result,
         "limitations": [
             "Only manually selected bottle samples; no new defect accuracy measurement.",
             "Readiness verifies config/integrity, not inference; actual predictions are tested separately.",
-            "Browser interaction, DB mutation/retention and Docker container internals are not exercised.",
+            ("Browser interaction, post-restart persistence and Docker internals are not "
+             "exercised." if check_operator else
+             "Browser interaction, DB mutation/retention and Docker internals are not exercised."),
             "This verifies only the specified localhost service; it does not prove cloud deployment.",
         ],
     }
@@ -105,7 +118,13 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--timeout", type=float, default=180)
     parser.add_argument("--require-auth", action="store_true")
+    parser.add_argument(
+        "--operator-workflow", action="store_true",
+        help="Opt in to write, review, CSV-export and delete one private test inspection",
+    )
     args = parser.parse_args(argv)
+    if args.operator_workflow and not args.require_auth:
+        parser.error("--operator-workflow requires --require-auth and a private history DB")
     destination = args.output.expanduser()
     if not destination.is_absolute() or destination.exists() or destination.is_symlink():
         parser.error("Evidence output must be a new absolute private path")
@@ -113,6 +132,7 @@ def main(argv: list[str] | None = None) -> None:
         report = verify_stack(
             args.url, args.normal, args.defective,
             timeout=args.timeout, require_auth=args.require_auth,
+            check_operator=args.operator_workflow,
         )
         destination.parent.mkdir(parents=True, exist_ok=True)
         flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
