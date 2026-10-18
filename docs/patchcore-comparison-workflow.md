@@ -4,7 +4,7 @@
 
 The original PaDiM/bottle run is completed. Repeating it just to add PatchCore would waste compute, and a casual new split can invalidate comparison. Use `ihsanvision.benchmark --reuse-existing` to **reuse the previous PaDiM checkpoint/report/split manifest and train only PatchCore**, provided that its run artifacts are available in Kaggle.
 
-**Current status:** The orchestration and offline tests are implemented. A real PatchCore training job has **not** yet been run, so there are **no PatchCore metrics to report**. Do not claim completed PatchCore metrics on that basis; the *workflow software* has already been integrated into `main`.
+**Current status (updated 2026-10-19):** This page preserves the **historical incremental PatchCore workflow**. A real Bottle PatchCore experiment **was completed on 2026-10-15**. Its recorded held-out metrics, private archive status and methodological limits are documented in [the observed experiment report](../reports/2026-10-15-kaggle-patchcore-bottle.md). **Do not rerun completed Bottle training**; restore both trusted Bottle artifact triples and fit only the missing Cable/Carpet models. The newer [resumable training guide](resumable-multicategory-training.md) is the active portfolio runbook.
 
 ## Prerequisites
 
