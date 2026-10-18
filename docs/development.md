@@ -176,7 +176,13 @@ Now the UI displays **PaDiM** and **PatchCore** if both files exist. `GET /model
 
 The current in-process cache keeps **one checkpoint/model pair**; switching resets it, trading loading latency for bounded model memory. Keep the API bound to localhost: local API-key/auth, rate and upload limits are implemented, but TLS, identity and public deployment checks are not complete. Score units/thresholds can differ across model families; do not compare raw scores directly. CI checks API routing and operator workflows using mocked predictors. Real Bottle PaDiM/PatchCore browser and four-request HTTP inference **did pass on Mac** in [the October 16 evidence](../reports/2026-10-16-macos-dual-model-api-acceptance.md); the newest history/export/security revisions still need fresh real-Mac integration.
 
-### M6 real dual-model acceptance
+#**Bottle launcher safety:** `python -m scripts.run_local_demo` fails early if
+an inherited `IHSANVISION_MODEL_REGISTRY` could override the two Bottle
+checkpoints passed with `--artifacts-dir`. Explicitly remove that variable
+for the two-model demo, or launch the general API with your reviewed registry.
+It does not disable optional authentication or approval pins.
+
+## M6 real dual-model acceptance
 
 Use a Mac terminal with an active Python environment where Pillow and the source package are installed. Start the two-checkpoint local API on port 8003 in a **separate terminal** using the configuration above.
 
