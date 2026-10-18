@@ -1,0 +1,147 @@
+name: CPU Docker build and HTTP smoke (no checkpoints)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/docker-cpu-smoke.yml"
+      - "Dockerfile"
+      - ".dockerignore"
+      - "requirements.txt"
+      - "pyproject.toml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build actual CPU application image
+        run: |
+          docker build --pull --progress=plain \
+            --tag ihsanvision-cpu-smoke:ci .
+
+      - name: Verify image does not include private artifacts
+        run: |
+          python3 - <<'PY'
+          import subprocess
+          image = "ihsanvision-cpu-smoke:ci"
+          uid = subprocess.check_output(
+              ["docker", "image", "inspect", image, "--format", "{{.Config.User}}"],
+              text=True,
+          ).strip()
+          assert uid == "10001:10001", f"Unexpected container user {uid!r}"
+          output = subprocess.check_output(
+              ["docker", "run", "--rm", "--entrypoint", "python", image,
+               "-c", "from pathlib import Path; import json; p=Path('/app'); "
+               "bad=[str(x.relative_to(p)) for x in p.rglob('*') if x.is_file() "
+               "and (x.suffix in {'.ckpt','.pth','.pt','.onnx','.sqlite3','.zip'} "
+               "or x.name == '.env')]; print(json.dumps(bad))"],
+              text=True,
+          ).strip()
+          assert output == "[]", f"Private assets accidentally packed in image: {output}"
+          print("Image built and basic artifact/user checks passed.")
+          PY
+
+      - name: Run the actual API without private weights (expected unready)
+        run: |
+          docker run --rm --detach \
+            --name ihsanvision-api-ci \
+            --publish 127.0.0.1:18080:8080 \
+            --user 10001:10001 \
+            --read-only \
+            --tmpfs /tmp:rw,nosuid,nodev,size=1g \
+            --cap-drop ALL \
+            --security-opt no-new-privileges:true \
+            --pids-limit 256 \
+            --env IHSANVISION_API_KEY=ci-only-dummy-key-do-not-reuse \
+            ihsanvision-cpu-smoke:ci
+
+      - name: Exercise real HTTP API and readiness without loading a checkpoint
+        run: |
+          python3 - <<'PY'
+          import json
+          import time
+          from urllib import error, request
+
+          base = "http://127.0.0.1:18080"
+          for attempt in range(60):
+              try:
+                  with request.urlopen(base + "/health", timeout=5) as reply:
+                      health = json.load(reply)
+                  if health.get("status") == "ok":
+                      break
+              except (OSError, ValueError):
+                  pass
+              time.sleep(2)
+          else:
+              raise RuntimeError("The built CPU container API did not start")
+
+          assert health.get("model_configured") is False, health
+          with request.urlopen(base + "/models", timeout=10) as response:
+              models = json.load(response)
+          assert models.get("models_by_category") == {}, models
+
+          for endpoint, marker in (
+              ("/", b"IhsanVision"),
+              ("/batch", b"Inspect a product batch"),
+              ("/history", b"Private inspection history"),
+          ):
+              with request.urlopen(base + endpoint, timeout=10) as response:
+                  assert marker in response.read(100_000), endpoint
+
+          try:
+              request.urlopen(base + "/ready", timeout=10)
+          except error.HTTPError as exc:
+              assert exc.code == 503, exc.code
+          else:
+              raise AssertionError("No checkpoint must give HTTP 503 readiness")
+
+          unauthenticated = request.Request(
+              base + "/predict", method="POST",
+              data=b"untrusted multipart content",
+              headers={"Content-Type": "multipart/form-data; boundary=bad"},
+          )
+          try:
+              request.urlopen(unauthenticated, timeout=10)
+          except error.HTTPError as exc:
+              assert exc.code == 401, exc.code
+          else:
+              raise AssertionError("Unauthenticated upload must be refused before parsing")
+
+          print("Real container API HTTP smoke PASSED: routes, no-model readiness, preparse auth.")
+          print("Not performed: actual PaDiM/PatchCore checkpoint deserialization or inference.")
+          PY
+
+      - name: Check container runtime security flags
+        run: |
+          python3 - <<'PY'
+          import json
+          import subprocess
+
+          output = subprocess.check_output(
+              ["docker", "inspect", "ihsanvision-api-ci"], text=True
+          )
+          config = json.loads(output)[0]
+          host = config["HostConfig"]
+          assert host["ReadonlyRootfs"] is True
+          assert "ALL" in host["CapDrop"]
+          assert host["SecurityOpt"] == ["no-new-privileges:true"]
+          assert config["Config"]["User"] == "10001:10001"
+          binding = host["PortBindings"]["8080/tcp"][0]
+          assert binding["HostIp"] == "127.0.0.1"
+          assert binding["HostPort"] == "18080"
+          print("Live container confinement and localhost port verified.")
+          PY
+
+      - name: Diagnose only on failure and stop container
+        if: always()
+        run: |
+          docker ps -a --filter name=ihsanvision-api-ci
+          docker logs --tail 60 ihsanvision-api-ci 2>/dev/null || true
+          docker stop ihsanvision-api-ci 2>/dev/null || true
