@@ -67,7 +67,7 @@ The old feature branch remains temporarily for audit. **Existing single-branch c
 
 The completed PaDiM bottle experiment should be reused. The `ihsanvision.benchmark --reuse-existing` mode requires its saved `model.ckpt`, `report.json`, and `splits.json`, checks split equivalence **before** new PatchCore training, and refuses partial or mismatched experiments.
 
-See the [Kaggle PatchCore comparison workflow](patchcore-comparison-workflow.md) for restoring trusted artifacts from the private user-owned Kaggle input and running only the missing PatchCore job. No real PatchCore output is claimed yet.
+The Bottle PatchCore job **has completed** and its saved results were documented in [the observed Kaggle run](../reports/2026-10-15-kaggle-patchcore-bottle.md). Keep both Bottle checkpoints; use the [safe resumable runner](resumable-multicategory-training.md) for the portfolio's additional cable/carpet jobs. The old PatchCore comparison workflow is retained as historical reproduction guidance.
 
 ### Never overwrite an interrupted direct training run
 
@@ -174,7 +174,7 @@ python -m uvicorn ihsanvision.api:app --host 127.0.0.1 --port 8002
 
 Now the UI displays **PaDiM** and **PatchCore** if both files exist. `GET /models` returns `available_models` and `default_model` without checkpoint paths, and `POST /predict?model=patchcore` loads the server-configured PatchCore weights. Without a model query, `POST /predict` uses the preferred available default. `IHSANVISION_CHECKPOINT` with `IHSANVISION_MODEL` still supports the original single-model launch; explicit per-model checkpoint settings take precedence, and invalid/missing configured files remain unavailable. A request for an unsupported model returns HTTP 400; a supported but unconfigured model returns HTTP 503.
 
-The current in-process cache keeps **one checkpoint/model pair**; switching resets it, trading loading latency for bounded model memory. Keep the API bound to localhost until authentication, rate limits and deployment hardening are added. Score units/thresholds can differ across model families; do not compare raw scores directly. The current CI covers API routing via fake predictors. **End-to-end Mac PatchCore dashboard testing is pending**.
+The current in-process cache keeps **one checkpoint/model pair**; switching resets it, trading loading latency for bounded model memory. Keep the API bound to localhost: local API-key/auth, rate and upload limits are implemented, but TLS, identity and public deployment checks are not complete. Score units/thresholds can differ across model families; do not compare raw scores directly. CI checks API routing and operator workflows using mocked predictors. Real Bottle PaDiM/PatchCore browser and four-request HTTP inference **did pass on Mac** in [the October 16 evidence](../reports/2026-10-16-macos-dual-model-api-acceptance.md); the newest history/export/security revisions still need fresh real-Mac integration.
 
 ### M6 real dual-model acceptance
 
@@ -197,7 +197,7 @@ The check sends **four POST requests**: PaDiM normal, PaDiM defective, PatchCore
 - `--output` never overwrites an existing report. Change the file name for a second run.
 - Manually inspect rendered dashboard heatmaps for localization plausibility and test error states separately. PNG format/size validation is not an intersection-over-union or segmentation-quality test.
 
-A real run of this new script **has not yet been reported**; its offline regression tests validate client-side logic, not model science.
+A real four-request run of this script **passed on Mac on 2026-10-16**; see [the dated acceptance report](../reports/2026-10-16-macos-dual-model-api-acceptance.md). The script's offline regression tests separately validate the client contract. The newer full local-stack acceptance runner still needs a fresh operator execution.
 
 ## Contribution procedure
 
