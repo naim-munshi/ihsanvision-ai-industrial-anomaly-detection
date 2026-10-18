@@ -38,12 +38,15 @@ If you enabled **both** a private `IHSANVISION_HISTORY_DB` and a strong
 `IHSANVISION_API_KEY` when starting the server, you may additionally run the
 local-stack test with **`--require-auth --operator-workflow`**. Keep the key in
 the private client environment variable, never in a command line argument.
-This mode is **explicit opt-in** because it creates exactly one randomly
-identified test inspection, marks it `confirmed_normal`, checks database
-history, model checkpoint SHA traceability, lot aggregation, private CSV,
-and private telemetry, and then **deletes only that test record**. If the
-network or deletion fails, the command refuses to pass and reports the
-synthetic lot identifier for manual cleanup. Use a disposable private
+This mode is **explicit opt-in** because the four normal/defect × model
+acceptance requests **also create four private inspection rows** when history
+is enabled. It collects their IDs only in process. It then creates a fifth,
+randomly identified test inspection, marks it `confirmed_normal`, verifies
+private history/checkpoint SHA/lot groups/CSV/telemetry and **cleans all five
+specific test records**, never pre-existing operator rows. If the
+network or deletion fails, the command refuses to pass. Examine the newest
+private history rows and synthetic lot before any manual cleanup; never
+bulk-delete other operator data. Use a disposable private
 inspection DB for initial acceptance. Existing records are not deleted.
 
 ```bash
@@ -63,6 +66,10 @@ test SQLite DB. Browser clicks and successful persistence *after a real
 service restart* remain **separate manual checks**. The new report deliberately
 excludes raw input images, operator API key, checkpoint hashes, record IDs and
 lot identifiers.
+
+**Important:** A standard four-prediction run with private history enabled
+but **without** `--operator-workflow` can leave four normal inspection
+records. Use a disposable DB or the explicit operator cleanup mode instead.
 
 ## Docker validation
 

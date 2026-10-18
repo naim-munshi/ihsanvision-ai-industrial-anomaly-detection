@@ -60,6 +60,31 @@ def _require(condition: bool, message: str) -> None:
         raise RuntimeError("Operator acceptance failed: " + message)
 
 
+def cleanup_accepted_inspections(origin: str, ids: list[str]) -> None:
+    """Delete only records created by this acceptance run, trying every ID."""
+    origin = local_origin(origin)
+    if len(ids) != len(set(ids)) or any(
+        not isinstance(item, str) or INSPECTION_ID.fullmatch(item) is None
+        for item in ids
+    ):
+        raise ValueError("Refusing invalid or duplicate temporary inspection IDs")
+    failed = 0
+    for record_id in ids:
+        try:
+            reply = _json_request(origin, "/inspections/" + record_id,
+                                  method="DELETE")
+            if reply.get("deleted") is not True or reply.get("inspection_id") != record_id:
+                failed += 1
+        except Exception:
+            failed += 1
+    if failed:
+        raise RuntimeError(
+            f"Could not clean {failed} of {len(ids)} temporary private inspections. "
+            "Inspect the private history using the IDs retained only in process "
+            "and the latest run time; never bulk-delete existing operator data."
+        )
+
+
 def verify_operator_workflow(origin: str, normal_png: bytes) -> dict:
     """Perform a real private end-to-end operator flow and clean up its own row."""
     origin = local_origin(origin)

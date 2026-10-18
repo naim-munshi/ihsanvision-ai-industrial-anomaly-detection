@@ -15,7 +15,8 @@ import sys
 from urllib import error, request
 
 from .dual_model_acceptance import accept, image_sample, local_origin
-from .operator_workflow_acceptance import verify_operator_workflow
+from .operator_workflow_acceptance import (cleanup_accepted_inspections,
+                                           verify_operator_workflow)
 from .local_api_smoke import make_png, multipart_png
 
 MAX_UI_BYTES = 2 * 1024 * 1024
@@ -77,13 +78,27 @@ def verify_stack(origin: str, normal: Path, defective: Path, *,
         assert_unauthenticated_prediction_denied(origin)
         if not os.getenv("IHSANVISION_CLIENT_API_KEY"):
             raise RuntimeError("Set private IHSANVISION_CLIENT_API_KEY for authenticated acceptance")
-    predictions = accept(origin, normal, defective, timeout=timeout)
-    operator_result = None
-    if check_operator and predictions["status"] == "passed":
-        sample = image_sample(normal)
-        operator_result = verify_operator_workflow(origin, sample["png_bytes"])
-        if operator_result.get("status") != "operator_workflow_passed":
-            raise RuntimeError("Real private operator workflow acceptance failed")
+    recorded_ids: list[str] = []
+    try:
+        if check_operator:
+            predictions = accept(
+                origin, normal, defective, timeout=timeout,
+                inspection_sink=recorded_ids,
+            )
+        else:
+            predictions = accept(origin, normal, defective, timeout=timeout)
+        operator_result = None
+        if check_operator and predictions["status"] == "passed":
+            sample = image_sample(normal)
+            operator_result = verify_operator_workflow(origin, sample["png_bytes"])
+            if operator_result.get("status") != "operator_workflow_passed":
+                raise RuntimeError("Real private operator workflow acceptance failed")
+    finally:
+        # The four PaDiM/PatchCore smoke requests ALSO create history rows
+        # when private persistence is on. Never leave those in a clean test DB.
+        # Their IDs are kept only in memory, never in the acceptance report.
+        if check_operator and recorded_ids:
+            cleanup_accepted_inspections(origin, recorded_ids)
     return {
         "schema_version": 1,
         "status": ("local_stack_acceptance_passed"

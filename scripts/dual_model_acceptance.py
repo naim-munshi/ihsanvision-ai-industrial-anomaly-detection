@@ -25,6 +25,7 @@ from io import BytesIO
 import json
 import os
 import math
+import re
 from pathlib import Path
 import sys
 from urllib import error, parse, request
@@ -146,7 +147,8 @@ def image_sample(path: Path) -> dict:
     }
 
 
-def accept(origin: str, normal_path: Path, defective_path: Path, timeout: float = 180) -> dict:
+def accept(origin: str, normal_path: Path, defective_path: Path, timeout: float = 180,
+           inspection_sink: list[str] | None = None) -> dict:
     """Perform four real localhost HTTP requests; no training or dataset reads."""
     if not 1 <= timeout <= 600:
         raise ValueError("timeout must be between 1 and 600 seconds")
@@ -167,6 +169,17 @@ def accept(origin: str, normal_path: Path, defective_path: Path, timeout: float 
         for kind in ("normal", "defective"):
             sample = samples[kind]
             prediction = predict_png(origin, model, sample["png_bytes"], timeout=timeout)
+            if inspection_sink is not None:
+                # Private-history acceptance creates real successful
+                # inspection rows. Capture IDs immediately, before result
+                # validation, for exclusive targeted cleanup by the caller.
+                # Never copy them into the public evidence/report JSON.
+                record_id = prediction.get("inspection_id")
+                if (not isinstance(record_id, str)
+                        or re.fullmatch(r"[0-9a-f]{32}", record_id) is None
+                        or record_id in inspection_sink):
+                    raise RuntimeError("Private prediction did not return a unique inspection ID")
+                inspection_sink.append(record_id)
             evidence = validate_prediction(prediction, model, sample["dimensions"])
             expected = kind == "defective"
             rows.append({
