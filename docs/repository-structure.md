@@ -1,5 +1,35 @@
 # Repository structure and branch governance
 
+## Current GitHub branch audit (2026-10-18)
+
+The default branch is **`main`** and current CI is green. A read-only GitHub
+audit found **67 remote branches**, **no open PRs**, and approximately
+**60 merged PRs**. Many merged topic branches were retained because repository
+setting `delete_branch_on_merge` is **false**. GitHub reported `main` as
+**not protected**, with no repository rulesets. The project's PR review policy
+is documented below but is **not technically enforced** until the owner
+configures branch protection.
+
+**Safe owner cleanup:** In the repository's **Settings → General → Pull
+Requests**, enable *Automatically delete head branches* for future PRs.
+For existing branches, use the PR's **Delete branch** action **only on
+merged PRs after confirming the head branch is no longer being used**.
+Preserve `main`, historical `MdNaim`, and
+`feature/portfolio-production-pipeline` until the owner's old Mac/Kaggle
+checkouts have been migrated. Deleting a merged topic branch does not
+unmerge the PR, but any unmerged work on a reused branch must be preserved
+first. Do not force-push or bulk-delete branches merely because they share
+a name with a historical PR.
+
+In **Settings → Rules → Rulesets** (or **Branches → Add branch protection
+rule**, depending on the GitHub UI), protect `main` with required PR review
+and relevant checks from [CI](../.github/workflows/ci.yml):
+`unit-tests (3.11)`, `unit-tests (3.12)`, `source-hygiene`,
+`container-config`. Restrict force pushes/deletion; avoid requiring the
+heavy optional Docker build on every documentation-only change. The owner
+must choose and apply these settings in GitHub; changing Markdown does not
+change GitHub repository settings.
+
 ## Architecture decision (2026-10-14)
 
 The historical repository used the Python package name `src`. This made imports like `src.api` work but is not a meaningful library/module namespace.
@@ -12,7 +42,7 @@ The project now uses the canonical import namespace `ihsanvision`. The code was 
 
 ## Standard branch policy
 
-- `main` — **verified current GitHub default branch** and integration/release source. Code reaches `main` through reviewed pull requests with green CI.
+- `main` — **verified current GitHub default branch** and integration/release source. Changes should reach it through reviewed pull requests with green CI; branch protection is **not yet enforced in GitHub settings**.
 - `feature/<short-task>` — focused work branches originating at the latest `main`, opened as PRs back into `main`.
 - `MdNaim` — legacy default name from the initial repository setup, retained until migration and review are completed. Do not add new commits to it.
 - `feature/portfolio-production-pipeline` — historical integrated development work; PR #2 has now been merged into `main`; the historical feature branch remains for traceability. The branch can remain for traceability after merging.
@@ -55,7 +85,7 @@ The default is verified as `main`; in single-branch historical clones, local ref
 
 - A clean packaging smoke test (`pip install -e . --no-deps`) and Python 3.11/3.12 unit tests must pass before integrating structural changes.
 - The existing PaDiM training, FastAPI local demo, saved model cache and comparison logic are covered by observed experiments and mocked unit tests, as documented.
-- PatchCore training results, publicly hosted inference security, and multi-user performance are still pending.
+- **Bottle PatchCore results are observed and reported**, whereas Cable/Carpet training, current Mac operator acceptance and trusted-checkpoint Docker inference are pending. Public multi-user hosting is outside portfolio v1.0.
 - Preserve source history and training artifacts outside Git; never force-push protected or shared branches during a rename.
 
 ## What is **not** included in the reorganization
