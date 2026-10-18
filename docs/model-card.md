@@ -1,58 +1,61 @@
-# Model Card — IhsanVision.AI (PaDiM / MVTec AD Bottle)
+# Model card — IhsanVision.AI Bottle PaDiM and PatchCore
 
-## Model details
+**Scope:** two actual saved Anomalib model families evaluated on **MVTec AD / bottle**, seed **42**. This is an applied ML engineering **portfolio experiment**, not a universal industrial anomaly detector, calibrated classifier, or published leaderboard entry.
 
-| Field | Value |
-| --- | --- |
-| Model family | PaDiM (Patch Distribution Modeling) |
-| Framework | Anomalib 2.5.0 / PyTorch Lightning |
-| Dataset | MVTec Anomaly Detection, **bottle** category |
-| Training | One-class/normal appearance modelling |
-| Trained weights | `model.ckpt`, held outside Git repository |
-| Random seed | 42 |
-| Stage | Research portfolio prototype |
-| Model owner | IhsanVision.AI project maintainer |
-| Provenance | [Executed experiment report](../reports/2026-10-13-kaggle-padim-bottle.md) |
+| Field | PaDiM | PatchCore |
+| --- | --- | --- |
+| Framework | Anomalib 2.5.0 / PyTorch Lightning | Anomalib 2.5.0 / PyTorch Lightning |
+| Task | Normal-only anomaly detection and localization | Normal-only anomaly detection and localization |
+| Dataset | MVTec AD, bottle | MVTec AD, bottle |
+| Source | [Observed Kaggle run](../reports/2026-10-13-kaggle-padim-bottle.md) | [Observed Kaggle run](../reports/2026-10-15-kaggle-patchcore-bottle.md) |
+| Private artifact | `padim-bottle-seed42/model.ckpt` | `patchcore-bottle-seed42/model.ckpt` |
+| Local inference | [Real macOS/API acceptance](../reports/2026-10-16-macos-dual-model-api-acceptance.md) | [Real macOS/API acceptance](../reports/2026-10-16-macos-dual-model-api-acceptance.md) |
+| Intended use | Supervised research/demo quality inspection | Supervised research/demo quality inspection |
 
-**Note:** This document describes **one specific trained PaDiM checkpoint**, not all models selectable by the software. PatchCore has a model factory and benchmark runner but no verified Kaggle result yet.
+## Data and evaluation methodology
 
-## Intended use
+Both runs recorded the same category/seed and matching **train, validation and test image paths**. The documented split uses **209 normal training images**, **16 validation images** held out from the original MVTec test directory, and **67 remaining held-out test images**.
 
-Research, coursework, portfolio demonstration and human-reviewed industrial quality-inspection experiments using representative bottle images.
+The validation subset is not an independent official validation set. The resulting metrics **cannot be fairly compared to official full-test MVTec AD leaderboard numbers**. The shared path manifest is strong evidence of pairwise protocol agreement but does **not prove underlying image-byte equivalence** without additional content hashes.
 
-The model predicts a **raw anomaly score**, a binary anomaly label if its thresholds are available, and a **relative image heatmap** to help interpret possible defects. Use model output alongside manual inspection.
+| Held-out metric | PaDiM | PatchCore |
+| --- | ---: | ---: |
+| Image AUROC | 0.9963235855 | 1.0000000000 |
+| Image F1 | 0.9591836929 | 0.9900990129 |
+| Pixel AUROC | 0.9767602682 | 0.9856935740 |
+| Pixel F1 | 0.6497339010 | 0.7102153301 |
 
-## Training and evaluation
+These are saved/observed **single-seed, single-category** results; sample sizes are modest. A PatchCore image AUROC of 1.0000 here does **not** imply perfect defect detection in manufacturing. F1 values depend on the model's evaluation threshold. The pixel F1 values (especially PaDiM) indicate localization mistakes even when AUROC is high.
 
-Training uses 209 normal bottle images. The experiment creates a disjoint 16-image validation subset from the original test folder and evaluates against the remaining 67-image held-out test subset, with explicit split audits.
+Model decision thresholds, weights and original raw JSON reports should be validated against the user's private artifact archive before any new release claim. The checkpoint files are intentionally **not stored in Git**.
 
-| Held-out metric | Observed value |
-| --- | ---: |
-| Image AUROC | 0.9963 |
-| Image F1 | 0.9592 |
-| Pixel AUROC | 0.9768 |
-| Pixel F1 | 0.6497 |
+## Inference outputs and bounded usage
 
-See [evaluation protocol](evaluation.md) for threshold-dependence, data leakage checks and the reason these metrics **cannot be compared directly to published full-test MVTec scores**.
+The serving API returns a model/category identifier, **raw uncalibrated anomaly score**, optional anomaly decision and a **relative normalized heatmap**. These heatmaps are not globally calibrated segmentation masks. PaDiM and PatchCore raw scores are not comparable without calibration.
 
-A Kaggle-based saved-checkpoint smoke test on one defective image produced a predicted anomaly and PNG overlay. This was not a batch production test.
+Real, manually selected Mac Bottle images yielded correct normal/defective labels and valid same-dimension overlay PNGs for both model families; four examples **do not provide a statistically valid recall estimate** or guarantee membership in the saved held-out split.
 
-## Limitations
+## Hardware and latency (observed warm Mac HTTP profiles)
 
-- Bottle images only: no measured generalization to other MVTec categories or manufacturing environments.
-- Pixel F1 is materially below pixel AUROC; do not assume accurate binary defect boundaries.
-- Raw anomaly scores are **not calibrated probabilities** and should not be compared across model families as probabilities.
-- Per-image normalized heatmaps are **not calibrated segmentation masks**.
-- Domain shift, lighting changes, camera differences and unseen defect types have not been systematically evaluated.
-- One observed checkpoint-backed inference latency includes model loading, and is not warm-serving throughput.
-- No production safety certification, reliability guarantee, fairness/robustness study or deployment SLA.
+| Sequential HTTP round trip | PaDiM | PatchCore |
+| --- | ---: | ---: |
+| p50 (ms) | 388.87 | 493.05 |
+| p95 (ms) | 766.46 | 514.82 |
+| Cached measured calls | 20/20 | 20/20 |
 
-## Security, provenance and distribution
+One user-provided 900×900 image was used with three warmups and 20 sequential measured calls per model. This benchmark does not measure sustained throughput, model accuracy, peak memory, cold starts or full production tail-latency distributions. The original per-request JSON remains on the user's Mac. See [source report](../reports/2026-10-16-macos-paired-serving-profile.md).
 
-The checkpoint is a **trusted local experiment artifact**. PyTorch/Lightning serialized checkpoint files must not be loaded from unknown sources. The training data and model weights are not redistributed through this repository.
+## Limitations and foreseeable failure modes
 
-MVTec AD has its own licensing restrictions. Review the [official dataset information](https://www.mvtec.com/company/research/datasets/mvtec-ad) before use, especially commercially.
+- Lighting, material, camera resolution, alignment, lens artifacts, novel defect types and factory domain shift are **not** systematically evaluated.
+- Rare high-cost false negatives may occur; do not auto-reject/accept physical products without independent human review and pilot validation.
+- Per-image normalized heatmaps cannot be interpreted as calibrated defect boundaries or confidence maps.
+- Small held-out samples and single seed cannot establish robust cross-factory generalization; multiple categories and explicit failure-case review are portfolio v1.0 acceptance gates.
+- Lightning checkpoints may invoke unsafe deserialization when loaded from untrusted sources. Use only operator-trusted privately stored artifacts.
+- No real new cable/carpet results exist. Those are [separate pending experiments](portfolio-v1-plan.md), not entries in this model card.
 
-## Reproduction
+## Provenance, rights and reproducibility
 
-The repository's [Kaggle setup](development.md#kaggle-experiments) describes the training command, dataset discovery, and checkpoint verification. Keep `model.ckpt`, `report.json`, `splits.json`, `smoke_report.json` and `smoke_overlay.png` together under the experiment artifact directory.
+Record `report.json`, `splits.json`, the exact checkpoint SHA-256 and hardware/library versions privately for each trained model. Run [read-only comparison validation](verified-benchmark-summary.md) and [portfolio evidence verification](portfolio-release-readiness.md) on the owner's preserved artifacts.
+
+MVTec AD and pretrained backbones have their own usage terms. Dataset images, masks and checkpoint binaries are not redistributed through GitHub. This project is for research/portfolio demonstrations; any commercial use requires separate rights, robustness and safety review.
