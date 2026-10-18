@@ -47,6 +47,8 @@ python -m scripts.summarize_comparison \
 The command must fail when any pair is missing or splits differ; no new
 category performance is currently claimed.
 
+For independently labeled real test predictions, run the [private error-case audit](portfolio-error-analysis.md) and manually review actual FP/FN overlays. No evaluation data or images are public by default.
+
 A final per-category benchmark record must include counts, seed, train/val/test path-equivalence checks, metrics, original checkpoints and at least some grounded error-case analysis. The evaluation protocol must remain unchanged across paired models. Do not compare to official full-test leaderboards; do not invent absent scores or force a false positive/false negative example where none occurred.
 
 ## C. Run current application end to end using real trusted checkpoints

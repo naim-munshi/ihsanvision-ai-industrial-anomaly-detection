@@ -64,6 +64,8 @@ python -m scripts.summarize_comparison \
   --from-saved-runs --categories bottle cable carpet --seed 42
 ```
 
+For actual per-image false-positive/false-negative review, follow the [private failure-case audit protocol](portfolio-error-analysis.md). The offline audit refuses missing paired samples and never generates model predictions.
+
 This validates reported metrics and exact paired image split paths, but
 does **not** retrain any model or authenticate the underlying image bytes.
 See [saved-run reporting](verified-benchmark-summary.md).
