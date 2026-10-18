@@ -19,6 +19,29 @@ saved Bottle artifacts are restored to your private runs directory and the
 MVTec dataset layout is complete. If using a different dataset revision/mount
 path, investigate before claiming comparable experiments.
 
+**Restore both Bottle models first** when starting from a clean Kaggle session.
+Attach your privately preserved original model/report/split files using a
+private input (not GitHub), then stage each model into the *same* private runs
+directory. Set the source folders to the actual locations containing those
+three saved files:
+
+```bash
+python -m scripts.stage_reference_artifacts \
+  --source-dir /absolute/private/original-padim-bottle-seed42 \
+  --output-dir /absolute/private/ihsanvision_runs \
+  --model padim --category bottle --seed 42
+
+python -m scripts.stage_reference_artifacts \
+  --source-dir /absolute/private/original-patchcore-bottle-seed42 \
+  --output-dir /absolute/private/ihsanvision_runs \
+  --model patchcore --category bottle --seed 42
+```
+
+This only **copies and validates** trusted saved artifacts, never trains or
+deserializes a checkpoint. Skip staging if the two run directories already
+exist. Both source manifests must still match your current dataset's actual
+resolved image paths; the planner cannot silently move Kaggle paths.
+
 ```bash
 # Always inspect a no-training dry-run first:
 python -m scripts.resume_mvtec_training \
