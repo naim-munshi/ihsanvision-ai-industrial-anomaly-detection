@@ -89,7 +89,7 @@ def test_real_api_private_operator_workflow_creates_and_cleans_one_record(
     assert len(report["observed_workflow"]) == 9
     assert report["persisted_after_service_restart_verified"] is False
     assert report["browser_interaction_verified"] is False
-    for forbidden in ("checkpoint_sha256", "lot_id", "inspection_id",
+    for forbidden in ("test-only-checkpoint", "lot_id", "inspection_id",
                       "test-only-long-private-key"):
         assert forbidden not in json.dumps(report)
     key = {"X-IhsanVision-Key": "test-only-long-private-key"}
