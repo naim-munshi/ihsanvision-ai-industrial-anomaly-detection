@@ -11,6 +11,12 @@ in a Linux runner with:
 - Host port bound to **127.0.0.1 only**.
 - A disposable **CI-only** API key, never a real operator secret.
 
+The workflow now also imports the actual installed **PyTorch, TorchVision
+and Anomalib** libraries, and instantiates **both** PaDiM and PatchCore
+without pretrained downloads or network access. This checks the packaged
+ML dependency/model-construction pathway, **not** loading real trained
+checkpoints, anomaly scoring or heatmap inference.
+
 The workflow asserts `GET /health` is live, `GET /models` has no fake
 checkpoint entries, `GET /ready` returns **503** while no trusted weights
 are available, the three operator dashboard HTML routes are served and
