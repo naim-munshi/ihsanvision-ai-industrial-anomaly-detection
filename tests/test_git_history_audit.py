@@ -74,14 +74,17 @@ def test_historical_images_are_marked_for_license_review(tmp_path):
     }
 
 
-def test_cli_preserves_existing_evidence_file_and_writes_new_report(tmp_path):
+def test_cli_preserves_existing_evidence_file_and_writes_new_report(tmp_path, capsys):
     root = repo(tmp_path)
     output = tmp_path / "audit.json"
     main(["--repo", str(root), "--output", str(output)])
     assert output.exists()
     original = output.read_bytes()
-    with pytest.raises(SystemExit, match="Refusing to overwrite"):
+    with pytest.raises(SystemExit) as stopped:
         main(["--repo", str(root), "--output", str(output)])
+    # argparse intentionally exits 2 and prints a safe, actionable message.
+    assert stopped.value.code == 2
+    assert "Refusing to overwrite" in capsys.readouterr().err
     assert output.read_bytes() == original
 
 
