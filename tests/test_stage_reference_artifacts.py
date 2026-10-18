@@ -7,7 +7,7 @@ from scripts.stage_reference_artifacts import stage_reference
 
 
 def prepare_source(folder, model="padim"):
-    folder.mkdir(parents=True)
+    folder.mkdir(parents=True, exist_ok=True)
     ckpt = b"previously verified checkpoint fixture"
     (folder / "model.ckpt").write_bytes(ckpt)
     split = {
