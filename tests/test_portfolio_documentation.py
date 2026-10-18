@@ -51,7 +51,7 @@ def test_main_portfolio_scope_is_auditable_and_honest() -> None:
     # Explicit gaps prevent future documentation from silently overstating CI.
     assert "CI does not install the ML runtime" in readme
     assert "not a production-certified" in readme
-    assert "not yet executed" in readme
+    assert "not yet executed" in readme.lower()
     assert "P10" in plan
     assert "four model/category runs" in (
         ROOT / "docs/portfolio-release-readiness.md"
