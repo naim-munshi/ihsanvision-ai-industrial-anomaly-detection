@@ -30,6 +30,8 @@ jobs:
           python -m src.train --help
       - name: Compile code
         run: python -m compileall -q ihsanvision src scripts tests
+      - name: Verify every public Markdown local link resolves
+        run: python -m scripts.check_markdown_links
       - name: Run tests
         run: python -m pytest -q
       - name: Configure Node for dependency-free dashboard behavior tests
