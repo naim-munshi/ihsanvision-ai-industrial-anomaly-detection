@@ -7,7 +7,7 @@
 - [Bottle PaDiM](../reports/2026-10-13-kaggle-padim-bottle.md) and [Bottle PatchCore](../reports/2026-10-15-kaggle-patchcore-bottle.md) were genuinely trained/evaluated in Kaggle. The original artifacts are privately preserved and were checked against a bundled SHA-256 manifest on Mac.
 - [Mac Bottle dual-model acceptance](../reports/2026-10-16-macos-dual-model-api-acceptance.md) showed valid overlay PNGs and four manually labeled predictions.
 - [Mac paired serving profile](../reports/2026-10-16-macos-paired-serving-profile.md) measured same-input warm HTTP p50/p95 latency on both models.
-- Python 3.11/3.12, JavaScript dashboard and static Docker Compose security checks execute in [GitHub Actions](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/actions/workflows/ci.yml).
+- Python 3.11/3.12, JavaScript dashboard, source hygiene and static Compose security checks execute in [GitHub Actions](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/actions/workflows/ci.yml). A separate real Linux CPU image build/no-checkpoint HTTP smoke [also passed](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/actions/runs/39095740246), but real model inference inside Docker is still pending.
 
 These different observations are **not interchangeable**. An offline mocked API test is not real checkpoint inference; a checksum match is not scientific replication; a four-image smoke test is not accuracy measurement. Results use a validation subset held out of the original MVTec test set rather than the official full-test benchmark protocol.
 
@@ -69,7 +69,7 @@ Record a reproducible short summary without private image files, full local path
 
 ## D. Verify a real Docker build and actual inference
 
-The GitHub CI `container-config` job only validates static Compose security settings. On an actual Docker machine with trusted private weights:
+The GitHub `container-config` job validates static Compose configuration; a distinct Linux build workflow also successfully built and started the API with **no weights**. Neither substitutes for checkpoint-backed Docker acceptance. On an actual Docker machine with trusted private weights:
 
 ```bash
 # Set IHSANVISION_MODELS_DIR and IHSANVISION_API_KEY privately as documented.
