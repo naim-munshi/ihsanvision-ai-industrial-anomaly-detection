@@ -128,7 +128,7 @@ Execute missing work **only on your own licensed dataset and compute environment
 python -m scripts.summarize_comparison \
   --runs-dir /absolute/private/ihsanvision_runs \
   --from-saved-runs --categories bottle cable carpet --seed 42
-``` Preserve the existing completed Bottle artifacts rather than retraining them. [Model comparison and evidence verification](docs/verified-benchmark-summary.md). The optional MVTec AD 2 research adapter is **out of scope for portfolio v1.0**.
+``` Preserve the existing completed Bottle artifacts rather than retraining them. [Model comparison and evidence verification](docs/verified-benchmark-summary.md) · [False-positive/false-negative audit](docs/portfolio-error-analysis.md). The optional MVTec AD 2 research adapter is **out of scope for portfolio v1.0**.
 
 ## Tests and engineering practices
 
