@@ -28,7 +28,7 @@ def candidates(branches: list[dict], closed: list[dict],
     Pure helper; incomplete/foreign/malformed response records are ignored.
     """
     open_heads = {
-        pull.get("head", {}).get("ref")
+        (pull.get("head") or {}).get("ref")
         for pull in open_pulls
         if (pull.get("head") or {}).get("repo") and
         pull["head"]["repo"].get("full_name") == repo
@@ -101,9 +101,7 @@ def cleanup(token: str, *, apply: bool = False) -> dict:
         raise ValueError("GitHub Actions token required")
     root = f"repos/{REPOSITORY}"
     branches = _fetch_all(token, root + "/branches")
-    closed = _fetch_all(token, root + "/pulls?state=closed") if False else None
-    # Add query parameters explicitly so every page retains state=closed.
-    closed = _fetch_all(token, root + "/pulls") if False else _fetch_pulls(token, root, "closed")
+    closed = _fetch_pulls(token, root, "closed")
     open_pulls = _fetch_pulls(token, root, "open")
     selected = candidates(branches, closed, open_pulls)
     if len(selected) > MAX_DELETE:
