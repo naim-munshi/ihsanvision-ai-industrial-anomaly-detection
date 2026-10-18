@@ -1,0 +1,151 @@
+IhsanVision.AI Responsible Use License
+Version 1.0 — 18 October 2026
+
+Copyright (c) 2026 IhsanVision.AI contributors.
+All rights reserved except as expressly granted below.
+
+IMPORTANT: THIS IS A SOURCE-AVAILABLE, USE-RESTRICTED LICENSE.
+IT IS NOT AN OSI-APPROVED OPEN-SOURCE LICENSE.
+
+1. DEFINITIONS
+
+"Software" means the original source code and documentation distributed in
+this repository for which the copyright holders can grant rights under this
+License, including their covered portions of modified versions. "Licensor"
+means those copyright holders. "You" means an individual or organization
+exercising the permissions granted below.
+
+"Material Harm" means significant physical, psychological, privacy,
+financial, discriminatory, environmental, security, or other legally
+protected injury or loss to a person, group, or the public. The examples in
+Section 3 do not limit that definition.
+
+"Third-Party Materials" means any datasets, images, annotations, pretrained
+weights, checkpoints, libraries, trademarks, or other material whose rights
+are held by someone other than the Licensor.
+
+2. PERMISSION TO USE, STUDY, MODIFY AND SHARE
+
+Subject to ongoing compliance with this License, the Licensor grants You a
+non-exclusive, worldwide, royalty-free permission to access, use, run,
+reproduce, study, modify, and distribute the Software, including modified
+copies, and to make the Software available as part of an application or
+service.
+
+This permission applies to research, education, personal projects, and
+legitimate business or commercial applications, subject to Section 3 and
+any independent third-party rights. No separate fee or approval from the
+Licensor is required for uses that comply with this License.
+
+You must retain this License and applicable copyright and attribution
+notices in copies of the Software You distribute. Clearly identify Your
+modifications, and do not misrepresent a modified version as an official
+IhsanVision.AI release. If You distribute covered Software or modifications
+to it, You must pass on these same responsible-use restrictions and provide
+the recipient a copy of this License. You may add terms for Your own
+independently copyrighted contributions only to the extent that those terms
+do not remove or conflict with the protections applicable to the covered
+Software. Providing the Software for remote use does not remove Your
+obligation to comply with Section 3.
+
+3. PROHIBITED HARMFUL USE
+
+You may NOT use, modify, distribute, integrate, or deploy the Software,
+whether directly or knowingly through another party, for a purpose that
+intentionally, knowingly, or recklessly causes, enables, or materially
+facilitates Material Harm, or creates a substantial and reasonably
+foreseeable risk of such harm without appropriate safeguards.
+
+In particular, the permissions above do NOT cover any of the following:
+
+(a) Violence, weapons, or coercion: targeting people for physical violence;
+    assisting unlawful weapons deployment; torture, trafficking, forced
+    labor, or other serious violations of human rights.
+
+(b) Deceptive or criminal conduct: fraud, scams, theft, sabotage, malicious
+    cyber intrusion, evasion of lawful security controls, or the creation
+    or concealment of intentionally misleading inspection evidence.
+
+(c) Privacy and surveillance abuse: unlawful or non-consensual collection,
+    inference, tracking, or disclosure of identifiable personal data;
+    intrusive mass surveillance; stalking; or unlawful monitoring.
+
+(d) Discrimination and exploitation: unlawful discriminatory decisions,
+    harassment, intimidation, or exploitation of vulnerable people.
+
+(e) Dangerous industrial misuse: intentionally concealing known product
+    defects; falsifying quality-control results; or placing the Software in
+    control of safety-critical equipment, release decisions, or processes
+    where an unvalidated model's error could foreseeably cause serious injury
+    or substantial damage, without appropriate independent validation,
+    monitoring, failsafes, and qualified human oversight.
+
+(f) Other unlawful or materially harmful conduct: any use that violates
+    applicable law or intentionally, knowingly, or recklessly creates
+    significant harm to people, communities, public safety, or the environment.
+
+Examples are illustrative, not exhaustive. Good-faith security testing
+performed with authorization, legitimate quality assurance, scientific
+research, and human-supervised evaluation are not prohibited merely because
+they investigate defects, risks, failures, or security vulnerabilities.
+Those activities must still comply with all other terms.
+
+4. NO RIGHTS TO DATASETS, WEIGHTS OR OTHER THIRD-PARTY MATERIAL
+
+This License covers only the Licensor's rights in the Software. It does NOT
+license Third-Party Materials and does NOT override their terms.
+
+In particular, MVTec AD and MVTec AD 2 datasets have their own
+CC BY-NC-SA 4.0 terms, including a restriction on commercial use of the
+datasets. Permitted commercial use of the Software under Section 2 is NOT
+permission to use those datasets commercially or redistribute their images,
+annotations, or associated third-party materials. Obtaining separate
+permission is Your responsibility.
+
+Other dependencies, pretrained weights, models, images, and external
+services may carry separate licenses or restrictions. You must follow them.
+
+5. ATTRIBUTION, TRADEMARKS AND REPRESENTATIONS
+
+Keep applicable copyright and license notices. This License does not
+grant a right to the IhsanVision.AI name, logo, or other trademarks beyond
+reasonable descriptive identification or legally permitted nominative use.
+You may not imply endorsement, certification, safety approval, or an
+official partnership without separate permission.
+
+6. TERMINATION
+
+Rights under this License terminate automatically if You materially breach
+its terms. Except for deliberate or repeated harmful use under Section 3,
+rights are reinstated if You fully cease and cure the breach within 30 days
+after discovering it. Deliberate or repeated Section 3 violations require
+the Licensor's express written permission for reinstatement. Termination
+does not grant permission to retain or continue a prohibited deployment.
+
+This License does not cancel rights You may separately have under licenses
+from third-party copyright holders for their own materials.
+
+7. NO WARRANTY; NO SAFETY CERTIFICATION
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, WHETHER
+EXPRESS OR IMPLIED, INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR
+PURPOSE, ACCURACY, NON-INFRINGEMENT, OR SAFETY.
+
+THE SOFTWARE AND ITS ANOMALY SCORES OR HEATMAPS ARE NOT CERTIFIED FOR
+SAFETY-CRITICAL MANUFACTURING, MEDICAL, LEGAL, OR OTHER HIGH-RISK DECISIONS.
+HUMAN OVERSIGHT AND INDEPENDENT VALIDATION MAY BE REQUIRED.
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, LICENSORS AND
+CONTRIBUTORS ARE NOT LIABLE FOR CLAIMS OR DAMAGES ARISING FROM USING,
+MODIFYING, OR DISTRIBUTING THE SOFTWARE. NOTHING HERE EXCLUDES LIABILITY
+THAT CANNOT LAWFULLY BE EXCLUDED.
+
+8. MISCELLANEOUS
+
+If a court holds one provision unenforceable, the remaining provisions
+continue in effect to the extent permitted by law. No right is granted
+except as expressly stated. The Licensor may publish later versions of
+this License, but a later version does not automatically replace the terms
+for copies already received under this version.
+
+END OF LICENSE
