@@ -15,7 +15,7 @@ from urllib import error, parse, request
 
 REPOSITORY = "naim-munshi/ihsanvision-ai-industrial-anomaly-detection"
 KEEP = {"main", "MdNaim", "feature/portfolio-production-pipeline"}
-TOPIC_PREFIXES = ("feature/", "feat/", "fix/", "docs/", "ci/", "chore/")
+TOPIC_PREFIXES = ("feature/", "feat/", "fix/", "docs/", "ci/", "chore/", "security/")
 VALID_BRANCH = re.compile(r"[A-Za-z0-9][A-Za-z0-9/_.-]{1,150}\Z")
 MAX_PAGES = 10
 MAX_DELETE = 80
