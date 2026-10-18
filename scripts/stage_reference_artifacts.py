@@ -37,7 +37,7 @@ def stage_reference(
     output_dir = Path(output_dir).expanduser().resolve()
     folder_name = f"{model}-{category}-seed{seed}"
     destination = output_dir / folder_name
-    if destination.exists():
+    if destination.exists() or destination.is_symlink():
         raise FileExistsError(
             f"Refusing to overwrite existing benchmark artifact directory: {destination}"
         )
@@ -53,7 +53,7 @@ def stage_reference(
         read_completed_run(staged, model, category, seed)
         # On the same volume, a rename makes all three files visible together.
         # Do not overwrite an existing destination even if another process raced.
-        if destination.exists():
+        if destination.exists() or destination.is_symlink():
             raise FileExistsError(f"Destination was created during staging: {destination}")
         staged.rename(destination)
     return destination
