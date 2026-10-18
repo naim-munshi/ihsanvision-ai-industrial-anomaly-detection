@@ -77,7 +77,7 @@ Training and public application hosting are **separate concerns**. Dataset image
 | Private checkpoint pins, staged model releases, local API security | **Offline regression tested; latest real-model verification pending** |
 | Linux CPU Docker image + local Compose | **Real Linux build, API smoke, PaDiM/PatchCore initialization and package check passed in CI; target Mac checkpoint-backed Docker inference pending** |
 | Cable and carpet paired experiments | **Not yet executed; no fabricated metrics** |
-| Release media, source license and versioned v1.0 tag | **Not yet approved/published** |
+| Release media, legal approval and versioned v1.0 tag | **Responsible-use source license added; media rights/legal review and v1.0 release pending** |
 
 The baseline GitHub Actions checks run lightweight Python 3.11/3.12, dashboard JS, source hygiene and static Compose tests. Separately, an [actual Linux CPU Docker run](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/actions/runs/39100705980) passed container build, HTTP startup, PyTorch/Anomalib imports, both model-class initialization and installed-package compatibility checks. **Neither CI path executes checkpoint-backed PaDiM/PatchCore inference**. [Latest CI](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/actions/workflows/ci.yml).
 
@@ -174,12 +174,12 @@ The immutable [portfolio v1.0 plan](docs/portfolio-v1-plan.md) defines observabl
 2. Finish the **four missing** paired experiments on cable/carpet (PaDiM and PatchCore for each).
 3. Run the latest complete application flow using real checkpoints; verify real target-hardware Docker build and checkpoint-backed inference.
 4. Publish **only approved/original demo visuals**, a concise walkthrough, honest benchmark and error-case analysis.
-5. Review code/documentation/license and create a versioned GitHub release after the gates pass.
+5. Review the responsible-use license, external dataset/media rights and documentation; create a versioned GitHub release only after all gates pass.
 
 **Not required:** all 15 categories, MVTec AD 2, Kubernetes, cloud multi-tenancy, physical conveyor integration or commercial factory certification. No public hosted demo or v1.0 release is claimed today.
 
 ## Responsible use and legal scope
 
-The public repository contains source code and manually documented evaluation evidence, **not** MVTec dataset images, masks or trained model binaries. MVTec AD/AD2 and upstream pretrained models carry their own terms. Review permission before publishing any image, weight or demo video based on those sources. A source-code license has **not yet been selected**; public visibility does not grant general reuse rights.
+The original project source code is available under the [IhsanVision.AI Responsible Use License v1.0](LICENSE): study, modify and share it for lawful, non-harmful purposes **only**. Harmful use is prohibited. This is a **source-available, use-restricted license, not an OSI-approved open-source license**. See [licensing and permitted uses](docs/licensing.md). This license **does not cover MVTec AD/AD2 datasets, pretrained weights or other third-party assets**; MVTec explicitly prohibits commercial dataset use without separate permission. Review rights before publishing images, checkpoints or a demo video.
 
 **IhsanVision.AI is a supervised research and portfolio tool, not a replacement for validated manufacturing quality assurance or safety-critical decisions.**
