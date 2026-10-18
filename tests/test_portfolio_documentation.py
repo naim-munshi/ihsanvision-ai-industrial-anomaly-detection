@@ -43,6 +43,9 @@ def test_main_portfolio_scope_is_auditable_and_honest() -> None:
     for category in ("bottle", "cable", "carpet"):
         assert category in readme.lower()
         assert category in plan.lower()
+    assert "normal-only" in model.lower()
+    assert "unsupervised" in model.lower()
+    assert "The solution is supervised" not in plan
     for family in ("PaDiM", "PatchCore"):
         assert family in readme
         assert family in model

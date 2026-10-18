@@ -94,3 +94,45 @@ def test_reject_nonfinite_or_missing_metrics(tmp_path):
 def test_refuse_bad_portfolio_scope(tmp_path, categories, seed):
     with pytest.raises(ValueError):
         summarize_saved_runs(tmp_path, categories, seed)
+
+
+@pytest.mark.parametrize("invalid,match", [
+    (True, "image_AUROC"),
+    (False, "image_AUROC"),
+    ("0.99", "image_AUROC"),
+    (None, "image_AUROC"),
+])
+def test_saved_report_rejects_boolean_or_non_numeric_auc(tmp_path, invalid, match):
+    # JSON true would otherwise be accepted as AUROC=1.0000 by Python's
+    # isinstance(True, int). Never publish fabricated perfection.
+    populate(tmp_path)
+    path = tmp_path / "padim-bottle-seed42/report.json"
+    payload = json.loads(path.read_text())
+    payload["evaluation"]["metrics"]["image_AUROC"] = invalid
+    path.write_text(json.dumps(payload))
+    with pytest.raises(ValueError, match=match):
+        summarize_saved_runs(tmp_path, list(CATEGORIES), 42)
+
+
+@pytest.mark.parametrize("evaluation", [None, [], {}, {"metrics": None}, {"metrics": []}])
+def test_saved_report_rejects_malformed_evaluation_without_attribute_error(
+    tmp_path, evaluation
+):
+    populate(tmp_path)
+    path = tmp_path / "padim-bottle-seed42/report.json"
+    payload = json.loads(path.read_text())
+    payload["evaluation"] = evaluation
+    path.write_text(json.dumps(payload))
+    with pytest.raises(ValueError, match="evaluation metrics"):
+        summarize_saved_runs(tmp_path, list(CATEGORIES), 42)
+
+
+@pytest.mark.parametrize("invalid", [True, False, "125.25", None])
+def test_saved_report_rejects_invalid_training_duration(tmp_path, invalid):
+    populate(tmp_path)
+    path = tmp_path / "padim-bottle-seed42/report.json"
+    payload = json.loads(path.read_text())
+    payload["train_seconds"] = invalid
+    path.write_text(json.dumps(payload))
+    with pytest.raises(ValueError, match="train_seconds"):
+        summarize_saved_runs(tmp_path, list(CATEGORIES), 42)
