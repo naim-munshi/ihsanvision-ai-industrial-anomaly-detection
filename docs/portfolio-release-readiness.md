@@ -35,6 +35,18 @@ The verifier checks the bundled eight-file SHA-256 manifest, pairwise saved repo
 
 The final v1.0 target is **Bottle, Cable, Carpet × PaDiM/PatchCore** (six total). Bottle is already trained, so **four model/category runs** remain. Use the [dry-run-first planner](resumable-multicategory-training.md) on your licensed dataset and preserved benchmark output folder; execute one missing run at a time.
 
+When six saved model/report/split trios actually exist, create their
+checked comparison without retraining:
+
+```bash
+python -m scripts.summarize_comparison \
+  --runs-dir /absolute/private/ihsanvision_runs \
+  --from-saved-runs --categories bottle cable carpet --seed 42
+```
+
+The command must fail when any pair is missing or splits differ; no new
+category performance is currently claimed.
+
 A final per-category benchmark record must include counts, seed, train/val/test path-equivalence checks, metrics, original checkpoints and at least some grounded error-case analysis. The evaluation protocol must remain unchanged across paired models. Do not compare to official full-test leaderboards; do not invent absent scores or force a false positive/false negative example where none occurred.
 
 ## C. Run current application end to end using real trusted checkpoints
