@@ -66,6 +66,8 @@ credential must be rotated, and any restrictive historical media requires
 human review. Do not force-push to erase evidence or rewrite shared branches
 without an explicit separately approved remediation plan.
 
+The first actual workflow [ran successfully on 2026-10-19 (JST)](../reports/2026-10-19-git-history-audit.md) on 184 historic paths and 509 reachable Git blobs, with no known-pattern findings. That result is **dated and limited**, not a legal or full security approval. Rerun before the final release.
+
 The workflow runs on a change to its script/workflow or can be manually
 re-run before the final release. It is **not** part of the fast Python
 unit-test matrix and does not load ML checkpoints.
