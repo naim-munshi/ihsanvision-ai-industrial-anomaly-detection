@@ -37,3 +37,15 @@ def test_build_context_excludes_private_data_and_secrets():
     ignored = (ROOT / ".gitignore").read_text().splitlines()
     assert ".env" in ignored and ".env.*" in ignored
     assert "!.env.docker.example" in ignored
+
+
+def test_cloud_cpu_container_checks_real_ml_imports_without_weights():
+    workflow = (ROOT / ".github/workflows/docker-cpu-smoke.yml").read_text()
+    assert "Import the actual ML stack and initialize both model families" in workflow
+    assert "import torch" in workflow
+    assert "import torchvision" in workflow
+    assert "import anomalib" in workflow
+    assert "make_model(family, pre_trained=False)" in workflow
+    assert 'for family in ("padim", "patchcore")' in workflow
+    assert "--network none" in workflow
+    assert "NO checkpoint inference." in workflow
