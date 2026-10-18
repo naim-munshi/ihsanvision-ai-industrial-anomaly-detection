@@ -36,6 +36,40 @@ review the **full Git history**, dependencies, upstream terms, data and
 media provenance, and the actual source archive. If a real token was ever
 committed, removing it from HEAD does not revoke it; rotate it immediately.
 
+## Historic commits and deleted assets
+
+The normal CI source-hygiene check only inspects Git **HEAD**. A deleted
+credential or trained checkpoint might still be retrievable from earlier
+commits. Before the v1.0 release, run the separate
+[Git history audit](../.github/workflows/git-history-audit.yml) under
+**Actions → Review reachable Git history for release → Run workflow**.
+
+This workflow performs a full-history checkout and fetches current remote
+branches and tags. The offline
+[`scripts.audit_git_history`](../scripts/audit_git_history.py) scans:
+
+- All historical filenames reachable through locally fetched refs for
+  previously committed model weights, SQLite files, dataset directories,
+  environment files and media requiring redistribution rights review.
+- Small/medium historical Git blobs for a deliberately narrow set of
+  high-confidence leaked API key/private-key patterns, even when a sensitive
+  file was deleted later.
+- Shallow history, missing content coverage and oversized blobs are reported
+  as limitations; a missing history cannot be declared clean.
+
+The report **does not print secret bytes, original private paths, or
+customer filenames**: it uses anonymous path references and shortened Git
+object hashes. Review the **actual GitHub Actions result and its 14-day
+artifact**. No passing script, even on a complete checkout, proves full
+license approval or absence of every secret type. Any potentially exposed
+credential must be rotated, and any restrictive historical media requires
+human review. Do not force-push to erase evidence or rewrite shared branches
+without an explicit separately approved remediation plan.
+
+The workflow runs on a change to its script/workflow or can be manually
+re-run before the final release. It is **not** part of the fast Python
+unit-test matrix and does not load ML checkpoints.
+
 ## Owner's final publication steps
 
 1. Produce the actual Bottle/Cable/Carpet evaluations and the private error
