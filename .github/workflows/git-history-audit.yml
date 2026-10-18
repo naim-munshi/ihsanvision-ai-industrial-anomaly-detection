@@ -1,0 +1,42 @@
+name: Review reachable Git history for release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/audit_git_history.py"
+      - ".github/workflows/git-history-audit.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  history-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Fetch all remote branches and annotated tags for a bounded history review
+        run: |
+          git fetch --quiet --no-tags origin '+refs/heads/*:refs/remotes/origin/*'
+          git fetch --quiet --tags origin
+
+      - name: Inspect reachable history, including deleted paths and old Git blobs
+        run: |
+          python3 -m scripts.audit_git_history \
+            --repo . \
+            --output git-history-audit.json
+
+      - name: Retain anonymized private-history source findings for human review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ihsanvision-git-history-audit
+          path: git-history-audit.json
+          if-no-files-found: warn
+          retention-days: 14
