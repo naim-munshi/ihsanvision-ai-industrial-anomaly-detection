@@ -22,6 +22,7 @@ def test_only_unchanged_same_repo_merged_pr_heads_are_eligible():
         branch("MdNaim"),
         branch("feature/portfolio-production-pipeline"),
         branch("feature/merged-ok"),
+        branch("security/completed-audit"),
         branch("fix/updated-after-merge", "b" * 40),
         branch("docs/unmerged"),
         branch("chore/protected", protected=True),
