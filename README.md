@@ -141,6 +141,18 @@ node --test tests/*.test.cjs
 
 Development and deployment details: [developer guide](docs/development.md) · [container guide](docs/container-deployment.md) · [security baseline](docs/security-baseline.md) · [model registration and review](docs/operator-model-releases.md).
 
+## Finish the job-ready portfolio
+
+**Owner handoff:** [FINISHING.md](FINISHING.md) consolidates the exact four
+remaining model jobs, final local Mac/Docker commands, evidence and release
+steps. [Demo storyboard](docs/portfolio-demo-storyboard.md) defines the
+rights-cleared screenshots and 90-second actual software recording.
+[Unreleased changelog](CHANGELOG.md) distinguishes implemented code from
+pending experiments and real runtime acceptance.
+[Source release hygiene](docs/release-source-hygiene.md) blocks accidental
+weights, private data and high-confidence secrets in public GitHub history
+at the HEAD checkout (historical commit audit remains manual).
+
 ## Portfolio release gates
 
 The immutable [portfolio v1.0 plan](docs/portfolio-v1-plan.md) defines observable acceptance evidence for the remaining work:
