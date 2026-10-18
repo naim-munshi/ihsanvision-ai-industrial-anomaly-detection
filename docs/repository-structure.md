@@ -10,6 +10,20 @@ setting `delete_branch_on_merge` is **false**. GitHub reported `main` as
 is documented below but is **not technically enforced** until the owner
 configures branch protection.
 
+**Automated safe cleanup:** The repository also includes
+[`prune-merged-branches.yml`](../.github/workflows/prune-merged-branches.yml),
+which runs only on a new `main` push. It first prints a dry run, then
+selects eligible **same-repository merged PR heads** whose live SHA still
+equals that PR's final head SHA, skips protected/open/reused branches and
+explicitly preserves `main`, `MdNaim`, and
+`feature/portfolio-production-pipeline`. The script
+[`scripts/prune_merged_branches.py`](../scripts/prune_merged_branches.py)
+also rechecks the exact SHA immediately before deletion and retains a
+14-day GitHub Actions report. It does not rewrite `main` or PR history.
+If repository permissions forbid deletion, the action fails rather than
+claiming success; the owner may use the GitHub branch UI after reviewing
+the dry-run candidates.
+
 **Safe owner cleanup:** In the repository's **Settings → General → Pull
 Requests**, enable *Automatically delete head branches* for future PRs.
 For existing branches, use the PR's **Delete branch** action **only on
