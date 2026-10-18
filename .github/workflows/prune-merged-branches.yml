@@ -1,0 +1,48 @@
+name: Clean unchanged merged PR branches
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: ihsanvision-merged-branch-cleanup
+  cancel-in-progress: false
+
+jobs:
+  prune:
+    if: github.repository == 'naim-munshi/ihsanvision-ai-industrial-anomaly-detection'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dry-run exact eligible merged PR heads
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 -m scripts.prune_merged_branches
+
+      - name: Prune only unchanged, merged, unprotected topic branches
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 -m scripts.prune_merged_branches --apply > branch-cleanup-report.json
+          python3 - <<'PY'
+          import json
+          report = json.load(open("branch-cleanup-report.json", encoding="utf-8"))
+          print("Verified unchanged merged heads:", report["eligible_merged_unchanged_branches"])
+          print("Safely pruned:", len(report["deleted_branches"]))
+          print("Changed/protected skipped:", len(report["skipped_changed_or_protected"]))
+          print("Preserved:", ", ".join(report["preserved_branches"]))
+          PY
+
+      - name: Preserve safe cleanup audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: ihsanvision-merged-branch-cleanup
+          path: branch-cleanup-report.json
+          if-no-files-found: error
+          retention-days: 14
