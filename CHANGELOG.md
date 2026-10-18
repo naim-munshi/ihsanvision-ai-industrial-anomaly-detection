@@ -46,7 +46,7 @@ project has **not** yet published its portfolio `v1.0.0` release.
 - **Current runtime:** latest full Mac operator workflow and private
   checkpoint-backed Docker acceptance.
 - **Presentation and legal:** authentic rights-cleared screenshots/video,
-  source-code license decision, upstream dataset/weight/media rights audit,
+  review of the newly added responsible-use source license, upstream dataset/weight/media rights audit,
   clean tagged GitHub release.
 
 **Release note:** A green offline CI or cloud image build without checkpoint
