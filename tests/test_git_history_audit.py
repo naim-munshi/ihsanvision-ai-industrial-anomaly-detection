@@ -75,7 +75,7 @@ def test_historical_images_are_marked_for_license_review(tmp_path):
 
 
 def test_cli_preserves_existing_evidence_file_and_writes_new_report(tmp_path):
-    root = repo(tmp_path / "source" if False else tmp_path)
+    root = repo(tmp_path)
     output = tmp_path / "audit.json"
     main(["--repo", str(root), "--output", str(output)])
     assert output.exists()
