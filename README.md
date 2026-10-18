@@ -6,7 +6,7 @@
 
 **Stack:** Python · PyTorch · Anomalib 2.5.0 · PaDiM · PatchCore · FastAPI · SQLite · Docker · GitHub Actions
 
-> **Status:** AI engineering portfolio prototype, **not a production-certified defect detection system**. PaDiM and PatchCore have measured results on **MVTec AD / bottle** and working local checkpoint-backed inference. The fixed [portfolio v1.0 scope and evidence gates](docs/portfolio-v1-plan.md) additionally require cable/carpet evaluation, integrated runtime testing, a real Docker build, approved demo media and a reviewed release. No further categories or enterprise features are required for v1.0.
+> **Status:** AI engineering portfolio prototype, **not a production-certified defect detection system**. PaDiM and PatchCore have measured results on **MVTec AD / bottle** and working local checkpoint-backed inference. The fixed [portfolio v1.0 scope and evidence gates](docs/portfolio-v1-plan.md) additionally require cable/carpet evaluation, integrated runtime testing, real checkpoint-backed Docker acceptance, approved demo media and a reviewed release. No further categories or enterprise features are required for v1.0.
 
 ## Project in 30 seconds
 
@@ -64,11 +64,11 @@ Training and public application hosting are **separate concerns**. Dataset image
 | Model-cache reuse, sequential latency | **Real Mac paired profiles; limited workload** |
 | Batch dashboard, CSV, lot history and independent human review | **Code and offline/mock integration tests; latest Mac E2E pending** |
 | Private checkpoint pins, staged model releases, local API security | **Offline regression tested; latest real-model verification pending** |
-| Local Docker/Compose, nonroot/read-only security config | **Static CI verified; real image build/inference pending** |
+| Linux CPU Docker image + local Compose | **Actual GitHub Linux image build/API HTTP smoke passed; target Mac Docker checkpoint inference pending** |
 | Cable and carpet paired experiments | **Not yet executed; no fabricated metrics** |
 | Release media, source license and versioned v1.0 tag | **Not yet approved/published** |
 
-The baseline GitHub Actions checks run lightweight Python tests on 3.11/3.12, dashboard JS tests and static Docker Compose security configuration. **CI does not install the ML runtime or execute real model inference.** [Latest CI](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/actions/workflows/ci.yml).
+The baseline GitHub Actions checks run lightweight Python 3.11/3.12, dashboard JS and static Compose tests, without model weights. A separate [actual Linux CPU Docker build/API smoke run](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/actions/runs/39095740246) passed, but **neither CI path executes checkpoint-backed PaDiM/PatchCore inference**. [Latest CI](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/actions/workflows/ci.yml).
 
 ## Reproduce the application locally
 
@@ -141,13 +141,25 @@ node --test tests/*.test.cjs
 
 Development and deployment details: [developer guide](docs/development.md) · [container guide](docs/container-deployment.md) · [security baseline](docs/security-baseline.md) · [model registration and review](docs/operator-model-releases.md).
 
+## Finish the job-ready portfolio
+
+**Owner handoff:** [FINISHING.md](FINISHING.md) consolidates the exact four
+remaining model jobs, final local Mac/Docker commands, evidence and release
+steps. [Demo storyboard](docs/portfolio-demo-storyboard.md) defines the
+rights-cleared screenshots and 90-second actual software recording.
+[Unreleased changelog](CHANGELOG.md) distinguishes implemented code from
+pending experiments and real runtime acceptance.
+[Source release hygiene](docs/release-source-hygiene.md) blocks accidental
+weights, private data and high-confidence secrets in public GitHub history
+at the HEAD checkout (historical commit audit remains manual).
+
 ## Portfolio release gates
 
 The immutable [portfolio v1.0 plan](docs/portfolio-v1-plan.md) defines observable acceptance evidence for the remaining work:
 
 1. Reproduce or independently audit the preserved Bottle experiment artifacts.
 2. Finish the **four missing** paired experiments on cable/carpet (PaDiM and PatchCore for each).
-3. Run the latest complete application flow using real checkpoints; verify actual Docker build and inference.
+3. Run the latest complete application flow using real checkpoints; verify real target-hardware Docker build and checkpoint-backed inference.
 4. Publish **only approved/original demo visuals**, a concise walkthrough, honest benchmark and error-case analysis.
 5. Review code/documentation/license and create a versioned GitHub release after the gates pass.
 

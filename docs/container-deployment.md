@@ -2,7 +2,7 @@
 
 ## Status
 
-The source repository includes a proposed CPU inference container and an isolated local Docker Compose configuration. **No successful Docker build, Docker inference, cloud deployment or remote public security review has yet been observed.** Existing Mac Docker Desktop availability and package architecture compatibility must be checked by the operator before claiming a working container.
+The source repository includes a CPU inference container and an isolated local Docker Compose configuration. **An actual Linux CPU Docker image build and no-checkpoint HTTP API smoke passed in GitHub Actions on 2026-10-18** ([verified run](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/actions/runs/39095740246)); **real trusted-checkpoint Docker inference, the owner's Mac build, cloud deployment and public security remain unverified**. Apple Silicon/runtime compatibility must still be checked on target hardware.
 
 The container is intended for **localhost experimentation only**. It is deliberately not exposed on a public interface. Real deployment requires a separate infrastructure/security review and HTTPS/gateway controls.
 
@@ -45,7 +45,7 @@ curl -fsS http://127.0.0.1:8080/ready
 curl -fsS http://127.0.0.1:8080/models
 ~~~
 
-**Build warning:** installing Anomalib/PyTorch may download large packages and may require architecture-specific wheels, RAM/disk space and a compatible Docker/CPU environment. A successful image build has NOT yet been demonstrated. On an Apple Silicon Mac the Linux container dependency stack may differ from the verified macOS virtual environment. Never disable certificate verification as a shortcut.
+**Build warning:** installing Anomalib/PyTorch may download large packages and may require architecture-specific wheels, RAM/disk space and a compatible Docker/CPU environment. An actual image build succeeded on GitHub's Linux CPU runner; an Apple Silicon/local Mac image build has NOT yet been demonstrated. On an Apple Silicon Mac the Linux container dependency stack may differ from the verified macOS virtual environment. Never disable certificate verification as a shortcut.
 
 In Safari open http://127.0.0.1:8080/ and enter the private API key only into the password field to allow inference. Both local model paths should be discoverable if the bind mount was successful. Use an image you are permitted to inspect. Stop without deleting data using:
 
@@ -54,6 +54,16 @@ docker compose -f compose.yaml down
 ~~~
 
 The host's external checkpoint directory is read-only to the container and is not removed by docker compose down. Do not run docker compose down --volumes unless you understand all mounts and named volumes.
+
+## Automated Linux CPU build gate (no checkpoint weights)
+
+A separate, heavier [GitHub Actions job](docker-cloud-build-evidence.md) has
+successfully built the real CPU Docker image and started the API without
+private weights. It verified live HTTP authentication, expected /ready 503
+without checkpoints, dashboard routes, nonroot execution, loopback binding
+and container confinement. This is genuine Linux container execution, **not**
+checkpoint-backed inference and not full P8. Full real on-Mac/target-machine
+inference/restart steps remain required below.
 
 ## Automated static Compose gate
 

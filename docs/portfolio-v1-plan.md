@@ -19,7 +19,7 @@ Each gate is either **Verified**, **Pending**, or **Blocked by external runtime/
 | P5 | Carpet PaDiM and PatchCore | **Pending real training** | Same evidence standard as P4; scores never invented |
 | P6 | 3-category comparison and failure analysis | **Pending** (Bottle results available) | Machine-validated saved reports + per-category sample counts, image/pixel AUROC/F1 and documented actual error cases or an explicit statement that none were observed |
 | P7 | Latest operator workflows in a real runtime | **Pending latest-code Mac run**; mocked integration tests pass | With trusted local weights: upload, normal/defect heatmap, batch, persisted history after restart, independent human review, lot grouping and private CSV all pass; the optional `--operator-workflow` acceptance exercises an authenticated write/review/report/cleanup flow; record sanitized evidence |
-| P8 | Actual local Docker image acceptance | **Blocked by Docker/runtime + private weights**; static Compose CI passes | Image builds, non-root/read-only constraints hold, both Bottle checkpoints infer through container port, readiness and restart succeed |
+| P8 | Actual local Docker image acceptance | **Partially verified:** actual GitHub Linux CPU image build and no-model HTTP smoke passed; owner Mac checkpoint-backed inference pending | Image builds, non-root/read-only constraints hold, both Bottle checkpoints infer through container port, readiness and restart succeed |
 | P9 | Recruiter-ready presentation and permitted media | **In progress**; documentation exists but no actual media published | Concise README, correct paired model card, architecture/evaluation/limitations, three approved screenshots (single result, heatmap comparison, batch/history), short real recording and clear setup |
 | P10 | Versioned release, licensing and safety review | **Pending** | Operator chooses code license, reviews dataset/pretrained/image rights, no credentials or restricted assets in source/media, all P1–P9 gates passed; only then tag/release `v1.0.0` |
 
@@ -81,7 +81,7 @@ The final demo should cover: launch app → select Bottle/PaDiM → normal input
 - **Observed real model result:** original private run plus honest public methodology/report.
 - **Automated tested implementation:** Python/JS GitHub CI (no loaded PyTorch checkpoint).
 - **Real local integration:** dated, sanitized, reproducible output from Mac/real checkpoint.
-- **Container acceptance:** actual Docker build + live checkpoint-backed HTTP call.
+- **Container acceptance:** GitHub Linux CPU image-build/HTTP smoke passed with no weights; full gate requires target Mac Docker build + live checkpoint-backed HTTP call.
 - **Not verified:** test script exists but operator has not executed it.
 
 Keep these categories separate in README, model card, CV and interviews. Never extrapolate one-category AUROC into a universal industrial performance guarantee.
