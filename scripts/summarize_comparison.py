@@ -14,6 +14,7 @@ import json
 from pathlib import Path
 
 from ihsanvision.benchmark import read_completed_run, require_matching_splits, run_folder
+from ihsanvision.config import CATEGORIES
 
 
 METRICS = ("image_AUROC", "image_F1Score", "pixel_AUROC", "pixel_F1Score")
@@ -113,12 +114,84 @@ def summarize(runs_dir: Path) -> str:
     return "\n".join(lines)
 
 
+def summarize_saved_runs(runs_dir: Path, categories: list[str], seed: int) -> str:
+    """Verified offline comparison from saved run triples, without comparison.json.
+
+    The resumable training runner produces individual completed model runs but
+    does not create a fresh aggregate comparison.json. This reporting path
+    therefore reconstructs a *read-only* portfolio table directly from the
+    six private model/report/split triples after the requested runs actually
+    finish. It does not invoke Anomalib, deserialize a checkpoint, or train.
+    """
+    if not categories or len(categories) != len(set(categories)):
+        raise ValueError("Require nonempty, unique portfolio categories")
+    if any(category not in CATEGORIES for category in categories):
+        raise ValueError("Unsupported MVTec AD category")
+    if type(seed) is not int or seed < 0:
+        raise ValueError("Seed must be a nonnegative integer")
+    lines = [
+        "# PaDiM vs PatchCore — Validated Saved-Run Portfolio Comparison",
+        "",
+        f"Recorded seed: `{seed}`; all metrics originate from the saved per-run reports.",
+        "",
+        "| Category | Model | Train | Val | Test | Image AUROC | Image F1 | Pixel AUROC | Pixel F1 | Train (s) |",
+        "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for category in categories:
+        manifests = {}
+        category_rows = []
+        for model in MODELS:
+            folder = run_folder(Path(runs_dir), model, category, seed)
+            report, manifest = read_completed_run(folder, model, category, seed)
+            manifests[model] = manifest
+            category_rows.append((model, report))
+        counts = require_matching_splits(category, manifests)
+        for model, report in category_rows:
+            metrics = report["evaluation"]["metrics"]
+            lines.append(
+                f"| {category} | {model} | {counts['train']} | {counts['val']} | "
+                f"{counts['test']} | "
+                + " | ".join(f"{metrics[name]:.4f}" for name in METRICS)
+                + f" | {report['train_seconds']:.1f} |"
+            )
+    lines.extend([
+        "",
+        "## Evidence scope and limitations",
+        "",
+        "- All requested category/model saved checkpoint, report and split triples "
+        "were present and structurally validated **without model deserialization**.",
+        "- For each category, PaDiM and PatchCore train/validation/test **paths** match "
+        "exactly. Underlying image-byte identity was not independently verified.",
+        "- Validation examples were taken from the original MVTec AD test folder; "
+        "these results are not directly comparable to official full-test leaderboard scores.",
+        "- Training times come from saved runs and are not a controlled hardware comparison.",
+        "- AUROC and F1 reflect one recorded seed and split; do not infer industrial "
+        "generalization, calibrated scores, or per-pixel segmentation quality.",
+        "- Report contents and checkpoint existence are audited, not retrained or "
+        "cryptographically proven to come from an independent run.",
+        "",
+    ])
+    return "\n".join(lines)
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--runs-dir", required=True, type=Path)
+    parser.add_argument(
+        "--from-saved-runs", action="store_true",
+        help="Build an offline multi-category comparison from completed model/report/split trios",
+    )
+    parser.add_argument(
+        "--categories", nargs="+", choices=CATEGORIES,
+        default=["bottle", "cable", "carpet"],
+        help="Ordered portfolio categories (used with --from-saved-runs)",
+    )
+    parser.add_argument("--seed", type=int, default=42,
+                        help="Recorded experiment seed (used with --from-saved-runs)")
     parser.add_argument("--output", type=Path, help="Optional new Markdown file; existing files are never overwritten")
     args = parser.parse_args(argv)
-    summary = summarize(args.runs_dir)
+    summary = (summarize_saved_runs(args.runs_dir, args.categories, args.seed)
+               if args.from_saved_runs else summarize(args.runs_dir))
     if args.output is None:
         print(summary, end="")
     else:

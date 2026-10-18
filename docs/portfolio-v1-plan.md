@@ -54,6 +54,20 @@ python -m scripts.resume_mvtec_training \
   --accelerator auto --execute --max-jobs 1
 ```
 
+Once all six trusted artifact triples really exist, run the **read-only**
+portfolio comparison. This is safe only when you have preserved each
+category/model pair under the same runs directory:
+
+```bash
+python -m scripts.summarize_comparison \
+  --runs-dir /absolute/private/ihsanvision_runs \
+  --from-saved-runs --categories bottle cable carpet --seed 42
+```
+
+This validates reported metrics and exact paired image split paths, but
+does **not** retrain any model or authenticate the underlying image bytes.
+See [saved-run reporting](verified-benchmark-summary.md).
+
 Do not claim training happened merely because these commands appear in GitHub. On a completed experiment directory, the existing `scripts.summarize_comparison` verifies `comparison.json`, per-model reports and exact split equivalence before rendering a metrics table; see [benchmark summary](verified-benchmark-summary.md). All training checkpoints, raw images and private path manifests remain **outside Git**.
 
 ### Demonstration and permission policy

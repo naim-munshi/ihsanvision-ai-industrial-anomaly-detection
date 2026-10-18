@@ -34,6 +34,32 @@ For an output-only preview (no file changes), omit `--output`:
 python -m scripts.summarize_comparison --runs-dir /kaggle/working/ihsanvision_runs
 ~~~
 
+## Portfolio 3-category saved runs (without new training)
+
+The normal `scripts.resume_mvtec_training` pipeline writes **individual**
+completed `model.ckpt`, `report.json`, and `splits.json` triples. It does
+**not** automatically regenerate a multi-category `comparison.json`. When
+Bottle, Cable and Carpet have genuinely completed their two model runs and
+all six run directories are under the same private `--runs-dir`, generate a
+read-only portfolio table directly from **those saved reports**:
+
+```bash
+python -m scripts.summarize_comparison \
+  --runs-dir /absolute/private/ihsanvision_runs \
+  --from-saved-runs --categories bottle cable carpet --seed 42
+```
+
+To save a **new** private Markdown report, append
+`--output /absolute/private/portfolio-three-category.md`; existing files
+are not overwritten. The command checks all six checkpoint/report/split
+triples, validates metric ranges, checks each pair's exact train/val/test
+paths and prints actual reported image/pixel AUROC/F1 and split counts.
+It **does not deserialize** checkpoints or estimate missing scores. Missing
+Cable/Carpet experiments make the command **fail**, not insert blanks or
+fake performance. For these saved-run tables no aggregate
+`comparison.json` is required; use the default comparison.json path below
+when checking an already created `ihsanvision.benchmark` aggregate.
+
 ## Validation contract
 
 The generator refuses to report results unless all of these hold:

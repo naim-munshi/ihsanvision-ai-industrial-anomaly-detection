@@ -122,7 +122,13 @@ python -m scripts.resume_mvtec_training \
   --categories bottle cable carpet --seed 42
 ```
 
-Execute missing work **only on your own licensed dataset and compute environment**, with `--execute --max-jobs 1`, after reviewing the dry-run. Preserve the existing completed Bottle artifacts rather than retraining them. [Model comparison and evidence verification](docs/verified-benchmark-summary.md). The optional MVTec AD 2 research adapter is **out of scope for portfolio v1.0**.
+Execute missing work **only on your own licensed dataset and compute environment**, with `--execute --max-jobs 1`, after reviewing the dry-run. Once all six checkpoint/report/split trios genuinely exist, build the **read-only** 3-category comparison (no fitting or metrics fabrication):
+
+```bash
+python -m scripts.summarize_comparison \
+  --runs-dir /absolute/private/ihsanvision_runs \
+  --from-saved-runs --categories bottle cable carpet --seed 42
+``` Preserve the existing completed Bottle artifacts rather than retraining them. [Model comparison and evidence verification](docs/verified-benchmark-summary.md). The optional MVTec AD 2 research adapter is **out of scope for portfolio v1.0**.
 
 ## Tests and engineering practices
 
