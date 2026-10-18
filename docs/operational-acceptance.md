@@ -67,6 +67,10 @@ service restart* remain **separate manual checks**. The new report deliberately
 excludes raw input images, operator API key, checkpoint hashes, record IDs and
 lot identifiers.
 
+**Important:** A standard four-prediction run with private history enabled
+but **without** `--operator-workflow` can leave four normal inspection
+records. Use a disposable DB or the explicit operator cleanup mode instead.
+
 ## Docker validation
 
 First successfully run `docker compose -f compose.yaml build` and
