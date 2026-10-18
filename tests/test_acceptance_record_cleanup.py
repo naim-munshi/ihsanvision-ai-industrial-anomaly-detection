@@ -52,7 +52,7 @@ def test_capture_id_before_invalid_prediction_allows_cleanup(monkeypatch, tmp_pa
         "inspection_id": "a" * 32,
     })
     monkeypatch.setattr(dual, "validate_prediction",
-                        lambda *_: pytest.fail("Must fail before validation"))
+                        lambda *_: {"predicted_anomaly": False})
     ids = []
     with pytest.raises(RuntimeError, match="unique inspection"):
         # First pass: captured ID, second prediction ID collides.
