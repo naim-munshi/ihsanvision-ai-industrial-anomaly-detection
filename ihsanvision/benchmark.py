@@ -78,13 +78,18 @@ def read_completed_run(folder: Path, model: str, category: str, seed: int) -> tu
     if report.get("split_counts") != counts:
         raise ValueError(f"Report split counts disagree with splits.json: {folder}")
 
-    metrics = report.get("evaluation", {}).get("metrics", {})
+    evaluation = report.get("evaluation")
+    metrics = evaluation.get("metrics") if isinstance(evaluation, dict) else None
+    if not isinstance(metrics, dict):
+        raise ValueError(f"Missing or invalid evaluation metrics in {folder}")
     for name in ("image_AUROC", "image_F1Score", "pixel_AUROC", "pixel_F1Score"):
         value = metrics.get(name)
-        if not isinstance(value, (int, float)) or not math.isfinite(value) or not 0 <= value <= 1:
+        # bool is a subclass of int: accepting "true" from a damaged JSON
+        # report as 1.0 would fabricate an apparently perfect AUROC/F1.
+        if type(value) not in (int, float) or not math.isfinite(value) or not 0 <= value <= 1:
             raise ValueError(f"Missing or invalid {name} in {folder}")
     duration = report.get("train_seconds")
-    if not isinstance(duration, (int, float)) or not math.isfinite(duration) or duration < 0:
+    if type(duration) not in (int, float) or not math.isfinite(duration) or duration < 0:
         raise ValueError(f"Missing or invalid train_seconds in {folder}")
     return report, manifest
 
