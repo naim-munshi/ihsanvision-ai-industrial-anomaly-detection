@@ -44,8 +44,9 @@ is enabled. It collects their IDs only in process. It then creates a fifth,
 randomly identified test inspection, marks it `confirmed_normal`, verifies
 private history/checkpoint SHA/lot groups/CSV/telemetry and **cleans all five
 specific test records**, never pre-existing operator rows. If the
-network or deletion fails, the command refuses to pass and reports the
-synthetic lot identifier for manual cleanup. Use a disposable private
+network or deletion fails, the command refuses to pass. Examine the newest
+private history rows and synthetic lot before any manual cleanup; never
+bulk-delete other operator data. Use a disposable private
 inspection DB for initial acceptance. Existing records are not deleted.
 
 ```bash
