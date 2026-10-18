@@ -8,6 +8,21 @@ from .config import (CATEGORIES, MODELS, TrainConfig, audit_splits,
                      make_model, save_json, scalar_metrics, seed_everything,
                      verify_reference_splits)
 
+def prepare_fresh_run_dir(config: TrainConfig) -> Path:
+    """Exclusively create one NEW run directory before fitting a model.
+
+    Training must never silently overwrite partial checkpoints, engine state,
+    split manifests or prior reports. This holds for direct CLI calls as well as
+    the resumable planner. The caller leaves a failed run for manual inspection.
+    """
+    config.validate()
+    folder = config.output_dir / f"{config.model}-{config.category}-seed{config.seed}"
+    # mkdir(exist_ok=False) is exclusive even when another runner creates
+    # the directory between checks. Symlinks and partially filled dirs fail.
+    folder.mkdir(parents=True, exist_ok=False)
+    return folder
+
+
 def run(config: TrainConfig) -> dict:
     config.validate()
     from anomalib import __version__ as anomalib_version
@@ -15,10 +30,7 @@ def run(config: TrainConfig) -> dict:
     from anomalib.engine import Engine
     import torch
 
-    run_dir = config.output_dir / f"{config.model}-{config.category}-seed{config.seed}"
-    if (run_dir / "report.json").exists():
-        raise FileExistsError(f"Existing report: {run_dir / 'report.json'}")
-    run_dir.mkdir(parents=True, exist_ok=True)
+    run_dir = prepare_fresh_run_dir(config)
     seed_everything(config.seed)
 
     # Validation uses a reserved fraction of MVTec's test directory.
