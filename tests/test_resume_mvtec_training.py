@@ -146,7 +146,7 @@ def test_execute_refuses_race_and_cannot_overwrite(tmp_path):
     runs = tmp_path / "runs"
     state = runner.plan(dataset, runs, ["bottle"], 42)
     fake_artifacts(runs, "bottle", "padim", 42)
-    with pytest.raises(RuntimeError, match="appeared since planning"):
+    with pytest.raises(RuntimeError, match="directory appeared since planning"):
         runner.execute(state, dataset, runs, seed=42, accelerator="cpu",
                        trainer=lambda _: pytest.fail("Must not train"))
 
@@ -171,3 +171,41 @@ def test_cli_dry_run_does_not_fit_or_create_artifacts(tmp_path, monkeypatch, cap
                  "--categories", "bottle"])
     assert '"training_jobs_pending": 2' in capsys.readouterr().out
     assert not runs.exists()
+
+
+@pytest.mark.parametrize("leftover", ["", "engine", "notes.txt"])
+def test_existing_run_without_trio_is_never_scheduled(tmp_path, leftover):
+    dataset = local_dataset(tmp_path)
+    runs = tmp_path / "runs"
+    folder = runs / "padim-bottle-seed42"
+    folder.mkdir(parents=True)
+    if leftover == "engine":
+        (folder / leftover).mkdir()
+    elif leftover:
+        (folder / leftover).write_bytes(b"keep-interrupted-artifact")
+    with pytest.raises(RuntimeError, match="run directory has no completed"):
+        runner.plan(dataset, runs, ["bottle"], 42)
+    assert folder.is_dir()
+    if leftover == "notes.txt":
+        assert (folder / leftover).read_bytes() == b"keep-interrupted-artifact"
+
+
+def test_symlinked_completed_run_is_not_trusted(tmp_path):
+    dataset = local_dataset(tmp_path)
+    runs = tmp_path / "runs"
+    trusted = fake_artifacts(tmp_path / "outside", "bottle", "padim", 42)
+    runs.mkdir()
+    (runs / "padim-bottle-seed42").symlink_to(trusted, target_is_directory=True)
+    with pytest.raises(RuntimeError, match="Symlinked"):
+        runner.plan(dataset, runs, ["bottle"], 42)
+    assert (trusted / "model.ckpt").is_file()
+
+
+def test_execute_race_with_empty_run_directory_fails_before_trainer(tmp_path):
+    dataset = local_dataset(tmp_path)
+    runs = tmp_path / "runs"
+    state = runner.plan(dataset, runs, ["bottle"], 42)
+    (runs / "padim-bottle-seed42").mkdir(parents=True)
+    with pytest.raises(RuntimeError, match="run directory appeared"):
+        runner.execute(state, dataset, runs, seed=42, accelerator="cpu",
+                       trainer=lambda *_: pytest.fail("Must not retrain"))
