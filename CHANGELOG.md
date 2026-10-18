@@ -30,8 +30,8 @@ project has **not** yet published its portfolio `v1.0.0` release.
 ### Engineering and release safety
 
 - Added Python 3.11/3.12 and browser JavaScript CI tests, static Docker
-  Compose security checks, and optional real Linux CPU image build/HTTP smoke
-  checks.
+  Compose security checks and a [successful actual Linux CPU image build and
+  no-checkpoint HTTP API smoke](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/actions/runs/39095740246).
 - Added real local acceptance tools and opt-in authenticated operator
   write/review/report/cleanup; actual latest Mac checks are still pending.
 - Added a Git-tracked public-source hygiene check to flag private data,
