@@ -74,3 +74,11 @@ jobs:
           )
           print("Compose security/config shape verified; real image build and inference NOT tested.")
           PY
+
+  source-hygiene:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Audit tracked source for private artifacts, secrets, and unreviewed media
+        run: python3 -m scripts.check_release_hygiene --ci
