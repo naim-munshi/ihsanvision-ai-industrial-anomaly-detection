@@ -17,6 +17,31 @@ checkpoint just to make the plan pass. A new run directory appearing between
 dry-run and execution is also refused.
 
 
+## Restore original paired Bottle artifacts before planning
+
+To ensure a clean Kaggle session schedules **only four new Cable/Carpet fits**,
+first privately restore **both** original Bottle model triples. The staging
+utility accepts `--model padim` (default for existing usage) **or**
+`--model patchcore`. Point each invocation at the existing model's own
+`model.ckpt`, `report.json`, and `splits.json` folder. It checks the report,
+seed, category, metrics and split manifest without loading checkpoint bytes.
+
+```bash
+python -m scripts.stage_reference_artifacts \
+  --source-dir /private/padim-bottle-seed42 \
+  --output-dir /private/ihsanvision_runs \
+  --category bottle --seed 42 --model padim
+
+python -m scripts.stage_reference_artifacts \
+  --source-dir /private/patchcore-bottle-seed42 \
+  --output-dir /private/ihsanvision_runs \
+  --category bottle --seed 42 --model patchcore
+```
+
+If either run is already present, **do not repeat its staging command**:
+the tool refuses overwrites. If private archived split paths differ from
+the current MVTec dataset mount, investigate before any further fitting.
+
 ## Preflight before all GPU work
 
 Mount or extract a properly licensed, operator-owned MVTec AD dataset locally
