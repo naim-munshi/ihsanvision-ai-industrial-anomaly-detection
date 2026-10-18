@@ -23,6 +23,15 @@ are available, the three operator dashboard HTML routes are served and
 unauthenticated `POST /predict` fails with HTTP 401. It also checks the
 built image user and absence of accidentally packed checkpoint/secret formats.
 
+The real image build additionally runs `python -m pip check` **inside the
+container**, detecting incompatible installed distribution requirements, and
+uploads a 14-day `ihsanvision-cpu-dependencies` artifact containing the
+actual `pip freeze` list. This gives a verifiable Linux CPU dependency record
+for the exact GitHub Actions run; **it is not an Apple Silicon/GPU lockfile**
+and does not independently attest experiment-time Kaggle packages. Review
+the specific successful workflow run and its artifact when comparing
+environments.
+
 The build may download large Anomalib/PyTorch dependencies and is **not
 included in every lightweight Python unit-test run**. Trigger manually in
 GitHub Actions via **CPU Docker build and HTTP smoke (no checkpoints) → Run

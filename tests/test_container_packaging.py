@@ -49,3 +49,12 @@ def test_cloud_cpu_container_checks_real_ml_imports_without_weights():
     assert 'for family in ("padim", "patchcore")' in workflow
     assert "--network none" in workflow
     assert "NO checkpoint inference." in workflow
+
+
+def test_cpu_image_dependency_check_is_inside_docker_and_versions_are_saved():
+    workflow = (ROOT / ".github/workflows/docker-cpu-smoke.yml").read_text()
+    assert "ihsanvision-cpu-smoke:ci -m pip check" in workflow
+    assert "ihsanvision-cpu-smoke:ci -m pip freeze" in workflow
+    assert "uses: actions/upload-artifact@v4" in workflow
+    assert "name: ihsanvision-cpu-dependencies" in workflow
+    assert "retention-days: 14" in workflow
