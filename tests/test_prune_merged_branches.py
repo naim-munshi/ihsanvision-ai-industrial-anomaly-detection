@@ -32,6 +32,7 @@ def test_only_unchanged_same_repo_merged_pr_heads_are_eligible():
     ]
     history = [
         pull("feature/merged-ok"),
+        pull("security/completed-audit"),
         pull("fix/updated-after-merge"),
         pull("chore/protected"),
         pull("ci/open-pr"),
@@ -40,7 +41,8 @@ def test_only_unchanged_same_repo_merged_pr_heads_are_eligible():
     ]
     open_prs = [pull("ci/open-pr", merged=None)]
     assert prune.candidates(branches, history, open_prs) == [
-        ("feature/merged-ok", "a" * 40)
+        ("feature/merged-ok", "a" * 40),
+        ("security/completed-audit", "a" * 40),
     ]
 
 
