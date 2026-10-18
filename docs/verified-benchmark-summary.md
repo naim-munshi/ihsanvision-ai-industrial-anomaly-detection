@@ -5,7 +5,7 @@ The read-only `scripts.summarize_comparison` command converts a **completed**
 This is a reporting tool, **not** a training command. No model checkpoints are
 deserialized, and no additional scores are estimated.
 
-## After the real Kaggle comparison completes
+## Verify the completed Bottle comparison or future cable/carpet runs
 
 Run in a notebook code cell (do **not** paste bare shell commands into Python):
 
@@ -67,5 +67,4 @@ Do not upload checkpoint binaries or MVTec images to a public GitHub repository.
 The summary does not demonstrate operational reliability, inference speed or
 successful deployment. Record those with separate verified experiments.
 
-**Current evidence status:** At the time this tool was authored, PatchCore training
-was running in a Kaggle notebook. No completed PatchCore scores are asserted here.
+**Current evidence status:** Bottle PaDiM and PatchCore **have both completed real Kaggle runs**; documented observed metrics and a Mac checksum-verified backup are in [the PatchCore evidence report](../reports/2026-10-15-kaggle-patchcore-bottle.md). An owner-side successful comparison summary audit has been reported, but full independent provenance and new cable/carpet runs are not claimed. Use this verifier on each preserved original artifact set rather than hand-entering or inventing metrics.
