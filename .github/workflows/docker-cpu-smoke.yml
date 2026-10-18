@@ -77,6 +77,29 @@ jobs:
           print("ML dependency import and model construction passed; NO checkpoint inference.")
           '
 
+      - name: Check installed dependency compatibility and capture CPU image versions
+        run: |
+          # Installed package metadata is checked IN the built image, not on the
+          # runner where a different, lightweight Python environment is used.
+          docker run --rm --network none --entrypoint python \
+            ihsanvision-cpu-smoke:ci -m pip check
+          docker run --rm --network none --entrypoint python \
+            ihsanvision-cpu-smoke:ci -m pip freeze \
+            > docker-cpu-installed-packages.txt
+          test -s docker-cpu-installed-packages.txt
+          # Keep the full installed-version list as CI evidence only, not a
+          # cross-platform lockfile or a claim of a reproducible GPU setup.
+          grep -i -E '^(anomalib|torch|torchvision|numpy|fastapi)==' \
+            docker-cpu-installed-packages.txt
+
+      - name: Preserve dependency versions for the exact GitHub Actions image build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ihsanvision-cpu-dependencies
+          path: docker-cpu-installed-packages.txt
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Run the actual API without private weights (expected unready)
         run: |
           docker run --rm --detach \
