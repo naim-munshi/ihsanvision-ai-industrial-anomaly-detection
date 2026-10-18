@@ -49,7 +49,7 @@ python -m scripts.local_stack_acceptance \
   --output "$HOME/ihsanvision-artifacts/portfolio-local-stack-v1.json"
 ```
 
-If private server key authentication is enabled, privately set `IHSANVISION_CLIENT_API_KEY` and add `--require-auth`. Additionally **manually** verify the latest `/batch` and authenticated `/history` workflow: upload multiple photos, record/restart persistence, independent operator verdict, per-lot summary and metadata-only CSV. The local-stack tool does not itself exercise browser clicks, SQLite mutation or screenshot accuracy.
+If private server key authentication is enabled, privately set `IHSANVISION_CLIENT_API_KEY` and add `--require-auth`. With private history and authentication deliberately enabled, rerun the same command with `--require-auth --operator-workflow` using a new output file. It writes and deletes **one synthetic inspection record** while checking authenticated prediction, review, lot/version summaries, private CSV and telemetry. Additionally **manually** verify the latest `/batch` and authenticated `/history` workflow: upload multiple photos, record/restart persistence, independent operator verdict, per-lot summary and metadata-only CSV. The local-stack tool does not itself exercise browser clicks, SQLite mutation or screenshot accuracy.
 
 Record a reproducible short summary without private image files, full local paths or credentials. Inspect overlays; check visible failures, empty/error responses and small-screen/keyboard interaction.
 
