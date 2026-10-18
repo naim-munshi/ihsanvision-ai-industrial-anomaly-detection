@@ -49,7 +49,7 @@ def test_main_portfolio_scope_is_auditable_and_honest() -> None:
     for measured in ("0.9963", "1.0000", "0.6497", "0.7102"):
         assert measured in readme
     # Explicit gaps prevent future documentation from silently overstating CI.
-    assert "neither CI path executes checkpoint-backed PaDiM/PatchCore inference" in readme
+    assert "neither ci path executes checkpoint-backed padim/patchcore inference" in readme.lower()
     assert "not a production-certified" in readme
     assert "not yet executed" in readme.lower()
     assert "P10" in plan

@@ -8,6 +8,17 @@
 
 > **Status:** AI engineering portfolio prototype, **not a production-certified defect detection system**. PaDiM and PatchCore have measured results on **MVTec AD / bottle** and working local checkpoint-backed inference. The fixed [portfolio v1.0 scope and evidence gates](docs/portfolio-v1-plan.md) additionally require cable/carpet evaluation, integrated runtime testing, real checkpoint-backed Docker acceptance, approved demo media and a reviewed release. No further categories or enterprise features are required for v1.0.
 
+## Explore the project
+
+| For recruiters | For developers |
+| --- | --- |
+| [Measured results](#measured-model-performance--mvtec-ad-bottle) and [observed serving speed](#real-local-serving-evidence) | [Local demo setup](#reproduce-the-application-locally) |
+| [Architecture](#software-architecture) and [model limitations](docs/model-card.md) | [Training and 3-category comparison](#reproduce-the-experiments) |
+| [What was actually tested](#what-is-implemented-vs-independently-validated) | [Automated tests](#tests-and-engineering-practices) and [Docker guide](docs/container-deployment.md) |
+| [Final demo plan](docs/portfolio-demo-storyboard.md) *(media pending)* | [Owner finishing steps](FINISHING.md) and [fixed P1–P10 gates](docs/portfolio-v1-plan.md) |
+
+**Demo status:** This repository does not yet publish a video, production deployment, trained checkpoints or redistribution-licensed dataset screenshots. Historical Kaggle/Mac results and Linux Docker CI evidence are linked below.
+
 ## Project in 30 seconds
 
 IhsanVision.AI applies **normal-only visual anomaly detection** to manufactured products. The operator submits an image or a small batch, chooses a locally trusted category-specific model, and receives an **uncalibrated anomaly score**, an optional normal/anomaly decision and a **relative localization heatmap**. Optional private workflows track production lots, human reviews, model checkpoint versions and metadata-only CSV reports.
@@ -64,11 +75,11 @@ Training and public application hosting are **separate concerns**. Dataset image
 | Model-cache reuse, sequential latency | **Real Mac paired profiles; limited workload** |
 | Batch dashboard, CSV, lot history and independent human review | **Code and offline/mock integration tests; latest Mac E2E pending** |
 | Private checkpoint pins, staged model releases, local API security | **Offline regression tested; latest real-model verification pending** |
-| Linux CPU Docker image + local Compose | **Actual GitHub Linux image build/API HTTP smoke passed; target Mac Docker checkpoint inference pending** |
+| Linux CPU Docker image + local Compose | **Real Linux build, API smoke, PaDiM/PatchCore initialization and package check passed in CI; target Mac checkpoint-backed Docker inference pending** |
 | Cable and carpet paired experiments | **Not yet executed; no fabricated metrics** |
 | Release media, source license and versioned v1.0 tag | **Not yet approved/published** |
 
-The baseline GitHub Actions checks run lightweight Python 3.11/3.12, dashboard JS and static Compose tests, without model weights. A separate [actual Linux CPU Docker build/API smoke run](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/actions/runs/39095740246) passed, but **neither CI path executes checkpoint-backed PaDiM/PatchCore inference**. [Latest CI](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/actions/workflows/ci.yml).
+The baseline GitHub Actions checks run lightweight Python 3.11/3.12, dashboard JS, source hygiene and static Compose tests. Separately, an [actual Linux CPU Docker run](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/actions/runs/39100705980) passed container build, HTTP startup, PyTorch/Anomalib imports, both model-class initialization and installed-package compatibility checks. **Neither CI path executes checkpoint-backed PaDiM/PatchCore inference**. [Latest CI](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/actions/workflows/ci.yml).
 
 ## Reproduce the application locally
 
@@ -128,7 +139,9 @@ Execute missing work **only on your own licensed dataset and compute environment
 python -m scripts.summarize_comparison \
   --runs-dir /absolute/private/ihsanvision_runs \
   --from-saved-runs --categories bottle cable carpet --seed 42
-``` Preserve the existing completed Bottle artifacts rather than retraining them. [Model comparison and evidence verification](docs/verified-benchmark-summary.md) · [False-positive/false-negative audit](docs/portfolio-error-analysis.md). The optional MVTec AD 2 research adapter is **out of scope for portfolio v1.0**.
+```
+
+Preserve the existing completed Bottle artifacts rather than retraining them. [Model comparison and evidence verification](docs/verified-benchmark-summary.md) · [False-positive/false-negative audit](docs/portfolio-error-analysis.md). The optional MVTec AD 2 research adapter is **out of scope for portfolio v1.0**.
 
 ## Tests and engineering practices
 

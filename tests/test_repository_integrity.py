@@ -48,7 +48,8 @@ def test_no_weights_or_dataset_images_in_source_tree():
     # contain Torch .pt files and must never cause false test failures.
     tracked = subprocess.run(
         ["git", "ls-files", "-z"], cwd=ROOT, capture_output=True, check=True
-    ).stdout.decode("utf-8").split("\\0")
+    ).stdout.decode("utf-8").split("\0")
+    tracked = [file for file in tracked if file]
     forbidden = {".ckpt", ".pth", ".pt", ".onnx"}
     offenders = [file for file in tracked if Path(file).suffix.lower() in forbidden]
     assert not offenders, f"Model binaries must remain outside Git: {offenders}"

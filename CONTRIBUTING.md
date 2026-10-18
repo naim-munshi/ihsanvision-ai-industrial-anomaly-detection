@@ -8,7 +8,7 @@ This repository contains a research/portfolio prototype, **not** safety-certifie
 2. Keep commits small, descriptive, and reviewable. Do not force-push shared branches or push directly to `main`.
 3. Open a pull request targeting `main` with a problem statement, test steps, before/after behavior, limitations and relevant issue references.
 4. Keep the PR in draft until the requested functionality and tests are complete. Review CI on Python 3.11 and 3.12 before requesting merge.
-5. During branch migration, the historical `MdNaim` default branch and `feature/portfolio-production-pipeline` remain for traceability. See [repository structure and branch governance](docs/repository-structure.md).
+5. After a PR is merged and any independent work is preserved, delete its short-lived topic branch. Preserve legacy `MdNaim` and `feature/portfolio-production-pipeline` until their historical Mac/Kaggle uses are resolved. GitHub's automatic head-branch deletion and `main` protection are **currently disabled**; the owner should enable them through [the branch governance guide](docs/repository-structure.md).
 
 ## Python application layout
 
@@ -17,6 +17,8 @@ This repository contains a research/portfolio prototype, **not** safety-certifie
 - Add scripts/workflow helpers to `scripts/`, offline regression tests to `tests/`, verified experiment evidence to `reports/`, and explanations to `docs/`.
 - Use `pyproject.toml` for packaging metadata/console scripts. Keep compatible runtime constraints in `requirements.txt`.
 - Avoid checking in large weights, images, dataset copies, tokens, generated outputs, notebook checkpoints or environment files.
+
+**Scope discipline:** The current `v1.0` goal is the [fixed AI Engineer portfolio](docs/portfolio-v1-plan.md): Bottle/Cable/Carpet, PaDiM/PatchCore, real operator demo, reproducible evaluation and release evidence. Avoid adding enterprise SaaS or speculative feature work. A PR with no new measured model evidence must not claim a completed model or production deployment.
 
 ## Local checks
 
