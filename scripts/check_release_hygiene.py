@@ -105,7 +105,7 @@ def audit_source(root: Path, names: list[str]) -> dict:
             "Evidence of completed real Bottle/Cable/Carpet paired experiments",
             "Latest local real-model end-to-end and Docker acceptance",
             "Approved/rights-cleared real screenshots and demo recording",
-            "Owner-approved source-code license and source-media rights",
+            "Owner legal review of responsible-use source license and source-media rights",
             "Reviewed versioned GitHub release",
         ],
         "v1_portfolio_release_verified": False,

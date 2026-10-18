@@ -167,8 +167,10 @@ will reject media without a rights register.
 2. Run `python -m pytest -q`, dashboard tests, static
    `python -m scripts.check_release_hygiene --ci`, source/license review and
    final real Mac/Docker acceptance.
-3. **Owner selects a source-code license** and checks MVTec, pretrained
-   weights and demo-media permissions. No license has been selected for you.
+3. **Owner reviews the existing responsible-use source license**
+   ([LICENSE](LICENSE)) and obtains qualified legal advice if needed. Audit
+   separate MVTec, pretrained-weight and demo-media permissions. Having
+   this source-code license does not authorize commercial MVTec data use.
 4. Confirm README/demo links and all public claims match actual evidence.
    Review the whole Git history for accidental secrets or restricted assets.
 5. Only then create the annotated `v1.0.0` tag and GitHub release from

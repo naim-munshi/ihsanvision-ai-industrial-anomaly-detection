@@ -46,4 +46,4 @@ For a real model change, *also* execute the appropriate trusted-checkpoint or da
 
 Do not paste user secrets or model artifacts into public issues or PRs. Coordinate security disclosures privately with the repository maintainer. Review the MVTec AD dataset license before redistribution or commercial use.
 
-**No explicit source code license has been selected by the repository owner.** Contributing code does not automatically grant a commercial reuse license or permission to distribute datasets.
+The original repository code is offered under the [IhsanVision.AI Responsible Use License v1.0](LICENSE), a **source-available, use-restricted, non-OSI** license. Harmful uses are prohibited, and changes distributed to others must preserve the terms for covered source code. Contributions require the contributor's permission for the applicable licensing; third-party dataset, model or dependency licenses remain separate. See [the licensing guide](docs/licensing.md).
