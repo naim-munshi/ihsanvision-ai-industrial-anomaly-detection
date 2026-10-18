@@ -10,7 +10,7 @@
 | Source | [Observed Kaggle run](../reports/2026-10-13-kaggle-padim-bottle.md) | [Observed Kaggle run](../reports/2026-10-15-kaggle-patchcore-bottle.md) |
 | Private artifact | `padim-bottle-seed42/model.ckpt` | `patchcore-bottle-seed42/model.ckpt` |
 | Local inference | [Real macOS/API acceptance](../reports/2026-10-16-macos-dual-model-api-acceptance.md) | [Real macOS/API acceptance](../reports/2026-10-16-macos-dual-model-api-acceptance.md) |
-| Intended use | Supervised research/demo quality inspection | Supervised research/demo quality inspection |
+| Intended use | Unsupervised (normal-only) research/demo defect inspection | Unsupervised (normal-only) research/demo defect inspection |
 
 ## Data and evaluation methodology
 
