@@ -41,7 +41,7 @@ def test_readme_has_clear_standalone_reproducibility_commands():
     assert "## Portfolio release gates" in readme
     assert "``` Preserve the existing completed Bottle artifacts" not in readme
     assert "Preserve the existing completed Bottle artifacts" in readme
-    assert "neither CI path executes checkpoint-backed" in readme.lower()
+    assert "neither ci path executes checkpoint-backed" in readme.lower()
 
 
 def test_current_status_documents_are_not_confused_with_full_factory_vision():
