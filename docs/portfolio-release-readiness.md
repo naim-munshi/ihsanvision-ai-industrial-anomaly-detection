@@ -87,7 +87,7 @@ Only after verifying the final software:
 - Add **three permission-cleared original screenshots**: single-image normal/defect result with relative heatmap, PaDiM/PatchCore view, and batch/history operator report. They must show actual responses, not invented detection scores.
 - Record a **60–120 second real demo**: model select → upload → overlay → batch report → human review. Link the video prominently from README. A private unlisted link is acceptable only if recruiters can access it.
 - Ensure README's top section contains the honest PaDiM/PatchCore metric comparison, service performance evidence, architecture diagram, quick-start, tests and limitations.
-- Keep MVTec images, model weights, split file paths, credentials, customer/lot secrets and serialized checkpoints out of the **public** release. The source code currently has **no LICENSE**; the owner must select a legally appropriate license before publication. Review dataset, pretrained-weight and demo-media rights separately.
+- Keep MVTec images, model weights, split file paths, credentials, customer/lot secrets and serialized checkpoints out of the **public** release. The repository now has a [source-available responsible-use LICENSE](../LICENSE), but its legal enforceability and any contribution/third-party rights must still be reviewed before a versioned release. Review dataset, pretrained-weight and demo-media rights separately.
 
 Use the real [model card](model-card.md), [evaluation methodology](evaluation.md) and [security boundaries](security-baseline.md). Do not claim certified defect segmentation or general manufacturing accuracy.
 
