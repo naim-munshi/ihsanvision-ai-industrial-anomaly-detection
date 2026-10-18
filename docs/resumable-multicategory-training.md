@@ -19,7 +19,7 @@ Start with a dry-run:
 python -m scripts.resume_mvtec_training \
   --dataset-root /absolute/private/MVTecAD \
   --runs-dir /absolute/private/ihsanvision_runs \
-  --categories bottle cable capsule
+  --categories bottle cable carpet
 ~~~
 
 The tool prints a **read-only, path-scrubbed** JSON plan: category image counts,

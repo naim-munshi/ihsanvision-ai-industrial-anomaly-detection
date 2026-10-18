@@ -1,63 +1,84 @@
-# IhsanVision.AI — Portfolio release readiness
+# IhsanVision.AI — portfolio v1.0 release acceptance
 
-## Status: prototype; no public release approved
+**Current status: not released.** This is the operational checklist for the [fixed AI engineer portfolio v1.0 scope](portfolio-v1-plan.md), **not** a factory-production certification program. Do not create a `v1.0.0` tag or mark the portfolio as finished until its ten gates are satisfied.
 
-This document is a **release gate**, not a declaration of production readiness. Trained models and observed browser demos already exist, but there is no independently verified hosted demo, end-to-end real Mac Docker build, full threat-model review, multi-category training study or chosen source-code license.
+## Evidence that already exists
 
-## Research artifacts and provenance gate (automated)
+- [Bottle PaDiM](../reports/2026-10-13-kaggle-padim-bottle.md) and [Bottle PatchCore](../reports/2026-10-15-kaggle-patchcore-bottle.md) were genuinely trained/evaluated in Kaggle. The original artifacts are privately preserved and were checked against a bundled SHA-256 manifest on Mac.
+- [Mac Bottle dual-model acceptance](../reports/2026-10-16-macos-dual-model-api-acceptance.md) showed valid overlay PNGs and four manually labeled predictions.
+- [Mac paired serving profile](../reports/2026-10-16-macos-paired-serving-profile.md) measured same-input warm HTTP p50/p95 latency on both models.
+- Python 3.11/3.12, JavaScript dashboard and static Docker Compose security checks execute in [GitHub Actions](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/actions/workflows/ci.yml).
 
-Run from an updated project checkout on the **Mac that holds the private Kaggle outputs**:
+These different observations are **not interchangeable**. An offline mocked API test is not real checkpoint inference; a checksum match is not scientific replication; a four-image smoke test is not accuracy measurement. Results use a validation subset held out of the original MVTec test set rather than the official full-test benchmark protocol.
 
-~~~bash
+## A. Validate preserved original model evidence (Mac/private)
+
+Use an updated checkout and independently owned original run archive. First confirm the saved full reference manifest and `comparison.json` are the correct files for the same benchmark:
+
+```bash
+python -m scripts.summarize_comparison \
+  --runs-dir "$HOME/ihsanvision-artifacts/benchmark-bottle-seed42-2026-10-15"
+```
+
+Then run the read-only portfolio evidence verifier, supplying the **actual** saved PatchCore smoke ZIP:
+
+```bash
 python -m scripts.verify_portfolio_evidence \
   --runs-dir "$HOME/ihsanvision-artifacts/benchmark-bottle-seed42-2026-10-15" \
   --smoke-zip "$HOME/Downloads/ihsanvision_patchcore_smoke_evidence.zip" \
-  --output "$HOME/ihsanvision-artifacts/portfolio_evidence_audit.json"
-~~~
+  --output "$HOME/ihsanvision-artifacts/portfolio-evidence-v1-audit.json"
+```
 
-This command is read-only toward original evidence and does not load PyTorch checkpoints, retrain models or send files across the network. It checks SHA-256 for both model checkpoints and their JSON reports/splits plus comparison outputs against the **same bundled manifest** the user already verified, reruns exact metric/split consistency from the existing comparison summary module, verifies the saved Markdown report and checks the PatchCore smoke report and overlay ZIP. It refuses unexpected archive entries and overwriting an existing output JSON. The generated audit JSON deliberately contains **no private absolute paths, source image bytes, model weights or base64 heatmaps**.
+The verifier checks the bundled eight-file SHA-256 manifest, pairwise saved report/split consistency, saved Markdown summary and smoke ZIP. No model deserialization or dataset redistribution occurs. The user must inspect the output and keep it privately; a passing report is **artifact consistency evidence**, not proof of generalizable model accuracy.
 
-The status **artifact_evidence_verified** is *not* an independent certification of where the checkpoint originally came from, scientific replication, measured model generality, or approval to deploy. It specifically reports public_release_authorized=false.
+## B. Complete only the missing portfolio model pairs (Kaggle or compute)
 
-## Portfolio narrative architecture
+The final v1.0 target is **Bottle, Cable, Carpet × PaDiM/PatchCore** (six total). Bottle is already trained, so **four model/category runs** remain. Use the [dry-run-first planner](resumable-multicategory-training.md) on your licensed dataset and preserved benchmark output folder; execute one missing run at a time.
 
-~~~mermaid
-flowchart LR
-    A[Inspector browser] --> B[FastAPI prediction API]
-    B --> C[Optional API key and per-process admission]
-    C --> D[PaDiM or PatchCore inference session]
-    E[Trusted private checkpoints] --> D
-    D --> F[Raw anomaly score and relative overlay]
-    F --> A
-    G[MVTec AD training inputs] --> H[Kaggle Anomalib experiments]
-    H --> I[Private checkpoint, report and split archives]
-    I --> E
-    I --> J[Read-only benchmark evidence verifier]
-    K[Offline GitHub Actions tests] --> B
-~~~
+A final per-category benchmark record must include counts, seed, train/val/test path-equivalence checks, metrics, original checkpoints and at least some grounded error-case analysis. The evaluation protocol must remain unchanged across paired models. Do not compare to official full-test leaderboards; do not invent absent scores or force a false positive/false negative example where none occurred.
 
-This is a **logical prototype architecture**. It does not imply hosted cloud infrastructure, real multi-tenant authentication, distributed queues, production monitoring or an operational training pipeline.
+## C. Run current application end to end using real trusted checkpoints
 
-## Gate-by-gate launch checklist
+On the Mac, install the documented ML dependencies and start `python -m scripts.run_local_demo` with the two trusted Bottle weights. In a separate terminal, run:
 
-| Gate | Current evidence | What is still needed |
-| --- | --- | --- |
-| Reproducible model experiments | PaDiM/PatchCore bottle logs, raw reports and manifests saved privately; local verified comparison summary generated | Record runtime provenance for both; multiple categories/seeds, controlled reproduction |
-| Private artifact preservation | Both checkpoint ZIP archive checksum verified on Mac; separate smoke ZIP passes integrity | Run new read-only audit and establish a second independent private backup |
-| Real model browser workflow | PaDiM normal/defect observed; PaDiM/PatchCore normal-image Safari tests passed | Same defective image through *both* models; verify source split/path and overlay plausibility |
-| Runtime performance | Historical 10-request PaDiM sample; newer profiler implemented and offline-tested | Real matching-input p50/p95 runs, cold vs warm trials, peak memory, concurrency/admission test |
-| Security | Optional shared key, 429 limiter, finite admission and request IDs tested offline | HTTPS reverse proxy, pre-body authentication/limits, managed secrets, account roles, logs/privacy review, incident handling |
-| Container/deployment | Nonroot local-only Docker/Compose source and static tests | Successful image build and checkpoint inference on target machine, deployment/rollback checks |
-| UX accessibility | Browser interface renders and demo cases observed | Error-state, small-screen, keyboard-only and screen-reader testing |
-| Legal | Research dataset/model attribution is documented | User approval of source-code license, verify rights for weights, pretrained assets, MVTec visual redistribution |
-| Portfolio presentation | README, architecture, evaluation notes and CI | Approved anonymized visuals, short demo video, final results table, release notes and version tag |
+```bash
+python -m scripts.local_stack_acceptance \
+  --url http://127.0.0.1:8003 \
+  --normal /absolute/private/normal_bottle.png \
+  --defective /absolute/private/defective_bottle.png \
+  --output "$HOME/ihsanvision-artifacts/portfolio-local-stack-v1.json"
+```
 
-**Do not publish MVTec training/test images, model binaries, notebook secrets or user identifiers by default.** Prefer links to project source and written measurements with methodological caveats; any data/weight release needs licensing approval. Do not select a legal license on the user's behalf without their decision.
+If private server key authentication is enabled, privately set `IHSANVISION_CLIENT_API_KEY` and add `--require-auth`. Additionally **manually** verify the latest `/batch` and authenticated `/history` workflow: upload multiple photos, record/restart persistence, independent operator verdict, per-lot summary and metadata-only CSV. The local-stack tool does not itself exercise browser clicks, SQLite mutation or screenshot accuracy.
 
-## GitHub release acceptance
+Record a reproducible short summary without private image files, full local paths or credentials. Inspect overlays; check visible failures, empty/error responses and small-screen/keyboard interaction.
 
-Before a v1.0 tag, check the merged main commit has green Python CI; run real M6 and M7 checks on the same Mac; confirm M9 Docker and API security integration; review all media rights, README claims and license; document known limitations; create a reproducible tag/release with concise changelog; verify the source tarball contains no private datasets or secrets. **No tag or GitHub release is created by this checklist.**
+## D. Verify a real Docker build and actual inference
 
-## Reproducibility / interpretation warning
+The GitHub CI `container-config` job only validates static Compose security settings. On an actual Docker machine with trusted private weights:
 
-Image AUROC can reach 1.0 on a small held-out test split without guaranteeing 100% future defect detection. The validation subset is drawn from MVTec AD's original test directory, so the reported PaDiM/PatchCore numbers do not match the external full-test benchmark protocol. Raw anomaly scores and contrast-normalized overlays are not calibrated probabilities or validated segmentation masks. A working web UI and finite inference time do not certify industrial safety or reliability.
+```bash
+# Set IHSANVISION_MODELS_DIR and IHSANVISION_API_KEY privately as documented.
+docker compose -f compose.yaml build
+docker compose -f compose.yaml up -d
+docker compose -f compose.yaml ps
+```
+
+Then run the same local-stack acceptance with `--url http://127.0.0.1:8080`, choosing a **new private output report path**. Confirm the container is non-root, read-only and loopback-mapped; verify restart, readiness, actual checkpoint inference and memory footprint. See [complete local container procedure](container-deployment.md). No public hosted service is required for the job portfolio.
+
+## E. Publish a trustworthy recruiter experience
+
+Only after verifying the final software:
+
+- Add **three permission-cleared original screenshots**: single-image normal/defect result with relative heatmap, PaDiM/PatchCore view, and batch/history operator report. They must show actual responses, not invented detection scores.
+- Record a **60–120 second real demo**: model select → upload → overlay → batch report → human review. Link the video prominently from README. A private unlisted link is acceptable only if recruiters can access it.
+- Ensure README's top section contains the honest PaDiM/PatchCore metric comparison, service performance evidence, architecture diagram, quick-start, tests and limitations.
+- Keep MVTec images, model weights, split file paths, credentials, customer/lot secrets and serialized checkpoints out of the **public** release. The source code currently has **no LICENSE**; the owner must select a legally appropriate license before publication. Review dataset, pretrained-weight and demo-media rights separately.
+
+Use the real [model card](model-card.md), [evaluation methodology](evaluation.md) and [security boundaries](security-baseline.md). Do not claim certified defect segmentation or general manufacturing accuracy.
+
+## F. Version and release
+
+Only after all ten [portfolio acceptance gates](portfolio-v1-plan.md) pass, create a reviewed changelog/tag/release `v1.0.0` from a clean green-`main` commit. Check the source archive for secrets and disallowed dataset imagery, verify all README links/media, and validate the example commands from a fresh environment. Do not fake a GitHub release, live URL, cloud deployment or benchmark.
+
+**Stop condition:** All ten frozen portfolio gates are verified with dated evidence and a real `v1.0.0` release exists. That—not a percentage or PR count—is the definition of portfolio completion.

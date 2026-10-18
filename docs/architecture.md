@@ -96,11 +96,11 @@ MVTec AD does not have a separate validation directory by default. The current i
 ### Prototype limitations
 
 - The current FastAPI process lazily loads a trusted checkpoint, then **reuses the model/Engine for repeated requests** under a per-process inference semaphore. The initial request includes restoration cost; subsequent warm requests do not normally reload model weights. The dashboard can select PaDiM or PatchCore only when a trusted checkpoint is configured on the server; changing models evicts the one cached model and incurs a reload. An environment flag (`IHSANVISION_MODEL_CACHE=0`) restores the original cold-loading path. Multi-worker and PatchCore cache behavior have not been validated on Mac.
-- API has no authentication, rate limiting or queueing; external deployment is not yet advised.
+- Local API implements opt-in API-key authentication, pre-parser upload guard, process-local rate/admission limits and sanitized request IDs. This is **not** multiuser identity or an internet-safe TLS gateway; public hosting is still unverified.
 - Experiment backend is Anomalib 2.5.0; upgrading versions may affect checkpoint compatibility.
 - CPU-only Kaggle runs do not establish accelerator portability.
 - Dataset assets and checkpoints are intentionally excluded by `.gitignore`.
 
 ## Planned architecture evolution
 
-The prototype has a lazily initialized per-process model cache and validated Mac PaDiM UI inference. Next improve startup lifecycle management, structured logging, request IDs, bounded request queues, model/version metadata, metrics and authentication. Only then evaluate batch serving, export formats and external hosting. See [roadmap.md](roadmap.md).
+The application now has a lazily initialized per-process model cache, real Mac Bottle inference evidence, private optional inspection history, model approval pins, CSV export, local telemetry and guarded inference requests. The final portfolio work is **real integration/Docker acceptance, reproducible cable/carpet experiments and approved demo evidence**, not additional platform features. See [fixed portfolio v1 plan](portfolio-v1-plan.md).
