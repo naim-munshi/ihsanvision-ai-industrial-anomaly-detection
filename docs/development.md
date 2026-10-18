@@ -69,6 +69,17 @@ The completed PaDiM bottle experiment should be reused. The `ihsanvision.benchma
 
 See the [Kaggle PatchCore comparison workflow](patchcore-comparison-workflow.md) for restoring trusted artifacts from the private user-owned Kaggle input and running only the missing PatchCore job. No real PatchCore output is claimed yet.
 
+### Never overwrite an interrupted direct training run
+
+Direct `python -m ihsanvision.train` now **requires a completely new**
+`<model>-<category>-seed<seed>` output directory. The process refuses any
+existing run directory, even if it contains only an interrupted `engine/`,
+`model.ckpt`, `splits.json`, or an incomplete `report.json`. No artifacts
+are deleted or overwritten. Before a deliberate new experiment, select a
+fresh output directory or seed; preserve and investigate partial artifacts.
+The multi-category resumable planner separately inspects completed triples
+and schedules only verified missing runs.
+
 ### Preserve data and models
 
 Kaggle working storage may be reset between sessions. **Before closing the session**, save a notebook version and export the run artifacts from `/kaggle/working/ihsanvision_runs/` to storage you control. At minimum preserve:
