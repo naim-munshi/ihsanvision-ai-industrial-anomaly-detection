@@ -48,6 +48,35 @@ jobs:
           print("Image built and basic artifact/user checks passed.")
           PY
 
+      - name: Import the actual ML stack and initialize both model families (no weights)
+        run: |
+          # Prove the real Linux CPU image can import Anomalib/Torch and construct
+          # BOTH serving model classes without downloading backbone weights,
+          # fitting data, or deserializing any untrusted checkpoint.
+          docker run --rm \
+            --user 10001:10001 \
+            --read-only \
+            --tmpfs /tmp:rw,nosuid,nodev,size=1g \
+            --cap-drop ALL \
+            --security-opt no-new-privileges:true \
+            --network none \
+            --entrypoint python \
+            ihsanvision-cpu-smoke:ci -c '
+          import torch
+          import torchvision
+          import anomalib
+          from ihsanvision.config import make_model
+          assert torch.__version__
+          assert torchvision.__version__
+          assert anomalib.__version__ == "2.5.0"
+          for family in ("padim", "patchcore"):
+              model = make_model(family, pre_trained=False)
+              assert model is not None, family
+              print(f"{family} constructed on CPU, no pretrained download", flush=True)
+              del model
+          print("ML dependency import and model construction passed; NO checkpoint inference.")
+          '
+
       - name: Run the actual API without private weights (expected unready)
         run: |
           docker run --rm --detach \
