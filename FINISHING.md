@@ -119,8 +119,8 @@ not real images, local file paths or API keys.
 
 ## C. On a Mac with Docker running — target image and real inference
 
-The separate GitHub cloud workflow may prove that a Linux CPU image builds,
-but **cannot** test your private models. Review
+The [successful GitHub cloud workflow](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/actions/runs/39095740246) proved that the Linux CPU image builds and the no-model API starts,
+but **did not** test your private models or target Mac Docker runtime. Review
 [container instructions](docs/container-deployment.md).
 
 ```bash
