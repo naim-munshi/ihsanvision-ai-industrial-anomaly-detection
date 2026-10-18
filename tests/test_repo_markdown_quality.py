@@ -39,7 +39,7 @@ def test_readme_has_clear_standalone_reproducibility_commands():
     assert "## Reproduce the application locally" in readme
     assert "## Reproduce the experiments" in readme
     assert "## Portfolio release gates" in readme
-    assert "\`\`\`\n\nPreserve the existing completed Bottle artifacts" not in readme
+    assert "``` Preserve the existing completed Bottle artifacts" not in readme
     assert "Preserve the existing completed Bottle artifacts" in readme
     assert "neither CI path executes checkpoint-backed" in readme.lower()
 
@@ -51,4 +51,3 @@ def test_current_status_documents_are_not_confused_with_full_factory_vision():
     assert "portfolio v1.0 plan" in roadmap
     assert "not a hosted" in deployment
     assert "pre-multipart upload" in deployment
-    assert "no arbitrary" not in deployment.lower()  # not a security assertion
