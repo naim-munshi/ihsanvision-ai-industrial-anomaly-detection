@@ -64,7 +64,22 @@ def plan(dataset_root: Path, runs_dir: Path, categories: list[str],
         manifests: dict[str, dict] = {}
         for model in ("padim", "patchcore"):
             folder = run_folder(runs_dir, model, category, seed)
+            # Direct training now exclusively creates run directories.
+            # Reject even an empty/engine-only interrupted directory before
+            # claiming that a new fit can be safely resumed. Symlinked run
+            # directories must not be treated as trusted completed artifacts.
+            if folder.is_symlink():
+                raise RuntimeError(
+                    f"Symlinked {category}/{model} run directory found; "
+                    "preserve and inspect it before resuming."
+                )
             artifacts = [name for name in ARTIFACTS if (folder / name).exists()]
+            if folder.exists() and not artifacts:
+                raise RuntimeError(
+                    f"Existing {category}/{model} run directory has no completed "
+                    "artifact trio. It may be an interrupted run; inspect or "
+                    "archive it before resuming."
+                )
             if 0 < len(artifacts) < len(ARTIFACTS):
                 raise RuntimeError(
                     f"Partial {category}/{model} artifacts found. Do not overwrite; "
@@ -123,8 +138,10 @@ def execute(plan_data: dict, dataset_root: Path, runs_dir: Path, *,
     for task in plan_data["jobs"][:max_jobs]:
         category, model = task["category"], task["model"]
         folder = run_folder(runs_dir, model, category, seed)
-        if any((folder / name).exists() for name in ARTIFACTS):
-            raise RuntimeError(f"{category}/{model} artifacts appeared since planning; refusing overwrite")
+        if folder.exists() or folder.is_symlink():
+            raise RuntimeError(
+                f"{category}/{model} run directory appeared since planning; refusing overwrite"
+            )
         other_model = "patchcore" if model == "padim" else "padim"
         reference = run_folder(runs_dir, other_model, category, seed) / "splits.json"
         reference_splits = reference if reference.is_file() else None
