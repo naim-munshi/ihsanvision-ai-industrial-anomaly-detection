@@ -76,6 +76,16 @@ Use your existing trusted Bottle artifacts stored **outside Git**:
   patchcore-bottle-seed42/model.ckpt
 ```
 
+The one-command Bottle launcher intentionally refuses an inherited
+`IHSANVISION_MODEL_REGISTRY`: the registry takes precedence over the
+explicit Bottle model environment paths and could otherwise silently run
+different weights. If you previously configured a multicategory registry,
+**unset it** in the Bottle demo terminal (`unset IHSANVISION_MODEL_REGISTRY`)
+after verifying which models you intend to test. Keep any approved-model
+manifest and API key deliberately configured; the launcher does not bypass
+operator approvals. For an intentional multi-category deployment, run the
+server using the reviewed registry instead of this Bottle-only launcher.
+
 From the updated repo:
 
 ```bash
