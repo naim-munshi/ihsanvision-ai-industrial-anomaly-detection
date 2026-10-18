@@ -88,7 +88,7 @@ Keep these categories separate in README, model card, CV and interviews. Never e
 
 ## Portfolio interview explanation (defensible)
 
-> I built a reproducible industrial anomaly detection prototype with PaDiM/PatchCore, audited disjoint train/validation/test image paths, shipped model-backed FastAPI inference and a browser operator workflow, and measured warm-serving latency. The measured Kaggle results currently cover Bottle; the additional category experiments and latest deployment acceptance are separate release gates. The solution is supervised and is not production-certified.
+> I built a reproducible industrial anomaly detection prototype with PaDiM/PatchCore, audited disjoint train/validation/test image paths, shipped model-backed FastAPI inference and a browser operator workflow, and measured warm-serving latency. The measured Kaggle results currently cover Bottle; the additional category experiments and latest deployment acceptance are separate release gates. The models learn normal-image representations without defect-label supervision; held-out defect labels are used for evaluation. The system is not production-certified.
 
 Customize the final statement **only after** all release evidence exists. Avoid including unverified category scores or public hosting claims.
 
