@@ -21,7 +21,7 @@ Each gate is either **Verified**, **Pending**, or **Blocked by external runtime/
 | P7 | Latest operator workflows in a real runtime | **Pending latest-code Mac run**; mocked integration tests pass | With trusted local weights: upload, normal/defect heatmap, batch, persisted history after restart, independent human review, lot grouping and private CSV all pass; the optional `--operator-workflow` acceptance exercises an authenticated write/review/report/cleanup flow; record sanitized evidence |
 | P8 | Actual local Docker image acceptance | **Partially verified:** actual GitHub Linux CPU image build and no-model HTTP smoke passed; owner Mac checkpoint-backed inference pending | Image builds, non-root/read-only constraints hold, both Bottle checkpoints infer through container port, readiness and restart succeed |
 | P9 | Recruiter-ready presentation and permitted media | **In progress**; documentation exists but no actual media published | Concise README, correct paired model card, architecture/evaluation/limitations, three approved screenshots (single result, heatmap comparison, batch/history), short real recording and clear setup |
-| P10 | Versioned release, licensing and safety review | **Pending** | Operator chooses code license, reviews dataset/pretrained/image rights, no credentials or restricted assets in source/media, all P1–P9 gates passed; only then tag/release `v1.0.0` |
+| P10 | Versioned release, licensing and safety review | **Responsible-use LICENSE added; final legal/media review and release pending** | Owner reviews the responsible-use source license and independent dataset/pretrained/image rights, checks source for secrets/restricted media, all P1–P9 gates pass; only then tag/release `v1.0.0` |
 
 **Initial baseline:** P1, P2, P3 have previous documented real/CI evidence; P4–P10 are not fully verified. Some P7–P9 code exists, but that does not constitute real acceptance. The final v1.0 code must also pass the acceptance suite **after** changes are merged.
 
@@ -31,7 +31,7 @@ Each gate is either **Verified**, **Pending**, or **Blocked by external runtime/
 2. **Real Bottle end-to-end acceptance** — use local known-trust weights and existing scripts. Confirm batch/history/review/export/monitoring and capture *actual* screenshots only with reuse permission.
 3. **Compute-limited 3-category benchmark** — keep existing Bottle; fit only missing cable/carpet jobs (four total), then verify split parity and compare real metrics.
 4. **Deployable demonstration** — build the image in a real Docker environment, use private read-only checkpoint mounts and a non-public port; record startup/restart, health, memory and bounded requests.
-5. **Portfolio publication** — publish only approved media and non-sensitive results, finalize selected source license, cut verified `v1.0.0` release.
+5. **Portfolio publication** — publish only approved media and non-sensitive results, review the responsible-use source license and third-party rights, then cut a verified `v1.0.0` release.
 
 ### Training on a real Kaggle/compute session (only when provided)
 
