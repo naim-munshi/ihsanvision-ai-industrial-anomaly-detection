@@ -24,7 +24,7 @@ to the internet, builds Docker or contacts the owner's Mac.
 It prints a structured result and refuses GitHub CI if the public source
 hygiene conditions fail. It deliberately reports
 `v1_portfolio_release_verified: false` **even when source hygiene passes**.
-An approved `LICENSE` file, permitted media rights, real six-model benchmark
+An existing `LICENSE` file, permission-cleared media, real six-model benchmark
 evidence, Mac inference, real Docker build and a tagged release are
 **separate acceptance gates**; the script does not infer them from filenames.
 
@@ -48,8 +48,9 @@ committed, removing it from HEAD does not revoke it; rotate it immediately.
    source, usage permission and publication date in
    `docs/release-media-rights.md`. A file existing in that location does not
    itself prove legal permission.
-3. The repository owner chooses a **source-code license** after checking
-   third-party obligations; this tool will not choose it automatically.
+3. The owner **reviews the existing responsible-use source license** and
+   verifies their copyright/contribution rights, MVTec and third-party
+   obligations. The static source checker cannot approve legal terms.
 4. Run the static check, Python/JS tests, real Mac and Docker acceptance,
    benchmark validation, and inspect release archives for secrets and
    restricted assets.
