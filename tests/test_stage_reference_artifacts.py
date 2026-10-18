@@ -110,3 +110,15 @@ def test_patchcore_staging_refuses_wrong_model_and_existing_destination(tmp_path
 def test_staging_rejects_unknown_model(tmp_path):
     with pytest.raises(ValueError, match="Unsupported MVTec"):
         stage_reference(tmp_path, tmp_path / "private-out", model="unknown")
+
+
+def test_staging_does_not_replace_dangling_destination_symlink(tmp_path):
+    source = tmp_path / "saved"
+    prepare_source(source, model="patchcore")
+    destination_root = tmp_path / "out"
+    destination_root.mkdir()
+    link = destination_root / "patchcore-bottle-seed42"
+    link.symlink_to(tmp_path / "does-not-exist", target_is_directory=True)
+    with pytest.raises(FileExistsError, match="Refusing to overwrite"):
+        stage_reference(source, destination_root, model="patchcore")
+    assert link.is_symlink()
