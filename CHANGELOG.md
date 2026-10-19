@@ -13,6 +13,12 @@ project has **not** yet published its portfolio `v1.0.0` release.
   overwritten experiments.
 - Added model/report/split validation, SHA-256 integrity checking and
   benchmark tables reconstructed **only from completed model artifacts**.
+- Corrected scientific terminology to **normal-only unsupervised** detection
+  and hardened saved-report validation against Boolean/perfect-score corruption.
+- Made original eight-file Bottle archive verification independent of optional
+  Markdown summaries and later smoke ZIPs; missing extras are explicitly **not checked**.
+- Enabled restoring **both** completed Bottle model artifact triples without
+  checkpoint deserialization or retraining.
 - Added a private per-image FP/FN error analysis tool; actual cable/carpet
   experimental data remain **uncollected**.
 
@@ -32,10 +38,18 @@ project has **not** yet published its portfolio `v1.0.0` release.
 - Added Python 3.11/3.12 and browser JavaScript CI tests, static Docker
   Compose security checks and a [successful actual Linux CPU image build and
   no-checkpoint HTTP API smoke](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/actions/runs/39095740246).
+- Verified no-network PaDiM/PatchCore model-class construction in the real Linux
+  container and captured dependency-version evidence (not checkpoint inference).
 - Added real local acceptance tools and opt-in authenticated operator
   write/review/report/cleanup; actual latest Mac checks are still pending.
 - Added a Git-tracked public-source hygiene check to flag private data,
   unreviewed media and high-confidence committed secrets.
+- Added a [dated reachable Git history security scan](reports/2026-10-19-git-history-audit.md)
+  with zero *recognized-pattern* findings; this does not establish total
+  secrets or licensing clearance.
+- Added the use-restricted [Responsible Use License v1.0](LICENSE) for project
+  source; separate dataset/media/pretrained-weight rights remain unresolved.
+- Added repository-wide Markdown link verification and safe merged-topic-branch cleanup.
 - Rebuilt project README/model card and froze the AI Engineer portfolio
   release criteria, demo storyboard and owner handoff.
 
@@ -46,8 +60,8 @@ project has **not** yet published its portfolio `v1.0.0` release.
 - **Current runtime:** latest full Mac operator workflow and private
   checkpoint-backed Docker acceptance.
 - **Presentation and legal:** authentic rights-cleared screenshots/video,
-  review of the newly added responsible-use source license, upstream dataset/weight/media rights audit,
-  clean tagged GitHub release.
+  legal review of the use-restricted source license, upstream dataset/weight/media
+  rights clearance, and a real clean tagged GitHub release.
 
 **Release note:** A green offline CI or cloud image build without checkpoint
 weights does **not** prove actual industrial inference or production readiness.
