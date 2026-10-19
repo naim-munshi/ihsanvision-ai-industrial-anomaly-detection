@@ -21,16 +21,26 @@ python -m scripts.summarize_comparison \
   --runs-dir "$HOME/ihsanvision-artifacts/benchmark-bottle-seed42-2026-10-15"
 ```
 
-Then run the read-only portfolio evidence verifier, supplying the **actual** saved PatchCore smoke ZIP:
+Then run the read-only portfolio evidence verifier **using just the eight-file original archived benchmark**. It does **not** require an extra `benchmark_summary.md` (that file was not part of the original checksum manifest), and it does not require a later-created smoke ZIP:
 
 ```bash
 python -m scripts.verify_portfolio_evidence \
   --runs-dir "$HOME/ihsanvision-artifacts/benchmark-bottle-seed42-2026-10-15" \
-  --smoke-zip "$HOME/Downloads/ihsanvision_patchcore_smoke_evidence.zip" \
   --output "$HOME/ihsanvision-artifacts/portfolio-evidence-v1-audit.json"
 ```
 
-The verifier checks the bundled eight-file SHA-256 manifest, pairwise saved report/split consistency, saved Markdown summary and smoke ZIP. No model deserialization or dataset redistribution occurs. The user must inspect the output and keep it privately; a passing report is **artifact consistency evidence**, not proof of generalizable model accuracy.
+This verifies the original checksum manifest and rechecks the PaDiM/PatchCore saved report/metric/split consistency. If an optional `benchmark_summary.md` exists it **must exactly match** the freshly regenerated report; otherwise the output explicitly says `not_present_optional` and does not fabricate or write it.
+
+**Only if you independently preserved the real PatchCore smoke ZIP**, run a second audit at a **new output path**, adding:
+
+```bash
+python -m scripts.verify_portfolio_evidence \
+  --runs-dir "$HOME/ihsanvision-artifacts/benchmark-bottle-seed42-2026-10-15" \
+  --smoke-zip "/absolute/private/actual-patchcore-smoke.zip" \
+  --output "$HOME/ihsanvision-artifacts/portfolio-evidence-with-smoke-v1.json"
+```
+
+With no smoke ZIP, the result explicitly states `benchmark_evidence_verified_smoke_not_checked`; **it does not claim a smoke test passed**. If an explicitly supplied ZIP is missing or invalid, the command fails. No model deserialization or dataset redistribution occurs. A passing audit establishes **saved-artifact consistency**, not scientific replication or generalized model quality.
 
 ## B. Complete only the missing portfolio model pairs (Kaggle or compute)
 
