@@ -162,9 +162,10 @@ steps. [Demo storyboard](docs/portfolio-demo-storyboard.md) defines the
 rights-cleared screenshots and 90-second actual software recording.
 [Unreleased changelog](CHANGELOG.md) distinguishes implemented code from
 pending experiments and real runtime acceptance.
-[Source release hygiene](docs/release-source-hygiene.md) blocks accidental
-weights, private data and high-confidence secrets in public GitHub history
-at the HEAD checkout (historical commit audit remains manual).
+[Source release hygiene](docs/release-source-hygiene.md) audits the current
+Git-tracked files. A separate [actual historical Git object audit](reports/2026-10-19-git-history-audit.md)
+checked reachable past commits for a limited set of secrets and restricted assets;
+neither scan proves complete security, legal rights or release authorization.
 
 ## Portfolio release gates
 
@@ -182,4 +183,4 @@ The immutable [portfolio v1.0 plan](docs/portfolio-v1-plan.md) defines observabl
 
 The original project source code is available under the [IhsanVision.AI Responsible Use License v1.0](LICENSE): study, modify and share it for lawful, non-harmful purposes **only**. Harmful use is prohibited. This is a **source-available, use-restricted license, not an OSI-approved open-source license**. See [licensing and permitted uses](docs/licensing.md). This license **does not cover MVTec AD/AD2 datasets, pretrained weights or other third-party assets**; MVTec explicitly prohibits commercial dataset use without separate permission. Review rights before publishing images, checkpoints or a demo video.
 
-**IhsanVision.AI is a supervised research and portfolio tool, not a replacement for validated manufacturing quality assurance or safety-critical decisions.**
+**IhsanVision.AI is a normal-only, unsupervised anomaly-detection research and portfolio tool** (defect labels are used for held-out evaluation, not normal-image training). It is not a replacement for validated manufacturing quality assurance or safety-critical decisions.

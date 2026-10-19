@@ -2,7 +2,7 @@
 
 ## Status
 
-The source repository includes a CPU inference container and an isolated local Docker Compose configuration. **An actual Linux CPU Docker image build and no-checkpoint HTTP API smoke passed in GitHub Actions on 2026-10-18** ([verified run](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/actions/runs/39095740246)); **real trusted-checkpoint Docker inference, the owner's Mac build, cloud deployment and public security remain unverified**. Apple Silicon/runtime compatibility must still be checked on target hardware.
+The source repository includes a CPU inference container and isolated local Docker Compose configuration. **An actual Linux CPU Docker image build and no-checkpoint HTTP API smoke passed in GitHub Actions** ([verified run](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/actions/runs/39095740246)). A [later successful CPU run](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/actions/runs/39100705980) also imported installed PyTorch/Anomalib, instantiated both PaDiM and PatchCore model classes without pretrained downloads, verified `pip check` and archived installed package versions. **Neither run loaded trained Bottle checkpoints or tested defect inference.** The owner's Mac build, private-weight Docker inference, cloud deployment and public security remain unverified. Apple Silicon/runtime compatibility must still be checked on target hardware.
 
 The container is intended for **localhost experimentation only**. It is deliberately not exposed on a public interface. Real deployment requires a separate infrastructure/security review and HTTPS/gateway controls.
 
