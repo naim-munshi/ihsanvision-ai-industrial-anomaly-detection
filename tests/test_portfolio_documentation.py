@@ -46,6 +46,10 @@ def test_main_portfolio_scope_is_auditable_and_honest() -> None:
     assert "normal-only" in model.lower()
     assert "unsupervised" in model.lower()
     assert "The solution is supervised" not in plan
+    assert "is a supervised research" not in readme.lower()
+    assert "normal-only, unsupervised anomaly-detection" in readme.lower()
+    assert "historical commit audit remains manual" not in readme
+    assert "Git object audit" in readme
     for family in ("PaDiM", "PatchCore"):
         assert family in readme
         assert family in model
@@ -59,3 +63,17 @@ def test_main_portfolio_scope_is_auditable_and_honest() -> None:
     assert "four model/category runs" in (
         ROOT / "docs/portfolio-release-readiness.md"
     ).read_text(encoding="utf-8")
+
+
+def test_candidate_release_is_explicitly_unreleased_and_requires_real_external_evidence():
+    draft = (ROOT / "docs/release-notes-v1-candidate.md").read_text()
+    changelog = (ROOT / "CHANGELOG.md").read_text()
+    finishing = (ROOT / "FINISHING.md").read_text()
+    assert "NOT PUBLISHED" in draft
+    assert "Do not publish" in draft
+    assert "P4/P5" in draft and "P10" in draft
+    assert "0.9963" in draft and "0.6497" in draft
+    assert "not a GitHub Release" in draft or "not a GitHub Release" in draft
+    assert "v1.0.0" in changelog
+    assert "does not" in changelog.lower()
+    assert "release-notes-v1-candidate.md" in finishing
