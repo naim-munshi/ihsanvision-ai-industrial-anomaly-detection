@@ -16,7 +16,7 @@
 <section class="panel"><h2>Inspect an image</h2><p>Choose one PNG, JPG, WEBP or BMP image (up to 10 MiB).</p><div class="model-control"><label for="category-choice">Product category</label><select id="category-choice" disabled><option value="">Checking trained categories...</option></select><small id="category-hint">Only trained categories registered by the operator are available.</small></div><div class="model-control"><label for="model-choice">Detection model</label><select id="model-choice" disabled><option value="">Checking available models...</option></select><small id="model-hint">Only server-configured, trusted model checkpoints can be selected.</small></div>
 <div class="api-key-control"><label for="api-key">API key (only when your server requires one)</label><input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Optional for local development"><small>Kept only in this browser tab's memory, never stored in the page or URL. Use HTTPS for any remote access.</small></div>
 <div class="upload"><input id="file" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" aria-describedby="filename error"><strong>Click to select a product image</strong><small id="filename">No image selected</small></div><img id="preview" class="preview" alt="Selected image preview">
-<button class="action" id="analyze" disabled>Analyze image</button><p id="error" role="alert"></p></section>
+<button class="action" id="analyze" disabled>Analyze image</button><button class="action" id="clear-selection" type="button">Clear selection and result</button><p id="error" role="alert"></p></section>
 <section class="panel"><h2>Inspection output</h2><div id="empty"><p>Your result will appear here when the model finishes inference.</p></div>
 <div class="result" id="result" aria-live="polite"><div class="eyebrow">Raw anomaly score</div><div id="score" class="score">—</div><div class="meta"><span id="label" class="chip"></span><span id="model" class="chip"></span><span id="result-category" class="chip"></span><span id="result-file" class="chip"></span><span id="latency" class="chip"></span></div><h2>Relative anomaly localization</h2><img class="map" id="heatmap" alt="Anomaly visualization overlay"><p class="note">Score is not a probability. Overlay contrast is normalized per image and is not a binary segmentation mask.</p></div>
 </section></div>
@@ -35,6 +35,7 @@ function resetResult(){
   $("heatmap").removeAttribute("src");
 }
 function updateAnalyzeButton(){
+  $("clear-selection").disabled=inFlight;
   analyzeButton.disabled=inFlight || !modelsAvailable || !fileValid || !modelChoice.value;
 }
 function refreshAvailableModels(preferred){
@@ -210,5 +211,19 @@ analyzeButton.addEventListener("click",async()=>{
     updateAnalyzeButton();
   }
 });
+$("clear-selection").addEventListener("click",()=>{
+  if(inFlight)return;
+  fileInput.value="";
+  fileValid=false;
+  if(previewUrl)URL.revokeObjectURL(previewUrl);
+  previewUrl=undefined;
+  $("preview").removeAttribute("src");
+  $("preview").style.display="none";
+  $("filename").textContent="No image selected";
+  $("error").textContent="";
+  resetResult();
+  updateAnalyzeButton();
+});
 loadModels();
 </script></body></html>
+

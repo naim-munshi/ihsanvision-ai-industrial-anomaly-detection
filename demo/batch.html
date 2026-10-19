@@ -39,7 +39,7 @@ th,td{padding:12px 10px;border-bottom:1px solid #29405b;white-space:nowrap}th{co
 <small id="selection">No images selected</small>
 <label for="api-key">API key (only if configured on your local server)</label>
 <input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Optional private inference key">
-<div class="actions"><button id="run" disabled>Inspect images</button><button id="download" class="secondary" disabled>Export CSV</button></div>
+<div class="actions"><button id="run" disabled>Inspect images</button><button id="clear-selection" class="secondary" type="button">Clear batch</button><button id="download" class="secondary" disabled>Export CSV</button></div>
 <p id="error" role="alert"></p><p id="progress" aria-live="polite">Waiting for trained model discovery.</p>
 </section>
 <section class="panel"><h2>Inspection lot results</h2>
@@ -85,6 +85,8 @@ function updateControls(){
   category.disabled=busy || Object.keys(catalog).length===0;
   model.disabled=busy || !catalog[category.value]?.length;
   images.disabled=busy;
+  $("api-key").disabled=busy;
+  $("clear-selection").disabled=busy;
   lot.disabled=busy;
   download.disabled=busy || lastRows.length===0;
 }
@@ -222,5 +224,16 @@ download.addEventListener("click",()=>{
   anchor.click();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 });
+$("clear-selection").addEventListener("click",()=>{
+  if(busy)return;
+  images.value="";
+  lot.value="";
+  resetResults();
+  $("selection").textContent="No images selected";
+  $("error").textContent="";
+  $("progress").textContent="Batch cleared. Saved private history is unchanged.";
+  updateControls();
+});
 discover();
 </script></body></html>
+

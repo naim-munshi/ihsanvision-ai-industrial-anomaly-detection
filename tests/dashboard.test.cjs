@@ -223,3 +223,16 @@ test("legacy /models response still defaults to bottle without category query", 
   await ui.elem("analyze").listeners.click();
   assert.ok(ui.fetchCalls.some(row => row.url === "/predict?model=padim"));
 });
+
+
+test("clear selection releases the preview and blocks resubmission", async () => {
+  const ui = await mount();
+  selectFile(ui, validFile);
+  await ui.elem("analyze").listeners.click();
+  ui.elem("clear-selection").listeners.click();
+  assert.equal(ui.elem("file").value, "");
+  assert.equal(ui.elem("analyze").disabled, true);
+  assert.equal(ui.elem("result").style.display, "none");
+  assert.equal(ui.elem("preview").src, undefined);
+  assert.deepEqual(ui.revocations, ["blob:test-image"]);
+});
