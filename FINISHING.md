@@ -213,6 +213,15 @@ will reject media without a rights register.
 
 ## E. Release — only once every gate passes
 
+A conservative, prewritten [v1.0.0 candidate release-note draft](docs/release-notes-v1-candidate.md)
+is already in Git. It currently contains only **historical verified Bottle
+observations** and explicitly lists P4–P10 evidence still missing. After all
+real gate evidence exists, revise the draft to include the actual Cable/Carpet
+metrics, successful current-build Mac/Docker validation, permission-cleared
+media and legal review; only then copy the approved final notes into an
+actual GitHub release. **Do not publish the draft as if v1.0 were finished.**
+
+
 1. Recheck [fixed P1–P10 acceptance gates](docs/portfolio-v1-plan.md) and
    update [GitHub issue #53](https://github.com/naim-munshi/ihsanvision-ai-industrial-anomaly-detection/issues/53)
    with dated private evidence/status and no secrets.
