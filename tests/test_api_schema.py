@@ -1,11 +1,15 @@
 """Typed FastAPI output contract: no NaN/Inf scores or negative latency."""
 from io import BytesIO
+from pathlib import Path
+import tomllib
+
 
 from fastapi.testclient import TestClient
 from PIL import Image
 from pydantic import ValidationError
 import pytest
 
+from ihsanvision import __version__
 from src.api import create_app
 from src.schemas import PredictionResponse
 
@@ -71,3 +75,13 @@ def test_api_serializes_optional_cache_field(monkeypatch, tmp_path):
     assert result.status_code == 200
     assert result.json()["model_reused"] is True
     assert result.json()["predicted_anomaly"] is None
+
+
+def test_openapi_package_and_project_metadata_share_current_version():
+    project = tomllib.loads(
+        (Path(__file__).resolve().parents[1] / "pyproject.toml").read_text()
+    )
+    version = project["project"]["version"]
+    assert version == __version__
+    client = TestClient(create_app())
+    assert client.get("/openapi.json").json()["info"]["version"] == version
