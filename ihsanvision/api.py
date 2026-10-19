@@ -15,6 +15,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, Response
 from PIL import Image, UnidentifiedImageError
 
+from . import __version__
 from .config import MODELS
 from .approvals import configured_approvals, restrict_catalog
 from .history import InspectionHistory
@@ -104,7 +105,7 @@ def _run_prediction(payload: bytes, suffix: str, checkpoint: Path, model_name: s
 def create_app(predict_fn=None) -> FastAPI:
     app = FastAPI(
         title="IhsanVision AI",
-        version="0.3.1",
+        version=__version__,
         description="Defect detection and localization. Not for safety-critical decisions.",
     )
     # Runs before FastAPI reads multipart bodies; default localhost mode is still unkeyed.
