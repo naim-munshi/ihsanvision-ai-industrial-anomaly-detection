@@ -32,7 +32,8 @@ small{color:#9eb0c6}.foot{margin-top:25px;font-size:12px;color:#708ba4}
 <input id="lot-filter" type="text" maxlength="40" placeholder="LOT-2026-A01" autocomplete="off" spellcheck="false">
 <small>Use opaque production lot codes only; avoid names or personal information.</small>
 <div class="toolbar">
-<button id="load">Load private history</button>
+<button id="load">Unlock / refresh history</button>
+<button id="lock" class="secondary" type="button">Lock and clear</button>
 <button id="lot-summary" class="secondary">Show lot overview</button>
 <button id="version-summary" class="secondary">Show model versions</button>
 <button id="export-csv" class="secondary" type="button">Export private CSV</button>
@@ -84,6 +85,7 @@ function setBusy(value){
   busy=value;
   $("api-key").disabled=value;
   $("load").disabled=value;
+  $("lock").disabled=value;
   $("lot-summary").disabled=value;
   $("version-summary").disabled=value;
   $("export-csv").disabled=value;
@@ -98,6 +100,35 @@ function clearRows(){
   active=false;
   setBusy(false);
 }
+function clearSummaries(){
+  $("lot-rows").replaceChildren();
+  $("version-rows").replaceChildren();
+  $("lot-error").textContent="";
+  $("version-error").textContent="";
+}
+function clearPrivateView(){
+  clearRows();
+  clearSummaries();
+  offset=0;
+  $("error").textContent="";
+  $("status").textContent="";
+}
+async function privateFetch(url, options){
+  const response=await fetch(url,{...options,cache:"no-store"});
+  if(response.status===401 || response.status===403){
+    clearPrivateView();
+    $("api-key").value="";
+    throw new Error("Invalid operator API key. Unlock history again.");
+  }
+  return response;
+}
+$("lock").addEventListener("click",()=>{
+  if(busy)return;
+  clearPrivateView();
+  $("api-key").value="";
+  $("lot-filter").value="";
+  $("status").textContent="Locked. Key and displayed private records cleared from this page. Saved records are unchanged.";
+});
 function cell(row,text,className){
   const td=document.createElement("td");
   td.textContent=String(text??"—");
@@ -161,7 +192,7 @@ async function loadPage(nextOffset=0){
   $("error").textContent="";
   $("status").textContent="Loading private inspection metadata...";
   try{
-    const response=await fetch("/inspections?limit="+LIMIT+"&offset="+nextOffset+
+    const response=await privateFetch("/inspections?limit="+LIMIT+"&offset="+nextOffset+
       (key?"&lot_id="+encodeURIComponent(key):""),{headers:headers()});
     if(!response.ok){
       if(response.status===401)throw new Error("Operator API key is missing or invalid.");
@@ -192,7 +223,7 @@ async function saveReview(id,verdict){
   setBusy(true);
   $("error").textContent="";
   try{
-    const response=await fetch("/inspections/"+encodeURIComponent(id)+"/review",{
+    const response=await privateFetch("/inspections/"+encodeURIComponent(id)+"/review",{
       method:"PATCH",
       headers:{...headers(),"Content-Type":"application/json"},
       body:JSON.stringify({verdict:verdict||null})
@@ -205,6 +236,7 @@ async function saveReview(id,verdict){
     return;
   }
   setBusy(false);
+  clearSummaries();
   await loadPage(offset);
 }
 async function deleteRecord(id){
@@ -213,7 +245,7 @@ async function deleteRecord(id){
   setBusy(true);
   $("error").textContent="";
   try{
-    const response=await fetch("/inspections/"+encodeURIComponent(id),{
+    const response=await privateFetch("/inspections/"+encodeURIComponent(id),{
       method:"DELETE",headers:headers()
     });
     if(!response.ok)throw new Error(response.status===401?"Invalid operator API key.":"Delete failed (HTTP "+response.status+").");
@@ -223,6 +255,7 @@ async function deleteRecord(id){
     return;
   }
   setBusy(false);
+  clearSummaries();
   await loadPage(Math.max(0,offset>=total-1?offset-LIMIT:offset));
 }
 async function loadLotOverview(){
@@ -233,7 +266,7 @@ async function loadLotOverview(){
   setBusy(true);
   $("lot-error").textContent="";
   try{
-    const response=await fetch("/inspection-lots?limit=100&offset=0",{headers:headers()});
+    const response=await privateFetch("/inspection-lots?limit=100&offset=0",{headers:headers()});
     if(!response.ok)throw new Error(response.status===401?
       "Invalid operator API key.":"Cannot load private lot summary (HTTP "+response.status+").");
     const data=await response.json();
@@ -270,7 +303,7 @@ async function loadVersionSummary(){
   try{
     const url="/inspection-model-versions?limit=100&offset=0"+
       (key?"&lot_id="+encodeURIComponent(key):"");
-    const response=await fetch(url,{headers:headers()});
+    const response=await privateFetch(url,{headers:headers()});
     if(!response.ok)throw new Error(response.status===401?
       "Invalid operator API key.":"Cannot load model versions (HTTP "+response.status+").");
     const payload=await response.json();
@@ -313,7 +346,7 @@ async function exportPrivateCsv(){
   $("error").textContent="";
   try{
     const route="/inspections/export.csv?limit=500"+(key?"&lot_id="+encodeURIComponent(key):"");
-    const response=await fetch(route,{headers:headers(),cache:"no-store"});
+    const response=await privateFetch(route,{headers:headers(),cache:"no-store"});
     if(!response.ok)throw new Error(response.status===401?
       "Invalid operator API key.":"Private export failed (HTTP "+response.status+").");
     const data=await response.blob();
@@ -333,10 +366,11 @@ async function exportPrivateCsv(){
 $("export-csv").addEventListener("click",exportPrivateCsv);
 
 
-$("lot-filter").addEventListener("input",()=>{clearRows();$("error").textContent="";});
+$("lot-filter").addEventListener("input",()=>{clearPrivateView();});
 $("load").addEventListener("click",()=>loadPage(0));
 $("prev").addEventListener("click",()=>loadPage(Math.max(0,offset-LIMIT)));
 $("next").addEventListener("click",()=>loadPage(offset+LIMIT));
-$("api-key").addEventListener("input",()=>{clearRows();$("error").textContent="";$("status").textContent="";});
+$("api-key").addEventListener("input",()=>{clearPrivateView();});
 </script>
 </body></html>
+

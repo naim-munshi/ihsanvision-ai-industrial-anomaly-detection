@@ -79,3 +79,35 @@ test("refuses malformed lot IDs and handles server errors without download", asy
   assert.match(ui.get("error").textContent, /Invalid operator API key/);
   assert.equal(ui.downloaded.length, 0);
 });
+
+
+test("locking clears key and all private views without deleting server records", async () => {
+  const ui = mount(async () => { throw new Error("must not fetch"); });
+  ui.get("api-key").value = "private-key";
+  for (const id of ["rows", "lot-rows", "version-rows"]) ui.get(id).children.push({textContent:"private"});
+  ui.get("lock").listeners.click();
+  assert.equal(ui.get("api-key").value, "");
+  for (const id of ["rows", "lot-rows", "version-rows"]) assert.equal(ui.get(id).children.length, 0);
+  assert.equal(ui.calls.length, 0);
+  assert.match(ui.get("status").textContent, /Locked/);
+});
+
+test("changing credentials or lot filter clears every stale summary", () => {
+  const ui = mount(async () => { throw new Error("must not fetch"); });
+  for (const control of ["api-key", "lot-filter"]) {
+    for (const id of ["rows", "lot-rows", "version-rows"]) ui.get(id).children.push({});
+    ui.get(control).listeners.input();
+    for (const id of ["rows", "lot-rows", "version-rows"]) assert.equal(ui.get(id).children.length, 0);
+  }
+});
+
+test("revoked key clears previously displayed records and credentials", async () => {
+  const ui = mount(async () => ({ok:false,status:401}));
+  ui.get("api-key").value = "revoked-key";
+  for (const id of ["rows", "lot-rows", "version-rows"]) ui.get(id).children.push({});
+  await ui.get("export-csv").listeners.click();
+  assert.equal(ui.get("api-key").value, "");
+  for (const id of ["rows", "lot-rows", "version-rows"]) assert.equal(ui.get(id).children.length, 0);
+  assert.equal(ui.downloaded.length, 0);
+  assert.equal(ui.calls[0].options.cache, "no-store");
+});

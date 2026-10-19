@@ -176,3 +176,27 @@ test("rejects unsafe lot identifiers and preserves untracked legacy behavior", a
   assert.equal(ui.fetchCalls.find(x => x.url.startsWith("/predict")).url,
                "/predict?model=padim");
 });
+
+
+test("batch controls keep the operator key fixed during inference", async () => {
+  let release;
+  const pending = new Promise(resolve => { release = resolve; });
+  const ui = await mount({predict:async () => {
+    await pending;
+    return {ok:true,status:200,json:async()=>({model:"padim",category:"bottle",anomaly_score:0.2,predicted_anomaly:false})};
+  }});
+  ui.get("images").files=[sample()];
+  ui.get("images").handlers.change();
+  const request=ui.get("run").handlers.click();
+  assert.equal(ui.get("api-key").disabled,true);
+  assert.equal(ui.get("clear-selection").disabled,true);
+  release();
+  await request;
+  assert.equal(ui.get("api-key").disabled,false);
+  // Native file inputs clear FileList when value is assigned an empty string.
+  Object.defineProperty(ui.get("images"), "value", {set(v){if(v === "")this.files=[];}});
+  ui.get("clear-selection").handlers.click();
+  assert.equal(ui.get("rows").children.length,0);
+  assert.equal(ui.get("run").disabled,true);
+  assert.equal(ui.get("download").disabled,true);
+});
