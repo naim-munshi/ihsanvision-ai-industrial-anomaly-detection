@@ -1,4 +1,5 @@
-# Local CPU-only research prototype. Build/run validation remains pending.
+# Local CPU research prototype. GitHub Linux image build and no-checkpoint ML
+# class/API startup tests passed; Mac/private-weight inference remains pending.
 FROM python:3.12-slim-bookworm
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
