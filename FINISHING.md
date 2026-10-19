@@ -89,6 +89,25 @@ Never publish private sample IDs, datasets, checkpoints, raw CSV or
 unlicensed example images. Review genuine false-positive/false-negative
 cases; do not invent an error when the sample has none.
 
+## A2. On your Mac — independently verify the preserved Bottle archive
+
+The original Bottle backup contains **eight checksum-listed files plus
+`SHA256SUMS.txt`**. An extra `benchmark_summary.md` is **not required**:
+the verifier reconstructs the paired comparison in memory. A later-created
+smoke ZIP is also optional; if not supplied, the report explicitly states
+that the smoke evidence was not checked. Use a **new private output path**:
+
+```bash
+python -m scripts.verify_portfolio_evidence \
+  --runs-dir "$HOME/ihsanvision-artifacts/benchmark-bottle-seed42-2026-10-15" \
+  --output "$HOME/ihsanvision-artifacts/portfolio-bottle-audit-v1.json"
+```
+
+If you have the separately preserved **actual** PatchCore smoke ZIP, add
+`--smoke-zip /absolute/private/actual-patchcore-smoke.zip` and save a
+**different** audit file. Do not invent smoke evidence or overwrite existing
+private reports. Passing the archive check does not fulfill P4–P10.
+
 ## B. On your Mac — real Bottle app end-to-end
 
 Use your existing trusted Bottle artifacts stored **outside Git**:
