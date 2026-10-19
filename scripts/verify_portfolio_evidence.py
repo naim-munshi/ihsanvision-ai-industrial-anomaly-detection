@@ -1,15 +1,21 @@
 """Read-only verification of saved benchmark and PatchCore smoke artifacts.
 
 No training, checkpoint deserialization, model publishing or remote calls.
-Verifies original per-file SHA-256 manifest, cross-report benchmark consistency,
-saved Markdown summary and real smoke ZIP contents. This is an *artifact evidence*
+Verifies original per-file SHA-256 manifest and cross-report benchmark consistency.
+If present, also checks a saved Markdown summary and user-supplied smoke ZIP.
+An absent optional item is marked not checked, never treated as verified. This is an *artifact evidence*
 gate only: passing it NEVER means a public or commercial release is authorized.
 
 Usage:
  python -m scripts.verify_portfolio_evidence \
    --runs-dir "$HOME/ihsanvision-artifacts/benchmark-bottle-seed42-2026-10-15" \
-   --smoke-zip "$HOME/Downloads/ihsanvision_patchcore_smoke_evidence.zip" \
    --output "$HOME/ihsanvision-artifacts/portfolio_evidence_audit.json"
+
+ # Optional only when you independently preserved the actual smoke ZIP:
+ python -m scripts.verify_portfolio_evidence \
+   --runs-dir "$HOME/ihsanvision-artifacts/benchmark-bottle-seed42-2026-10-15" \
+   --smoke-zip "$HOME/Downloads/ihsanvision_patchcore_smoke_evidence.zip" \
+   --output "$HOME/ihsanvision-artifacts/portfolio_evidence_audit_with_smoke.json"
 """
 from __future__ import annotations
 
@@ -83,14 +89,32 @@ def verify_manifest(runs_dir: Path) -> dict:
 
 
 def verify_summary(runs_dir: Path) -> dict:
-    """Validate exact metrics/manifests via existing read-only benchmark auditor."""
+    """Regenerate and verify original saved comparison; compare optional Markdown.
+
+    The owner's checksum-verified original 8-file archive intentionally does
+    not contain benchmark_summary.md: this report was an optional, later
+    generated artifact. Never block authentic evidence on a missing optional
+    presentation file, and never write a new file during verification.
+    """
+    regenerated = summarize(runs_dir)  # validates saved scores and paired paths
     path = Path(runs_dir) / "benchmark_summary.md"
-    if not path.is_file():
-        raise FileNotFoundError("Missing benchmark_summary.md")
-    regenerated = summarize(runs_dir)
-    if path.read_text(encoding="utf-8") != regenerated:
-        raise ValueError("Saved benchmark summary differs from source reports")
-    return {"report_consistency": "verified", "saved_summary_matches": True}
+    if path.is_symlink():
+        raise ValueError("Optional saved benchmark summary cannot be a symlink")
+    if path.exists():
+        if not path.is_file():
+            raise ValueError("Optional saved benchmark summary must be a file")
+        if path.read_text(encoding="utf-8") != regenerated:
+            raise ValueError("Saved benchmark summary differs from source reports")
+        saved_matches = True
+        summary_status = "verified"
+    else:
+        saved_matches = None
+        summary_status = "not_present_optional"
+    return {
+        "report_consistency": "verified",
+        "saved_summary_status": summary_status,
+        "saved_summary_matches": saved_matches,
+    }
 
 
 def verify_smoke_zip(path: Path) -> dict:
@@ -121,34 +145,42 @@ def verify_smoke_zip(path: Path) -> dict:
             "status": "single-image-inference-passed", "overlay_dimensions": dimensions}
 
 
-def verify(runs_dir: Path, smoke_zip: Path) -> dict:
-    result = {
+def verify(runs_dir: Path, smoke_zip: Path | None = None) -> dict:
+    """Validate core Bottle evidence; opt in to checking an actual saved smoke ZIP."""
+    manifest = verify_manifest(runs_dir)
+    benchmark = verify_summary(runs_dir)
+    smoke = (verify_smoke_zip(smoke_zip) if smoke_zip is not None
+             else {"status": "not_supplied_not_checked"})
+    return {
         "schema_version": 1,
-        "status": "artifact_evidence_verified",
+        "status": ("artifact_evidence_verified" if smoke_zip is not None
+                   else "benchmark_evidence_verified_smoke_not_checked"),
         "scientific_replication": False,
         "public_release_authorized": False,
         "source": "user_owned_local_saved_artifacts",
-        "benchmark_manifest": verify_manifest(runs_dir),
-        "benchmark": verify_summary(runs_dir),
-        "patchcore_smoke": verify_smoke_zip(smoke_zip),
+        "benchmark_manifest": manifest,
+        "benchmark": benchmark,
+        "patchcore_smoke": smoke,
         "limitations": [
             "Checks original included checksums; cannot establish independent provenance.",
             "Benchmark consistency does not replicate training or prove generalized model quality.",
+            "Absent optional benchmark_summary.md is not evidence of a saved Markdown file.",
+            "No smoke ZIP supplied means original smoke inference is NOT revalidated.",
             "A single defective-image smoke result does not measure defect recall.",
             "No source image/mask/checkpoint is uploaded or deserialized.",
             "Licensing, security, actual deployment, end-to-end real UI and video remain separate release gates.",
         ],
     }
-    return result
 
 
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--runs-dir", required=True, type=Path)
-    parser.add_argument("--smoke-zip", required=True, type=Path)
+    parser.add_argument("--smoke-zip", type=Path,
+                        help="Optional existing PatchCore smoke ZIP; if absent, smoke is not checked")
     parser.add_argument("--output", type=Path, help="New JSON file; existing files are never overwritten")
     args = parser.parse_args(argv)
-    if args.output is not None and args.output.exists():
+    if args.output is not None and (args.output.exists() or args.output.is_symlink()):
         parser.error(f"Report already exists: {args.output}")
     try:
         report = verify(args.runs_dir, args.smoke_zip)
