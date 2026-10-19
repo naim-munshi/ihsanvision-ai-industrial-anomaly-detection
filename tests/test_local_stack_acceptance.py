@@ -137,3 +137,40 @@ def test_operator_mode_cleans_temporary_rows_if_inference_fails(monkeypatch, tmp
             tmp_path / "defect.png", require_auth=True, check_operator=True,
         )
     assert cleaned == ["f" * 32]
+
+
+@pytest.mark.parametrize("failure_stage", ["operator", "cleanup"])
+def test_operator_failures_never_write_success_evidence(monkeypatch, tmp_path, failure_stage):
+    mock_stack(monkeypatch)
+    monkeypatch.setenv("IHSANVISION_CLIENT_API_KEY", "test-only-key")
+    monkeypatch.setattr(stack, "assert_unauthenticated_prediction_denied", lambda origin: None)
+    recorded = ["a" * 32, "b" * 32, "c" * 32, "d" * 32]
+    cleaned = []
+
+    def fake_accept(*args, inspection_sink=None, **kwargs):
+        inspection_sink.extend(recorded)
+        return {"status": "passed", "results": []}
+
+    def operator_result(*args):
+        if failure_stage == "operator":
+            raise RuntimeError("operator review failed")
+        return {"status": "operator_workflow_passed"}
+
+    def cleanup(origin, ids):
+        cleaned.extend(ids)
+        if failure_stage == "cleanup":
+            raise RuntimeError("temporary inspection cleanup failed")
+
+    monkeypatch.setattr(stack, "accept", fake_accept)
+    monkeypatch.setattr(stack, "image_sample", lambda path: {"png_bytes": b"png"})
+    monkeypatch.setattr(stack, "verify_operator_workflow", operator_result)
+    monkeypatch.setattr(stack, "cleanup_accepted_inspections", cleanup)
+    output = tmp_path / "acceptance.json"
+    with pytest.raises(SystemExit, match="Local stack acceptance FAILED"):
+        stack.main([
+            "--normal", str(tmp_path / "normal.png"),
+            "--defective", str(tmp_path / "defect.png"),
+            "--output", str(output), "--require-auth", "--operator-workflow",
+        ])
+    assert cleaned == recorded
+    assert not output.exists()
