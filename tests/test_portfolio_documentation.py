@@ -73,7 +73,7 @@ def test_candidate_release_is_explicitly_unreleased_and_requires_real_external_e
     assert "Do not publish" in draft
     assert "P4/P5" in draft and "P10" in draft
     assert "0.9963" in draft and "0.6497" in draft
-    assert "not a GitHub Release" in draft or "not a GitHub Release" in draft
+    assert "not a GitHub Release" in " ".join(draft.split())
     assert "v1.0.0" in changelog
-    assert "does not" in changelog.lower()
+    assert "does **not** prove actual industrial inference" in changelog
     assert "release-notes-v1-candidate.md" in finishing
