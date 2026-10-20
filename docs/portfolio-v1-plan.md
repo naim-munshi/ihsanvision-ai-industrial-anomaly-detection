@@ -1,5 +1,7 @@
 # IhsanVision.AI — fixed AI engineering portfolio v1.0 plan
 
+**Scope amended 2026-10-20:** The owner expanded the pre-release portfolio to **five categories × two models (10 runs)**. The active category scope, reported new run evidence, and updated release acceptance are in the [five-category extension](portfolio-five-category-extension.md). This document preserves the earlier **historical three-category baseline**; its frozen three-category assertions, training counts, and examples are **not the current complete release target**. The security, deployment, media, and rights gates continue to apply.
+
 **Frozen scope:** Three classic MVTec AD categories (**bottle, cable, carpet**) with two anomaly detectors (**PaDiM and PatchCore**); one usable operator inspection application; transparent evaluation, runtime evidence, documentation, permitted demo media and a reviewed GitHub release.
 
 **Audience:** AI/ML Engineer and Applied ML Software Engineer interviewers. A successful repository must demonstrate reproducible ML methodology **and** the ability to ship/test model-backed software. Industrial/commercial certification is **not** claimed.
