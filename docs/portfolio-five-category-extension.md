@@ -4,7 +4,7 @@
 
 ## What has actually been observed
 
-The owner supplied executed Kaggle logs on 2026-10-20 for Cable/Carpet/Metal Nut/Capsule × PaDiM/PatchCore, using a GPU-enabled MVTec AD mount and saved seed-42 model/report/split triples. The resumable runner reported `trained_and_verified` for all eight new runs and ultimately reported **zero pending jobs** for Cable/Carpet and for Metal Nut/Capsule separately. Original Bottle model evidence is documented in [PaDiM](../reports/2026-10-13-kaggle-padim-bottle.md) and [PatchCore](../reports/2026-10-15-kaggle-patchcore-bottle.md). **A single, independently validated ten-run report has not yet been generated** because the original Bottle artifacts were preserved separately on the owner's Mac.
+The owner supplied executed Kaggle logs on 2026-10-20 for Cable/Carpet/Metal Nut/Capsule × PaDiM/PatchCore, using a GPU-enabled MVTec AD mount and saved seed-42 model/report/split triples. The resumable runner reported `trained_and_verified` for all eight new runs and ultimately reported **zero pending jobs** for Cable/Carpet and for Metal Nut/Capsule separately. Original Bottle model evidence is documented in [PaDiM](../reports/2026-10-13-kaggle-padim-bottle.md) and [PatchCore](../reports/2026-10-15-kaggle-patchcore-bottle.md). **The owner subsequently assembled all ten private artifact triples on their Mac and ran the read-only `scripts.summarize_comparison --from-saved-runs` command successfully on 2026-10-20.** The report audited the saved checkpoint/report/split file contracts and exact same-category PaDiM/PatchCore train/validation/test path parity. This is owner-provided live Mac console evidence of saved-artifact consistency, not independent replication of training, matching dataset bytes, or successful live inference. A persistently saved private Markdown report and actual false-positive/negative review are still outstanding.
 
 | Category | Model | Image AUROC | Image F1 | Pixel AUROC | Pixel F1 | Source status |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
@@ -23,9 +23,9 @@ The owner supplied executed Kaggle logs on 2026-10-20 for Cable/Carpet/Metal Nut
 
 ## Archive and verification gate — outstanding owner actions
 
-1. Privately preserve the **eight new ZIP archives** (Cable, Carpet, Metal Nut, Capsule × both models) and a SHA-256 manifest, and confirm the archives were successfully downloaded and pass an independent checksum/integrity check on the Mac. Kaggle ZIP creation alone is **not** Mac backup acceptance. Do not upload MVTec images, checkpoints, split paths, auth tokens, or other restricted/private artifacts to public GitHub.
-2. Preserve the **two original Bottle** triples privately. Do **not** retrain or overwrite Bottle. Restore all **ten** trusted triples under a single private `runs_dir`; stage only into previously nonexistent directories. Original image-path manifests from the Bottle Kaggle session and newer sessions may differ: the comparator verifies PaDiM/PatchCore equality *per category*, not provenance or image hashes across sessions.
-3. Generate an actual ten-run summary, with all category/model triplets present and same-category split parity verified:
+1. **Mac SHA-256 verification observed:** the owner downloaded all eight new ZIP archives (Cable, Carpet, Metal Nut, Capsule × both models) and reported **eight `OK` results** from `shasum -a 256 -c SHA256SUMS-eight-kaggle.txt`. Maintain a second durable private copy; manifest matching verifies transport/integrity relative to that manifest, not model training provenance. Do not upload MVTec images, checkpoints, split paths, auth tokens, or other restricted/private artifacts to public GitHub.
+2. **All ten artifact triples were reported restored** to a distinct private Mac runs directory, with the original Bottle archive still preserved. Do **not** retrain or overwrite Bottle. Maintain offline private backups and investigate any future checksum changes. Original image-path manifests from the Bottle Kaggle session and newer sessions may differ: the comparator verifies PaDiM/PatchCore equality *per category*, not provenance or image hashes across sessions.
+3. **Ten-run read-only comparison passed on the owner's Mac (2026-10-20):** the utility inspected all ten checkpoint/report/split triples, verified five same-category paired path manifests and emitted the metrics and split counts. For reproducible private evidence, save a copy at a new location using:
 
    ```bash
    python -m scripts.summarize_comparison \
@@ -35,7 +35,7 @@ The owner supplied executed Kaggle logs on 2026-10-20 for Cable/Carpet/Metal Nut
      --output /absolute/private/portfolio-five-category.md
    ```
 
-   Save to a **new** output filename; the command deliberately refuses overwrites. A public metrics table should only be updated from the validated saved reports, and source paths/weights must stay private.
+   Save to a **new** output filename; the command deliberately refuses overwrites. This write-to-file step remains unconfirmed. Public metrics must be sourced from validated saved reports, with source paths/weights kept private.
 4. Independently review **real** held-out false positives/negatives and visibly failed overlays, or explicitly document where none were observed. The existing [error-case audit protocol](portfolio-error-analysis.md) must be adapted or invoked with these five selected categories using actual prediction records, never fabricated rows.
 
 ## Browser/deployment release acceptance — outstanding real tests
