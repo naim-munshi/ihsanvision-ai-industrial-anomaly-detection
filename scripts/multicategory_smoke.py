@@ -26,7 +26,7 @@ from .local_api_smoke import make_png, multipart_png
 CATEGORIES = ("bottle", "cable", "carpet", "metal_nut", "capsule")
 MODELS = ("padim", "patchcore")
 MAX_RESPONSE_BYTES = 12 * 1024 * 1024
-ID_PATTERN = re.compile(r"[0-9a-f]{32}\\Z")
+ID_PATTERN = re.compile(r"[0-9a-f]{32}\Z")
 
 
 def request_json(url: str, *, body: bytes | None = None,
@@ -104,7 +104,7 @@ def cleanup_inspection(origin: str, key: str, inspection_id: str) -> None:
 
 def verify_pairs(origin: str, categories: list[str], key: str,
                  *, timeout: float = 300) -> list[dict]:
-    if not key or any(ch in key for ch in "\\r\\n") or len(key) < 16:
+    if not key or any(ch in key for ch in "\r\n") or len(key) < 16:
         raise ValueError("Set a valid private operator key (never paste it in chat)")
     if not 1 <= timeout <= 600:
         raise ValueError("Timeout must be between 1 and 600 seconds")
@@ -160,7 +160,7 @@ def main(argv: list[str] | None = None) -> None:
     try:
         outcomes = verify_pairs(args.url, args.categories, key, timeout=args.timeout)
     except (OSError, ValueError, RuntimeError, error.URLError, json.JSONDecodeError) as exc:
-        parser.exit(1, f"Synthetic localhost acceptance FAILED: {exc}\\n")
+        parser.exit(1, f"Synthetic localhost acceptance FAILED: {exc}\n")
     print(json.dumps({"status": "synthetic_inference_passed",
                       "tested_pairs": len(outcomes),
                       "rows": outcomes,
