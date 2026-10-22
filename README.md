@@ -206,3 +206,11 @@ establish accuracy on factory or phone photographs. Physical Mac/iPhone camera
 and trained-checkpoint acceptance must still be verified locally. A phone's
 localhost refers to that phone, not the Mac server; this feature does not make
 the private Mac application remotely accessible.
+
+### Operator login
+
+Optional [local operator accounts](docs/operator-accounts.md) provide a sign-in
+page, revocable browser sessions, Admin/Operator permissions and named review
+attribution while retaining the existing dashboards and machine API-key scripts.
+Accounts share one installation's inspection history; this is not tenant isolation.
+Enable explicitly with a private account database and exact localhost/HTTPS origin.

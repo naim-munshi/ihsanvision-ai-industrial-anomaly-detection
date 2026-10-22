@@ -25,12 +25,14 @@ def positive_int_env(name: str, default: int, maximum: int) -> int:
     return parsed
 
 
-def require_predict_key(supplied: str | None) -> None:
+def require_predict_key(supplied: str | None, principal: dict | None = None) -> None:
     """Protect POST /predict when a key is explicitly configured."""
+    if principal is not None:
+        return  # Set only by the server-side session middleware.
     configured = os.getenv("IHSANVISION_API_KEY")
     if configured is None:
         return  # Backwards-compatible localhost developer mode; NOT public-safe.
-    if not configured or not hmac.compare_digest(supplied or "", configured):
+    if not configured or not hmac.compare_digest((supplied or "").encode(), configured.encode()):
         raise HTTPException(401, "Valid inference API key required", headers={"WWW-Authenticate": "ApiKey"})
 
 

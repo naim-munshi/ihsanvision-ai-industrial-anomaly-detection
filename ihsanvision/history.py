@@ -1,7 +1,8 @@
-"""Opt-in, private SQLite inspection ledger for a single local IhsanVision operator.
+"""Opt-in, private SQLite inspection ledger for a local IhsanVision installation.
 
 No raw image, filenames, image hashes, heatmap bytes, checkpoint paths or
 credentials are persisted. The only records are successful model predictions.
+New review audit rows additionally store the local account name or machine-key label.
 This is not a multi-tenant database, immutable compliance log or production
 event store. An operator must explicitly configure an absolute private path
 and an API key.
@@ -36,6 +37,10 @@ CREATE TABLE IF NOT EXISTS inspections (
 );
 CREATE INDEX IF NOT EXISTS inspections_created_at
 ON inspections(created_at DESC, id DESC);
+CREATE TABLE IF NOT EXISTS inspection_reviews (
+    id INTEGER PRIMARY KEY, inspection_id TEXT NOT NULL,
+    actor TEXT NOT NULL, verdict TEXT, changed_at TEXT NOT NULL
+);
 """
 _COLUMNS = ("id", "created_at", "category", "model",
             "predicted_anomaly", "anomaly_score", "latency_ms", "model_reused",
@@ -306,11 +311,11 @@ class InspectionHistory:
             ),
         }
 
-    def update_review(self, record_id: str, verdict: str | None) -> bool:
+    def update_review(self, record_id: str, verdict: str | None, actor: str = "api-key") -> bool:
         """Human adjudication is separate from immutable model prediction fields.
 
-        A null verdict clears the previous local review. No reviewer identity,
-        freeform notes or other personal details are persisted.
+        A null verdict clears the current review. A separate transactional audit
+        records the local account name (or api-key), verdict and timestamp.
         """
         if not isinstance(record_id, str) or not _ID.fullmatch(record_id):
             return False
@@ -320,6 +325,8 @@ class InspectionHistory:
             datetime.now(timezone.utc).isoformat(timespec="milliseconds")
             if verdict is not None else None
         )
+        if not isinstance(actor, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{2,63}", actor):
+            raise ValueError("Invalid review actor")
         with self._connect() as connection:
             result = connection.execute(
                 """UPDATE inspections
@@ -327,6 +334,11 @@ class InspectionHistory:
                    WHERE id = ?""",
                 (verdict, reviewed_at, record_id),
             )
+            if result.rowcount == 1:
+                connection.execute(
+                    "INSERT INTO inspection_reviews (inspection_id,actor,verdict,changed_at) VALUES (?,?,?,?)",
+                    (record_id, actor, verdict, datetime.now(timezone.utc).isoformat()),
+                )
             return result.rowcount == 1
 
     def delete_record(self, record_id: str) -> bool:

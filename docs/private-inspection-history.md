@@ -3,8 +3,7 @@
 ## What it does
 
 IhsanVision can now persist **successful** inspected-image prediction summaries to a
-private SQLite database across server restarts. This is an opt-in, **single-operator
-localhost** feature for internal industrial inspection workflows, **not** a production
+private SQLite database across server restarts. This is an opt-in, **local shared-installation** feature for internal industrial inspection workflows, **not** a production
 audit ledger or a multi-tenant SaaS database.
 
 Each row contains an opaque random inspection ID, UTC timestamp, configured
@@ -14,6 +13,10 @@ A human operator may independently mark `confirmed_normal`,
 `confirmed_anomaly`, or `needs_followup` after reviewing the inspected
 item; a separate `reviewed_at` timestamp is recorded. The original model
 prediction and score remain unchanged. Clearing a review returns it to null.
+New review changes also create a transactional `inspection_reviews` audit row
+with account name (or `api-key`), verdict and timestamp. See
+[optional operator accounts](operator-accounts.md). Older reviews retain their
+unknown identity; no attribution is fabricated.
 No raw image bytes, heatmaps, source filenames, **image** SHA-256 fingerprints,
 checkpoint files/paths, browser credentials or API keys are stored. An
 **SHA-256 checksum of the trusted checkpoint file** is additionally saved for
@@ -149,8 +152,8 @@ not logged.
   host disk encryption provides, or a regulatory-compliant electronic record.
 - The shared API key is single-operator authentication, **not** account-aware
   authorization, SSO, per-site tenancy or role-based access.
-- Human review and opaque lot associations are supported, but records do not
-  yet have operator identity, controlled lot master data, full checkpoint
+- Optional accounts attribute new review changes; key-based changes identify only
+  the shared machine key. Records still lack controlled lot master data, full checkpoint
   provenance/versions, failure-event audit trails, retention policies,
   scheduled backups or general schema migration governance. This update migrates existing PR #28
   private SQLite databases non-destructively by adding nullable review columns.

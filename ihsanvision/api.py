@@ -16,6 +16,7 @@ from fastapi.responses import FileResponse, Response
 from PIL import Image, UnidentifiedImageError
 
 from . import __version__
+from .auth import install_auth
 from .config import MODELS
 from .approvals import configured_approvals, restrict_catalog
 from .history import InspectionHistory
@@ -221,13 +222,13 @@ def create_app(predict_fn=None) -> FastAPI:
         }
 
     @app.get("/operator-metrics")
-    def operator_metrics(api_key: str | None = Header(
+    def operator_metrics(request: Request, api_key: str | None = Header(
         default=None, alias="X-IhsanVision-Key"
     )):
         """Operator-private, single-process counters; never model quality."""
         if not os.getenv("IHSANVISION_API_KEY"):
             raise HTTPException(503, "Operator metrics require configured private authentication")
-        require_predict_key(api_key)
+        require_predict_key(api_key, getattr(request.state, "principal", None))
         return telemetry.snapshot()
 
     @app.get("/models")
@@ -240,6 +241,7 @@ def create_app(predict_fn=None) -> FastAPI:
 
     @app.get("/inspections")
     async def inspections(
+        request: Request,
         limit: int = Query(default=50, ge=1, le=100),
         offset: int = Query(default=0, ge=0, le=1_000_000),
         lot_id: str | None = Query(default=None, pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]{2,39}$"),
@@ -247,11 +249,12 @@ def create_app(predict_fn=None) -> FastAPI:
     ):
         if history is None:
             raise HTTPException(503, "Private inspection history is disabled")
-        require_predict_key(api_key)
+        require_predict_key(api_key, getattr(request.state, "principal", None))
         return await run_in_threadpool(history.list_records, limit, offset, lot_id)
 
     @app.get("/inspections/export.csv")
     async def export_inspections(
+        request: Request,
         limit: int = Query(default=100, ge=1, le=500),
         lot_id: str | None = Query(default=None, pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]{2,39}$"),
         api_key: str | None = Header(default=None, alias="X-IhsanVision-Key"),
@@ -259,7 +262,7 @@ def create_app(predict_fn=None) -> FastAPI:
         """Export up to 500 metadata-only private inspections with CSV formula protection."""
         if history is None:
             raise HTTPException(503, "Private inspection history is disabled")
-        require_predict_key(api_key)
+        require_predict_key(api_key, getattr(request.state, "principal", None))
         content, count, truncated = await run_in_threadpool(
             export_history_csv, history, limit=limit, lot_id=lot_id
         )
@@ -275,17 +278,19 @@ def create_app(predict_fn=None) -> FastAPI:
 
     @app.get("/inspection-lots")
     async def inspection_lots(
+        request: Request,
         limit: int = Query(default=50, ge=1, le=100),
         offset: int = Query(default=0, ge=0, le=1_000_000),
         api_key: str | None = Header(default=None, alias="X-IhsanVision-Key"),
     ):
         if history is None:
             raise HTTPException(503, "Private inspection history is disabled")
-        require_predict_key(api_key)
+        require_predict_key(api_key, getattr(request.state, "principal", None))
         return await run_in_threadpool(history.list_lots, limit, offset)
 
     @app.get("/inspection-model-versions")
     async def inspection_model_versions(
+        request: Request,
         limit: int = Query(default=50, ge=1, le=100),
         offset: int = Query(default=0, ge=0, le=1_000_000),
         lot_id: str | None = Query(default=None, pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]{2,39}$"),
@@ -294,47 +299,51 @@ def create_app(predict_fn=None) -> FastAPI:
         """Private model-version observation; never expose checkpoints or paths."""
         if history is None:
             raise HTTPException(503, "Private inspection history is disabled")
-        require_predict_key(api_key)
+        require_predict_key(api_key, getattr(request.state, "principal", None))
         return await run_in_threadpool(
             history.list_model_versions, limit, offset, lot_id
         )
 
     @app.delete("/inspections/{inspection_id}")
     async def delete_inspection(
+        request: Request,
         inspection_id: str,
         api_key: str | None = Header(default=None, alias="X-IhsanVision-Key"),
     ):
         if history is None:
             raise HTTPException(503, "Private inspection history is disabled")
-        require_predict_key(api_key)
+        require_predict_key(api_key, getattr(request.state, "principal", None))
         if not await run_in_threadpool(history.delete_record, inspection_id):
             raise HTTPException(404, "Inspection record not found")
         return {"deleted": True, "inspection_id": inspection_id}
 
     @app.patch("/inspections/{inspection_id}/review")
     async def review_inspection(
+        request: Request,
         inspection_id: str,
         review: InspectionReviewUpdate,
         api_key: str | None = Header(default=None, alias="X-IhsanVision-Key"),
     ):
         if history is None:
             raise HTTPException(503, "Private inspection history is disabled")
-        require_predict_key(api_key)
+        require_predict_key(api_key, getattr(request.state, "principal", None))
         if not await run_in_threadpool(
-            history.update_review, inspection_id, review.verdict
+            history.update_review, inspection_id, review.verdict,
+            (getattr(request.state, "principal", None) or {}).get("username", "api-key")
         ):
             raise HTTPException(404, "Inspection record not found")
         return {"updated": True, "inspection_id": inspection_id, "verdict": review.verdict}
 
     @app.post("/predict", response_model=PredictionResponse)
     async def predict(
+        request: Request,
         file: UploadFile = File(...),
         model: str | None = Query(default=None),
         category: str | None = Query(default=None),
         lot_id: str | None = Query(default=None, pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]{2,39}$"),
         api_key: str | None = Header(default=None, alias="X-IhsanVision-Key"),
     ):
-        require_predict_key(api_key)
+        require_predict_key(api_key, getattr(request.state, "principal", None))
         if lot_id is not None and history is None:
             raise HTTPException(503, "Inspection lot tracking requires private history")
         if model is not None and model not in MODELS:
@@ -432,6 +441,7 @@ def create_app(predict_fn=None) -> FastAPI:
                 # Do not expose internal exception messages/checkpoint paths to clients.
                 raise HTTPException(500, "Inference failed; inspect server logs") from None
 
+    install_auth(app)
     return app
 
 

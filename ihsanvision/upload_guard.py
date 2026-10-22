@@ -54,7 +54,7 @@ class PredictBodyGuard:
             return
         try:
             supplied = credentials[0].decode("utf-8") if credentials else None
-            require_predict_key(supplied)
+            require_predict_key(supplied, scope.get("state", {}).get("principal"))
         except (UnicodeError, HTTPException):
             await JSONResponse(
                 {"detail": "Valid inference API key required"},

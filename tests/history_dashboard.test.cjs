@@ -10,7 +10,7 @@ const html = fs.readFileSync(path.join(__dirname, "../demo/history.html"), "utf8
 const script = html.match(/<script>([\s\S]*?)<\/script>/i)?.[1];
 assert.ok(script);
 
-function mount(handler) {
+function mount(handler, session = false) {
   const elements = new Map(), calls = [], downloaded = [], revoked = [];
   function create(tag) {
     return {
@@ -33,7 +33,7 @@ function mount(handler) {
   };
   vm.runInNewContext(script, {
     document: {getElementById: get, createElement: create},
-    window: {confirm: () => true},
+    window: {confirm: () => true, ihsanSession: session, ihsanRole: "operator"},
     fetch,
     URL: {createObjectURL: () => "blob:export", revokeObjectURL: value => revoked.push(value)},
     setTimeout: callback => callback(),
@@ -110,4 +110,13 @@ test("revoked key clears previously displayed records and credentials", async ()
   for (const id of ["rows", "lot-rows", "version-rows"]) assert.equal(ui.get(id).children.length, 0);
   assert.equal(ui.downloaded.length, 0);
   assert.equal(ui.calls[0].options.cache, "no-store");
+});
+
+
+test("account session can export history without copying an API key", async () => {
+  const ui = mount(async () => ({ok:true,status:200,blob:async()=>"csv",headers:{get:()=>"1"}}), true);
+  await ui.get("export-csv").listeners.click();
+  assert.equal(ui.calls.length, 1);
+  assert.equal(ui.calls[0].options.headers["X-IhsanVision-Key"], "");
+  assert.equal(ui.downloaded.length, 1);
 });

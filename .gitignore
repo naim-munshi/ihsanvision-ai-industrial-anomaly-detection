@@ -24,3 +24,10 @@ __pycache__/
 .DS_Store
 .ipynb_checkpoints/
 *.egg-info/
+
+# Private account/session and inspection databases
+*.sqlite
+*.sqlite3
+*.db
+*.sqlite*
+*.db-*

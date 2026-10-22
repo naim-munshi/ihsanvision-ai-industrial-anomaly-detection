@@ -76,6 +76,7 @@ not proven model accuracy.</p>
 </section>
 <div class="foot">IhsanVision.AI · Local operator-only prototype</div>
 </main>
+<script src="/auth-ui.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 const LIMIT=25;
@@ -176,13 +177,16 @@ function renderRecord(record){
   remove.type="button";
   remove.className="danger";
   remove.textContent="Delete";
+  if(typeof window!=="undefined" && window.ihsanSession && window.ihsanRole!=="admin"){
+    remove.disabled=true; remove.title="Administrator permission required";
+  }
   remove.setAttribute("aria-label","Delete inspection "+record.id);
   remove.addEventListener("click",()=>deleteRecord(record.id));
   action.appendChild(remove);
   $("rows").appendChild(tr);
 }
 async function loadPage(nextOffset=0){
-  if(busy||!$("api-key").value){$("error").textContent="Enter your operator API key.";return;}
+  if(busy||(!$("api-key").value && !(typeof window!=="undefined" && window.ihsanSession))){$("error").textContent="Enter your operator API key.";return;}
   const key=$("lot-filter").value;
   if(key && !/^[A-Za-z0-9][A-Za-z0-9_-]{2,39}$/.test(key)){
     $("error").textContent="Invalid lot ID format (3–40 ASCII letters, digits, _ or -).";
@@ -219,7 +223,7 @@ async function loadPage(nextOffset=0){
   }finally{setBusy(false);}
 }
 async function saveReview(id,verdict){
-  if(busy||!active||!$("api-key").value)return;
+  if(busy||!active||(!$("api-key").value && !(typeof window!=="undefined" && window.ihsanSession)))return;
   setBusy(true);
   $("error").textContent="";
   try{
@@ -240,7 +244,7 @@ async function saveReview(id,verdict){
   await loadPage(offset);
 }
 async function deleteRecord(id){
-  if(busy||!active||!$("api-key").value)return;
+  if(busy||!active||(!$("api-key").value && !(typeof window!=="undefined" && window.ihsanSession)))return;
   if(!window.confirm("Permanently delete this inspection record?"))return;
   setBusy(true);
   $("error").textContent="";
@@ -259,7 +263,7 @@ async function deleteRecord(id){
   await loadPage(Math.max(0,offset>=total-1?offset-LIMIT:offset));
 }
 async function loadLotOverview(){
-  if(busy||!$("api-key").value){
+  if(busy||(!$("api-key").value && !(typeof window!=="undefined" && window.ihsanSession))){
     $("lot-error").textContent="Enter the private operator API key first.";
     return;
   }
@@ -289,7 +293,7 @@ async function loadLotOverview(){
 }
 $("lot-summary").addEventListener("click",loadLotOverview);
 async function loadVersionSummary(){
-  if(busy||!$("api-key").value){
+  if(busy||(!$("api-key").value && !(typeof window!=="undefined" && window.ihsanSession))){
     $("version-error").textContent="Enter the private operator API key first.";
     return;
   }
@@ -333,7 +337,7 @@ async function loadVersionSummary(){
 }
 $("version-summary").addEventListener("click",loadVersionSummary);
 async function exportPrivateCsv(){
-  if(busy||!$("api-key").value){
+  if(busy||(!$("api-key").value && !(typeof window!=="undefined" && window.ihsanSession))){
     $("error").textContent="Enter your operator API key first.";
     return;
   }
