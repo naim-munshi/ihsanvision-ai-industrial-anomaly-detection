@@ -6,6 +6,7 @@
 <style>
 :root{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#ecf3ff;background:#0b1323;font-synthesis:none}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top left,#1c3454 0%,#0b1323 62%)}main{max-width:1050px;margin:auto;padding:36px 24px 80px}.top{display:flex;justify-content:space-between;align-items:center;gap:16px}.brand{font-weight:800;letter-spacing:-.04em;font-size:22px}.brand span{color:#67d9c2}.status{font-size:12px;background:#1a3141;padding:9px 13px;border-radius:30px;color:#b5deef}.hero{padding:83px 0 34px}.eyebrow{color:#67d9c2;text-transform:uppercase;font-size:12px;font-weight:700;letter-spacing:.15em}h1{font-size:clamp(34px,6vw,60px);letter-spacing:-.055em;margin:16px 0;line-height:1.06;max-width:770px}p{color:#a5b4cd;line-height:1.7}h2{font-size:18px}.main-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:30px}.panel{border:1px solid #29405b;border-radius:18px;padding:24px;background:#14243a}.upload{border:2px dashed #456985;border-radius:14px;padding:36px;text-align:center;background:#182b42;position:relative;cursor:pointer}.upload input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}.upload strong{display:block;font-size:17px}.upload small{display:block;color:#aabbd0;margin-top:12px}.preview{max-height:300px;width:100%;object-fit:contain;border-radius:10px;margin:18px auto;display:none}.action{border:0;border-radius:11px;background:#5ce0bf;color:#062434;font-weight:800;font-size:15px;padding:15px 22px;cursor:pointer;width:100%;margin-top:18px}.action:disabled{opacity:.5;cursor:not-allowed}.result{display:none}.score{font-size:48px;font-weight:800;letter-spacing:-.04em;margin:10px 0}.meta{display:flex;flex-wrap:wrap;gap:12px;color:#9eb0c6;font-size:13px}.chip{border-radius:20px;background:#263b52;padding:7px 11px}.note{font-size:12px;color:#91a8c0}#error{color:#ffb6ac;min-height:25px}img.map{display:block;width:100%;max-height:320px;object-fit:contain;background:#0b1323;border-radius:10px}.foot{margin-top:32px;font-size:12px;color:#708ba4}@media(max-width:760px){.main-grid{grid-template-columns:1fr}.hero{padding-top:55px}} .model-control{margin:20px 0 14px}.model-control label{display:block;font-size:13px;font-weight:700;color:#e6f3ff;margin-bottom:10px}.model-control select{width:100%;padding:13px;border-radius:11px;border:1px solid #456985;background:#102035;color:#ecf3ff;font:inherit;cursor:pointer}.model-control select:disabled{opacity:.65;cursor:not-allowed}.model-control small{display:block;margin-top:9px;color:#9eb0c6;line-height:1.5}
 .api-key-control{margin:10px 0 6px}.api-key-control label{display:block;font-size:13px;color:#e6f3ff;font-weight:700;margin-bottom:7px}.api-key-control input{width:100%;padding:12px;border-radius:10px;border:1px solid #456985;background:#102035;color:#ecf3ff;font:inherit}.api-key-control small{display:block;color:#9eb0c6;font-size:12px;line-height:1.5;margin-top:5px}
+.source-actions{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}.secondary{border:1px solid #456985;border-radius:10px;padding:12px 16px;background:#102035;color:#ecf3ff;font:inherit;cursor:pointer;min-height:44px;flex:1}.secondary:disabled{opacity:.5;cursor:not-allowed}.secondary:focus-visible,button:focus-visible{outline:3px solid #67d9c2;outline-offset:3px}.camera-box{border:1px solid #456985;border-radius:12px;padding:12px;margin-top:12px}.camera-box video{width:100%;max-height:320px;background:#0b1323;border-radius:8px;object-fit:contain}.camera-box[hidden]{display:none}.native-camera{position:relative;text-align:center}.native-camera input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}.native-camera:focus-within{outline:3px solid #67d9c2}.camera-note{font-size:12px;margin:8px 0}
 </style>
 </head>
 <body><main>
@@ -15,7 +16,11 @@
 <div class="main-grid">
 <section class="panel"><h2>Inspect an image</h2><p>Choose one PNG, JPG, WEBP or BMP image (up to 10 MiB).</p><div class="model-control"><label for="category-choice">Product category</label><select id="category-choice" disabled><option value="">Checking trained categories...</option></select><small id="category-hint">Only trained categories registered by the operator are available.</small></div><div class="model-control"><label for="model-choice">Detection model</label><select id="model-choice" disabled><option value="">Checking available models...</option></select><small id="model-hint">Only server-configured, trusted model checkpoints can be selected.</small></div>
 <div class="api-key-control"><label for="api-key">API key (only when your server requires one)</label><input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Optional for local development"><small>Kept only in this browser tab's memory, never stored in the page or URL. Use HTTPS for any remote access.</small></div>
-<div class="upload"><input id="file" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" aria-describedby="filename error"><strong>Click to select a product image</strong><small id="filename">No image selected</small></div><img id="preview" class="preview" alt="Selected image preview">
+<div class="upload"><input id="file" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" aria-describedby="filename error"><strong>Click to select a product image</strong><small id="filename">No image selected</small></div><div class="source-actions"><button id="open-camera" class="secondary" type="button">Open camera</button><label class="secondary native-camera">Take photo / choose photo<input id="camera-file" type="file" accept="image/*" capture="environment" aria-label="Take or choose a product photo"></label></div>
+<p class="camera-note">Use a clear, well-lit view of the selected product category. Camera photos may differ from the model's training images.</p>
+<p id="camera-status" class="note" role="status" aria-live="polite">Camera is off. A photo is uploaded only when you press Analyze image.</p>
+<div id="camera-panel" class="camera-box" hidden><video id="camera-video" autoplay muted playsinline aria-label="Live product camera preview"></video><div class="source-actions"><button id="capture-photo" class="secondary" type="button" disabled>Capture photo</button><button id="close-camera" class="secondary" type="button">Cancel camera</button></div></div>
+<img id="preview" class="preview" alt="Selected image preview">
 <button class="action" id="analyze" disabled>Analyze image</button><button class="action" id="clear-selection" type="button">Clear selection and result</button><p id="error" role="alert"></p></section>
 <section class="panel"><h2>Inspection output</h2><div id="empty"><p>Your result will appear here when the model finishes inference.</p></div>
 <div class="result" id="result" aria-live="polite"><div class="eyebrow">Raw anomaly score</div><div id="score" class="score">—</div><div class="meta"><span id="label" class="chip"></span><span id="model" class="chip"></span><span id="result-category" class="chip"></span><span id="result-file" class="chip"></span><span id="latency" class="chip"></span></div><h2>Relative anomaly localization</h2><img class="map" id="heatmap" alt="Anomaly visualization overlay"><p class="note">Score is not a probability. Overlay contrast is normalized per image and is not a binary segmentation mask.</p></div>
@@ -27,6 +32,8 @@ const $=id=>document.getElementById(id);
 const fileInput=$("file"), analyzeButton=$("analyze"), modelChoice=$("model-choice"), categoryChoice=$("category-choice");
 const MAX_IMAGE_BYTES=10*1024*1024;
 const SUPPORTED_IMAGE_TYPES=new Set(["image/png","image/jpeg","image/webp","image/bmp"]);
+let selectedImage=null;
+let cameraStream=null, cameraPending=false, capturePending=false, cameraEpoch=0;
 let previewUrl, modelsAvailable=false, inFlight=false, fileValid=false, modelsByCategory={};
 const modelLabel=name=>name==="padim"?"PaDiM":name==="patchcore"?"PatchCore":name;
 function resetResult(){
@@ -36,7 +43,10 @@ function resetResult(){
 }
 function updateAnalyzeButton(){
   $("clear-selection").disabled=inFlight;
-  analyzeButton.disabled=inFlight || !modelsAvailable || !fileValid || !modelChoice.value;
+  $("open-camera").disabled=inFlight || cameraPending || !!cameraStream;
+  $("camera-file").disabled=inFlight;
+  $("capture-photo").disabled=inFlight || capturePending || !cameraStream || !$("camera-video").videoWidth;
+  analyzeButton.disabled=inFlight || cameraPending || !!cameraStream || !modelsAvailable || !fileValid || !modelChoice.value;
 }
 function refreshAvailableModels(preferred){
   const category=categoryChoice.value;
@@ -119,9 +129,9 @@ modelChoice.addEventListener("change",()=>{
   $("error").textContent="";
   updateAnalyzeButton();
 });
-fileInput.addEventListener("change",()=>{
+function selectImage(file){
   if(inFlight)return;
-  const file=fileInput.files[0];
+  selectedImage=null;
   $("filename").textContent=file?file.name:"No image selected";
   if(previewUrl)URL.revokeObjectURL(previewUrl);
   previewUrl=undefined;
@@ -139,6 +149,7 @@ fileInput.addEventListener("change",()=>{
     $("error").textContent="Unsupported image type. Choose PNG, JPEG, WEBP or BMP.";
   }else{
     fileValid=true;
+    selectedImage=file;
     previewUrl=URL.createObjectURL(file);
     $("preview").src=previewUrl;
     $("preview").style.display="block";
@@ -148,10 +159,94 @@ fileInput.addEventListener("change",()=>{
     $("preview").style.display="none";
   }
   updateAnalyzeButton();
+}
+fileInput.addEventListener("change",()=>{
+  if(inFlight)return;
+  stopCamera();
+  $("camera-file").value="";
+  selectImage(fileInput.files[0]);
 });
+$("camera-file").addEventListener("change",()=>{
+  if(inFlight)return;
+  stopCamera();
+  fileInput.value="";
+  selectImage($("camera-file").files[0]);
+});
+function stopCamera(){
+  cameraEpoch++;
+  cameraPending=false;
+  capturePending=false;
+  const stream=cameraStream;
+  cameraStream=null;
+  if(stream)stream.getTracks().forEach(track=>track.stop());
+  $("camera-video").srcObject=null;
+  $("camera-panel").hidden=true;
+  $("camera-status").textContent="Camera is off. A photo is uploaded only when you press Analyze image.";
+  updateAnalyzeButton();
+}
+$("open-camera").addEventListener("click",async()=>{
+  if(inFlight || cameraPending || cameraStream)return;
+  if(typeof navigator==="undefined" || !navigator.mediaDevices?.getUserMedia){
+    $("camera-status").textContent="Live camera is unavailable here. Use Take photo / choose photo, or open this page on localhost or HTTPS.";
+    return;
+  }
+  const epoch=++cameraEpoch;
+  cameraPending=true;
+  $("camera-panel").hidden=false;
+  $("camera-status").textContent="Waiting for camera permission. You can cancel below.";
+  updateAnalyzeButton();
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:960}},audio:false});
+    if(epoch!==cameraEpoch){stream.getTracks().forEach(track=>track.stop());return;}
+    cameraStream=stream;
+    cameraPending=false;
+    $("camera-video").srcObject=stream;
+    stream.getTracks().forEach(track=>track.addEventListener("ended",()=>{if(cameraStream===stream)stopCamera();}));
+    await $("camera-video").play();
+    if(epoch!==cameraEpoch)return;
+    $("camera-status").textContent="Camera is on. Frame the product, then capture. No live video is uploaded.";
+    updateAnalyzeButton();
+  }catch(error){
+    if(epoch!==cameraEpoch)return;
+    stopCamera();
+    $("camera-status").textContent=error.name==="NotAllowedError"?"Camera permission was denied. Allow camera access or use Take photo / choose photo.":"Could not start the camera. Check that it is connected and not in use, or choose a photo.";
+  }
+});
+$("camera-video").addEventListener("loadeddata",updateAnalyzeButton);
+$("close-camera").addEventListener("click",stopCamera);
+$("capture-photo").addEventListener("click",()=>{
+  const video=$("camera-video");
+  if(inFlight || capturePending || !cameraStream || !video.videoWidth || !video.videoHeight)return;
+  const epoch=cameraEpoch;
+  capturePending=true;
+  updateAnalyzeButton();
+  try{
+    const canvas=document.createElement("canvas");
+    const scale=Math.min(1,1920/Math.max(video.videoWidth,video.videoHeight));
+    canvas.width=Math.max(1,Math.round(video.videoWidth*scale));
+    canvas.height=Math.max(1,Math.round(video.videoHeight*scale));
+    canvas.getContext("2d").drawImage(video,0,0,canvas.width,canvas.height);
+    canvas.toBlob(blob=>{
+      if(epoch!==cameraEpoch)return;
+      capturePending=false;
+      if(!blob){$("camera-status").textContent="Capture failed. Try again or choose a photo.";updateAnalyzeButton();return;}
+      stopCamera();
+      fileInput.value="";
+      $("camera-file").value="";
+      selectImage(new File([blob],"camera-capture.jpg",{type:"image/jpeg"}));
+      $("camera-status").textContent="Photo captured. Review the preview, then Analyze image. Open camera again to retake.";
+    },"image/jpeg",0.92);
+  }catch{
+    capturePending=false;
+    $("camera-status").textContent="Capture failed. Try again or choose a photo.";
+    updateAnalyzeButton();
+  }
+});
+if(typeof window!=="undefined")window.addEventListener("pagehide",stopCamera);
+if(document.addEventListener)document.addEventListener("visibilitychange",()=>{if(document.hidden)stopCamera();});
 analyzeButton.addEventListener("click",async()=>{
-  if(!fileValid || !modelsAvailable || !modelChoice.value || inFlight)return;
-  const selectedFile=fileInput.files[0];
+  if(!fileValid || !modelsAvailable || !modelChoice.value || inFlight || cameraPending || cameraStream)return;
+  const selectedFile=selectedImage;
   inFlight=true;
   fileInput.disabled=true;
   updateAnalyzeButton();
@@ -213,7 +308,10 @@ analyzeButton.addEventListener("click",async()=>{
 });
 $("clear-selection").addEventListener("click",()=>{
   if(inFlight)return;
+  stopCamera();
   fileInput.value="";
+  $("camera-file").value="";
+  selectedImage=null;
   fileValid=false;
   if(previewUrl)URL.revokeObjectURL(previewUrl);
   previewUrl=undefined;

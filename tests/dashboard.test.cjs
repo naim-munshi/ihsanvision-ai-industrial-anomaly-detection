@@ -11,7 +11,7 @@ const html = fs.readFileSync(path.join(__dirname, "../demo/index.html"), "utf8")
 const script = html.match(/<script>([\s\S]*?)<\/script>/i)?.[1];
 assert.ok(script, "Expected inline dashboard logic");
 
-async function mount({response, models} = {}) {
+async function mount({response, models, camera} = {}) {
   const elements = new Map();
   const fetchCalls = [];
   const revocations = [];
@@ -45,8 +45,13 @@ async function mount({response, models} = {}) {
     constructor() { this.parts = []; }
     append(name, file) { this.parts.push([name, file]); }
   }
+  elem("camera-video").play=async()=>{};
+  elem("camera-video").videoWidth=1280;
+  elem("camera-video").videoHeight=960;
   vm.runInNewContext(script, {
-    document: {getElementById: elem, createElement: () => elem("option-"+Math.random())},
+    document: {getElementById: elem, createElement: (tag) => tag === "canvas" && camera ? camera.canvas : elem("option-"+Math.random())},
+    navigator: camera ? {mediaDevices:{getUserMedia:camera.getUserMedia}} : {},
+    File: class {constructor(parts,name,options){this.name=name;this.type=options.type;this.size=parts[0].size;}},
     fetch, URL: {createObjectURL: () => "blob:test-image", revokeObjectURL: (u) => revocations.push(u)},
     FormData, console,
   }, {filename: "demo/index.html"});
@@ -235,4 +240,107 @@ test("clear selection releases the preview and blocks resubmission", async () =>
   assert.equal(ui.elem("result").style.display, "none");
   assert.equal(ui.elem("preview").src, undefined);
   assert.deepEqual(ui.revocations, ["blob:test-image"]);
+});
+
+
+function cameraFixture() {
+  const tracks = [{stopped:false, stop(){this.stopped=true;}, addEventListener(){}}];
+  const stream = {getTracks:()=>tracks};
+  return {tracks, stream, getUserMedia:async constraints=>{
+    assert.equal(constraints.audio,false);
+    return stream;
+  }, canvas:{getContext:()=>({drawImage(){}}),toBlob:callback=>callback({size:2048})}};
+}
+
+test("camera capture stops tracks and submits the photo through existing model route", async()=>{
+  const camera=cameraFixture();
+  const ui=await mount({camera});
+  await ui.elem("open-camera").listeners.click();
+  assert.equal(ui.elem("analyze").disabled,true);
+  assert.equal(ui.elem("camera-video").srcObject,camera.stream);
+  ui.elem("capture-photo").listeners.click();
+  assert.equal(camera.tracks[0].stopped,true);
+  assert.equal(ui.elem("camera-panel").hidden,true);
+  assert.equal(ui.elem("analyze").disabled,false);
+  assert.equal(ui.fetchCalls.length,1, "capture must not upload automatically");
+  await ui.elem("analyze").listeners.click();
+  const call=ui.fetchCalls.find(x=>x.url.startsWith("/predict"));
+  assert.equal(call.options.body.parts[0][1].name,"camera-capture.jpg");
+  assert.equal(call.options.body.parts[0][1].type,"image/jpeg");
+});
+
+test("cancelled pending permission cannot restart the camera", async()=>{
+  const camera=cameraFixture();
+  let grant;
+  camera.getUserMedia=()=>new Promise(resolve=>{grant=resolve;});
+  const ui=await mount({camera});
+  const opening=ui.elem("open-camera").listeners.click();
+  ui.elem("close-camera").listeners.click();
+  grant(camera.stream);
+  await opening;
+  assert.equal(camera.tracks[0].stopped,true);
+  assert.equal(ui.elem("camera-panel").hidden,true);
+  assert.equal(ui.elem("camera-video").srcObject,null);
+});
+
+test("permission denial and unsupported camera retain upload fallback", async()=>{
+  const camera=cameraFixture();
+  camera.getUserMedia=async()=>{throw {name:"NotAllowedError"};};
+  const ui=await mount({camera});
+  selectFile(ui,validFile);
+  await ui.elem("open-camera").listeners.click();
+  assert.match(ui.elem("camera-status").textContent,/denied/);
+  assert.equal(ui.elem("analyze").disabled,false);
+  const unavailable=await mount();
+  await unavailable.elem("open-camera").listeners.click();
+  assert.match(unavailable.elem("camera-status").textContent,/unavailable/);
+});
+
+test("late photo encoding cannot restore cleared selection", async()=>{
+  const camera=cameraFixture();
+  let encode;
+  camera.canvas.toBlob=callback=>{encode=callback;};
+  const ui=await mount({camera});
+  await ui.elem("open-camera").listeners.click();
+  ui.elem("capture-photo").listeners.click();
+  ui.elem("clear-selection").listeners.click();
+  encode({size:2048});
+  assert.equal(ui.elem("analyze").disabled,true);
+  assert.equal(ui.elem("preview").src,undefined);
+  assert.equal(camera.tracks[0].stopped,true);
+});
+
+test("native phone photo uses existing validation and inference", async()=>{
+  const ui=await mount();
+  ui.elem("camera-file").files=[validFile];
+  ui.elem("camera-file").listeners.change();
+  await ui.elem("analyze").listeners.click();
+  assert.equal(ui.fetchCalls.at(-1).options.body.parts[0][1],validFile);
+  ui.elem("camera-file").files=[{name:"photo.heic",type:"image/heic",size:2000}];
+  ui.elem("camera-file").listeners.change();
+  assert.equal(ui.elem("analyze").disabled,true);
+});
+
+test("failed capture keeps camera available for retry", async()=>{
+  const camera=cameraFixture();
+  camera.canvas.toBlob=callback=>callback(null);
+  const ui=await mount({camera});
+  await ui.elem("open-camera").listeners.click();
+  ui.elem("capture-photo").listeners.click();
+  assert.match(ui.elem("camera-status").textContent,/Capture failed/);
+  assert.equal(ui.elem("capture-photo").disabled,false);
+  assert.equal(ui.elem("analyze").disabled,true);
+  ui.elem("close-camera").listeners.click();
+  assert.equal(camera.tracks[0].stopped,true);
+});
+
+test("selecting an upload closes the live camera and uses the upload", async()=>{
+  const camera=cameraFixture();
+  const ui=await mount({camera});
+  await ui.elem("open-camera").listeners.click();
+  selectFile(ui,validFile);
+  assert.equal(camera.tracks[0].stopped,true);
+  assert.equal(ui.elem("camera-video").srcObject,null);
+  await ui.elem("analyze").listeners.click();
+  assert.equal(ui.fetchCalls.at(-1).options.body.parts[0][1],validFile);
 });

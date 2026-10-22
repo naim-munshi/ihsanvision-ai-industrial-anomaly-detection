@@ -184,3 +184,25 @@ The immutable [portfolio v1.0 plan](docs/portfolio-v1-plan.md) defines observabl
 The original project source code is available under the [IhsanVision.AI Responsible Use License v1.0](LICENSE): study, modify and share it for lawful, non-harmful purposes **only**. Harmful use is prohibited. This is a **source-available, use-restricted license, not an OSI-approved open-source license**. See [licensing and permitted uses](docs/licensing.md). This license **does not cover MVTec AD/AD2 datasets, pretrained weights or other third-party assets**; MVTec explicitly prohibits commercial dataset use without separate permission. Review rights before publishing images, checkpoints or a demo video.
 
 **IhsanVision.AI is a normal-only, unsupervised anomaly-detection research and portfolio tool** (defect labels are used for held-out evaluation, not normal-image training). It is not a replacement for validated manufacturing quality assurance or safety-critical decisions.
+
+### Camera inspection
+
+The single-image dashboard includes **Open camera** for a live preview and
+**Take photo / choose photo** for the phone's native image picker. Capture a
+photo, review the preview, then press **Analyze image**. Open the camera again
+to retake. Existing category/model selection and API-key authentication apply.
+
+Live camera access requires browser permission and a secure context (localhost
+or HTTPS). The camera stops after capture, cancellation, clearing the selection,
+or hiding/leaving the page. No live video is uploaded; only the selected still
+image is submitted when Analyze is pressed. Camera snapshots are JPEG and are
+bounded to 1920 pixels on the longest edge. Native phone photos use the same
+10 MiB and PNG/JPEG/WEBP/BMP validation as file uploads; convert unsupported HEIC
+photos to JPEG first. Browser/device behavior may vary.
+
+Use consistent lighting, framing and the matching trained product category.
+Camera inputs may differ from MVTec training images; this feature does not
+establish accuracy on factory or phone photographs. Physical Mac/iPhone camera
+and trained-checkpoint acceptance must still be verified locally. A phone's
+localhost refers to that phone, not the Mac server; this feature does not make
+the private Mac application remotely accessible.
