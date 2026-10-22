@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Operator sign in · IhsanVision.AI</title>
+<style>:root{font-family:Inter,system-ui,sans-serif;color:#ecf3ff;background:#0b1323}*{box-sizing:border-box}main{max-width:480px;margin:8vh auto;padding:24px}section{padding:28px;border:1px solid #29405b;border-radius:18px;background:#14243a}h1{letter-spacing:-.04em}p{color:#a5b4cd;line-height:1.6}label{display:block;margin:18px 0 8px}input,button{width:100%;padding:14px;border-radius:10px;font:inherit}input{color:#ecf3ff;background:#102035;border:1px solid #456985}button{margin-top:24px;background:#5ce0bf;border:0;font-weight:700;cursor:pointer}button:disabled{opacity:.5}a{color:#67d9c2}#error{color:#ffb6ac;min-height:24px}:focus-visible{outline:3px solid #67d9c2;outline-offset:3px}</style></head>
+<body><main><a href="/">IhsanVision.AI</a><section><h1>Operator sign in</h1><p>Use the local account created by your administrator.</p><form id="login-form"><label for="username">Username</label><input id="username" name="username" autocomplete="username" minlength="3" maxlength="64" required><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" maxlength="128" required><button id="submit" type="submit">Sign in</button></form><p id="error" role="alert"></p><p>Need access? Ask your administrator. Accounts share this installation's inspection ledger.</p></section></main>
+<script>
+const form=document.getElementById("login-form"), error=document.getElementById("error"), button=document.getElementById("submit");
+form.addEventListener("submit",async event=>{
+  event.preventDefault(); if(button.disabled)return; button.disabled=true; error.textContent="";
+  try{
+    const response=await fetch("/auth/login",{method:"POST",headers:{"Content-Type":"application/json","X-IhsanVision-Login":"1"},body:JSON.stringify({username:form.elements.username.value,password:form.elements.password.value})});
+    form.elements.password.value="";
+    if(response.ok){location.replace("/");return;}
+    error.textContent=response.status===429?"Too many attempts. Wait a minute and retry.":response.status===503?"Local accounts are not enabled on this server.":"Unable to sign in. Check your username and password.";
+  }catch{error.textContent="Cannot reach the server. Please retry.";}
+  finally{button.disabled=false;}
+});
+</script></body></html>
