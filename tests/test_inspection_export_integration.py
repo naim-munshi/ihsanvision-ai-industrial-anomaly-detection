@@ -132,3 +132,46 @@ def test_disabled_history_export_is_unavailable(monkeypatch):
     monkeypatch.delenv("IHSANVISION_HISTORY_DB", raising=False)
     r = TestClient(create_app(predict_fn=predictor)).get("/inspections/export.csv")
     assert r.status_code == 503
+
+
+def test_export_keeps_one_snapshot_during_concurrent_insert(monkeypatch, tmp_path):
+    from contextlib import closing
+
+    history = InspectionHistory(tmp_path / "snapshot.sqlite3")
+    original_connect = history._connect
+    with closing(original_connect()) as connection:
+        connection.execute("PRAGMA journal_mode=WAL")
+    result = {"anomaly_score": 0.5, "predicted_anomaly": False,
+              "checkpoint_sha256": "a" * 64}
+    expected = {history.record("bottle", "padim", result, lot_id="LOT-1")
+                for _ in range(101)}
+    inserted = []
+
+    def connect_with_writer():
+        connection = original_connect()
+
+        def row_factory(cursor, row):
+            # A second connection commits after the reader has started reading
+            # its rows. WAL permits that write without blocking the reader.
+            if len(row) > 1 and not inserted:
+                with closing(original_connect()) as writer, writer:
+                    new_id = "f" * 32
+                    writer.execute(
+                        "INSERT INTO inspections (id, created_at, category, model, "
+                        "anomaly_score, lot_id) VALUES (?, ?, ?, ?, ?, ?)",
+                        (new_id, "9999-01-01", "bottle", "padim", 0.8, "LOT-1"),
+                    )
+                inserted.append(new_id)
+            return row
+
+        connection.row_factory = row_factory
+        return connection
+
+    monkeypatch.setattr(history, "_connect", connect_with_writer)
+    text, count, truncated = export_history_csv(history, limit=101, lot_id="LOT-1")
+    ids = [row["id"] for row in csv.DictReader(StringIO(text))]
+    assert inserted, "The concurrent write must actually commit during export"
+    assert count == 101
+    assert len(set(ids)) == 101
+    assert set(ids) == expected
+    assert truncated is False

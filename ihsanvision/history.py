@@ -8,6 +8,7 @@ and an API key.
 """
 from __future__ import annotations
 
+from contextlib import closing
 from datetime import datetime, timezone
 import math
 import os
@@ -176,6 +177,25 @@ class InspectionHistory:
             "offset": offset,
             "lot_id": lot_id,
         }
+
+    def export_snapshot(self, limit: int = 100,
+                        lot_id: str | None = None) -> tuple[list[dict], bool]:
+        """Read bounded export rows and truncation from one SQLite snapshot."""
+        if type(limit) is not int or not 1 <= limit <= 500:
+            raise ValueError("Export limit must be 1-500")
+        lot_id = self.validate_lot(lot_id)
+        where = " WHERE lot_id = ?" if lot_id is not None else ""
+        params: tuple = (lot_id,) if lot_id is not None else ()
+        # One SELECT keeps rows stable while other connections insert, delete
+        # or review inspections. The extra row detects truncation without a
+        # separate COUNT or offset pages that can observe different snapshots.
+        with closing(self._connect()) as connection:
+            rows = connection.execute(
+                f"SELECT {', '.join(_COLUMNS)} FROM inspections" + where
+                + " ORDER BY created_at DESC, id DESC LIMIT ?",
+                (*params, limit + 1),
+            ).fetchall()
+        return [self._row(row) for row in rows[:limit]], len(rows) > limit
 
     def list_lots(self, limit: int = 50, offset: int = 0) -> dict:
         """Read-only per-lot counts; never turn AI predictions into ground truth."""

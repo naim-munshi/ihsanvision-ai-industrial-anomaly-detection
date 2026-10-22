@@ -42,18 +42,7 @@ def export_history_csv(history, *, limit: int = 100, lot_id: str | None = None) 
     buffer = StringIO(newline="")
     writer = csv.writer(buffer, lineterminator="\r\n")
     writer.writerow(EXPORT_COLUMNS)
-    written, total = 0, None
-    while written < limit:
-        batch = history.list_records(limit=min(100, limit - written),
-                                     offset=written, lot_id=lot_id)
-        if total is None:
-            total = batch["total"]
-        rows = batch["records"]
-        if not rows:
-            break
-        for row in rows:
-            writer.writerow([_csv_safe(row.get(column)) for column in EXPORT_COLUMNS])
-        written += len(rows)
-        if len(rows) < min(100, limit - (written - len(rows))):
-            break
-    return buffer.getvalue(), written, bool(total and total > written)
+    rows, truncated = history.export_snapshot(limit=limit, lot_id=lot_id)
+    for row in rows:
+        writer.writerow([_csv_safe(row.get(column)) for column in EXPORT_COLUMNS])
+    return buffer.getvalue(), len(rows), truncated
