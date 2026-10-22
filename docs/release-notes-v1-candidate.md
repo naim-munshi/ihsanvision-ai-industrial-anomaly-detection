@@ -1,7 +1,9 @@
 # IhsanVision.AI v1.0.0 — candidate release notes (NOT PUBLISHED)
 
-**Draft only — publication blocked.** Update this page with dated verified
-Cable/Carpet data, latest private Mac/Docker acceptance, approved original
+**Draft only — publication blocked.** The active scope is five categories
+(Bottle, Cable, Carpet, Metal Nut and Capsule) × PaDiM/PatchCore: ten models,
+as recorded in the [owner-approved extension](portfolio-five-category-extension.md).
+Reconcile the dated saved-run evidence, latest private Mac/Docker acceptance, approved original
 demo screenshots/video and completed third-party rights review **before**
 creating any `v1.0.0` tag or GitHub release. This Markdown page is not a
 GitHub Release and is intentionally not promoted as one.
@@ -31,7 +33,7 @@ private traceability. This is **not a factory safety-certified system**.
 - Automated Python 3.11/3.12 tests, browser JavaScript tests, source-release
   scanning, Markdown link integrity and a limited Git-history secrets audit.
 
-## Documented real model evidence (Bottle only, until next training)
+## Historical Bottle measurements and expanded evidence
 
 Historical real Kaggle observations, seed 42, original MVTec AD / bottle.
 209 normal train, 16 validation samples held out from the original test folder,
@@ -50,16 +52,32 @@ per model: PaDiM p50/p95 **388.87 / 766.46 ms** and PatchCore **493.05 /
 514.82 ms**. These are not production SLA measurements or proof of current
 build's real-model operator workflow.
 
+The [five-category evidence page](portfolio-five-category-extension.md) records
+the owner's eight additional Kaggle runs and ten-run saved-artifact comparison.
+No further training is required for the current scope. Those observations are
+owner-supplied evidence, not independent replication of training or current
+browser acceptance.
+
+The [local acceptance handoff](work-operator-full-acceptance-handoff.md) records
+20 successful real-image HTTP/PNG contracts and 18 matching sample labels.
+PaDiM classified the selected normal Metal Nut and Capsule samples as anomalous;
+their visual review remains pending. These original-test-derived demonstrations
+are not an independent accuracy estimate. Full browser/operator/restart and
+trained-checkpoint Docker acceptance remain required.
+
 ## Must replace draft with real verified v1 evidence
 
-- **P4/P5:** Add actual Cable and Carpet PaDiM/PatchCore metrics from the
-  original six saved private model/report/split triples; no estimated values.
-- **P6:** Link the real three-category comparison and grounded FP/FN review,
+- **P4/P5 (expanded scope):** Reconcile Cable, Carpet, Metal Nut and Capsule
+  evidence against the ten saved private model/report/split triples, preserving
+  the distinction between owner-reported results and independent verification.
+- **P6:** Link the saved five-category comparison and grounded FP/FN review,
   without exposing private image paths or image files.
 - **P7:** Link dated, sanitized *latest-build* real Mac acceptance covering
   batch, SQLite persistence after restart, human review and CSV.
 - **P8:** Link genuine target-machine Docker **checkpoint-backed** PaDiM and
-  PatchCore inference, heatmap, restart and memory observations.
+  PatchCore inference, heatmap, restart and memory observations. The current
+  Compose configuration only registers Bottle; document that partial scope or
+  review and test an extension before claiming ten-model Docker coverage.
 - **P9:** Add exactly approved and rights-cleared original demo screenshots and
   ~60–120 s video (no MVTec images or third-party content without permission).
 - **P10:** Review code/contribution copyright, the custom use-restricted
